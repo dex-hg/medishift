@@ -1,0 +1,175 @@
+.formulario {
+  overflow: hidden;
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  padding: 14px 18px;
+  gap: 10px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.aviso svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.aviso p {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.aviso--informativo {
+  color: #b2c6d3;
+  background: rgb(56 189 248 / 4%);
+}
+
+.aviso--informativo svg {
+  color: var(--azul);
+}
+
+.aviso--restriccion {
+  margin: 20px 24px 0;
+  color: #b8c8d2;
+  background: #0a1722;
+  border: 1px solid var(--borde-suave);
+  border-radius: 10px;
+}
+
+.aviso--restriccion svg {
+  color: var(--turquesa);
+}
+
+.aviso--resultado {
+  margin: 0 24px 20px;
+  color: #a8dbc0;
+  background: rgb(74 222 128 / 6%);
+  border: 1px solid rgb(74 222 128 / 14%);
+  border-radius: 10px;
+}
+
+.aviso--resultado svg {
+  color: var(--verde);
+}
+
+.seccion-formulario {
+  padding: 25px 24px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.seccion-formulario__titulo {
+  display: flex;
+  margin-bottom: 22px;
+  gap: 10px;
+}
+
+.seccion-formulario__titulo > svg {
+  margin-top: 1px;
+  color: var(--turquesa);
+}
+
+.seccion-formulario__titulo h2 {
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.seccion-formulario__titulo p {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.rejilla-formulario {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.campo--doble {
+  grid-column: span 2;
+}
+
+.campo label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.campo label > span {
+  color: #b7c6d0;
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.campo abbr {
+  color: var(--turquesa);
+  text-decoration: none;
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  width: 100%;
+  color: #dfe9ef;
+  background: #091622;
+  border: 1px solid var(--borde);
+  border-radius: 9px;
+  outline: 0;
+  transition: 150ms ease;
+}
+
+.campo input,
+.campo select {
+  height: 42px;
+  padding: 0 12px;
+}
+
+.campo textarea {
+  min-height: 88px;
+  padding: 11px 12px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.campo input::placeholder,
+.campo textarea::placeholder {
+  color: #566c7d;
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  border-color: rgb(45 212 191 / 46%);
+  box-shadow: 0 0 0 3px rgb(45 212 191 / 7%);
+}
+
+.campo input:user-invalid,
+.campo select:user-invalid,
+.campo textarea:user-invalid {
+  border-color: rgb(251 113 133 / 38%);
+}
+
+.campo > small {
+  display: block;
+  margin-top: 6px;
+  color: var(--texto-tenue);
+  font-size: 0.63rem;
+  line-height: 1.4;
+}
+
+.campo__error {
+  color: var(--rojo) !important;
+}
+
+.formulario__acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 18px 24px;
+  gap: 10px;
+  background: rgb(7 17 28 / 28%);
+}
+

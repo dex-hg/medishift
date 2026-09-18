@@ -1,0 +1,10 @@
+@import './base.css';
+@import './layout.css';
+@import './components/elementos.css';
+@import './pages/inicio.css';
+@import './components/tablas.css';
+@import './pages/horarios.css';
+@import './components/formularios.css';
+@import './pages/no-encontrado.css';
+@import './responsive.css';
+
