@@ -1,0 +1,276 @@
+@media (max-width: 1100px) {
+  .resumen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tarjeta-metrica:last-child {
+    grid-column: span 2;
+  }
+
+  .rejilla-inicio {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  .aplicacion,
+  .aplicacion--compacta {
+    display: block;
+  }
+
+  .barra-lateral,
+  .aplicacion--compacta .barra-lateral {
+    position: fixed;
+    left: 0;
+    width: min(290px, 86vw);
+    padding: 22px 16px 18px;
+    box-shadow: 18px 0 50px rgb(0 0 0 / 32%);
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+  }
+
+  .barra-lateral--abierta {
+    transform: translateX(0);
+  }
+
+  .aplicacion--compacta .marca__texto,
+  .aplicacion--compacta .navegacion__titulo,
+  .aplicacion--compacta .navegacion__enlace span,
+  .aplicacion--compacta .etiqueta-prototipo span,
+  .aplicacion--compacta .boton-compactar span {
+    display: initial;
+  }
+
+  .aplicacion--compacta .navegacion__enlace,
+  .aplicacion--compacta .boton-compactar {
+    justify-content: flex-start;
+    padding-inline: 12px;
+  }
+
+  .aplicacion--compacta .etiqueta-prototipo {
+    justify-content: flex-start;
+    padding-inline: 12px;
+  }
+
+  .aplicacion--compacta .boton-compactar svg {
+    transform: none;
+  }
+
+  .marca__cerrar,
+  .barra-superior__menu {
+    display: inline-grid;
+  }
+
+  .marca__cerrar {
+    margin-left: auto;
+  }
+
+  .boton-compactar {
+    display: none;
+  }
+
+  .fondo-menu {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    background: rgb(1 7 12 / 66%);
+    border: 0;
+    backdrop-filter: blur(3px);
+  }
+
+  .barra-superior {
+    height: 64px;
+  }
+
+  .barra-superior__contexto {
+    margin-right: auto;
+    margin-left: 12px;
+  }
+
+  .contenido-principal {
+    padding-top: 28px;
+  }
+
+  .perfil__datos {
+    display: none;
+  }
+
+  .controles-horario {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .periodo-horario {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .horario-semanal {
+    min-width: 0;
+    padding: 14px;
+  }
+
+  .horario-semanal__cabecera {
+    display: none;
+  }
+
+  .fila-horario {
+    position: relative;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 12px;
+    padding: 16px;
+    gap: 8px;
+    background: #0b1925;
+    border: 1px solid var(--borde-suave) !important;
+    border-radius: 11px;
+  }
+
+  .fila-horario:last-child {
+    margin-bottom: 0;
+  }
+
+  .fila-horario__profesional {
+    grid-column: span 2;
+    padding-right: 42px;
+    padding-bottom: 7px;
+  }
+
+  .fila-horario__editar {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+
+  .bloque-turno {
+    position: relative;
+    min-height: 68px;
+    padding-top: 20px;
+  }
+
+  .bloque-turno__dia {
+    position: absolute;
+    top: 7px;
+    display: block;
+    color: #61798b;
+    font-size: 0.56rem;
+    font-weight: 740;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+@media (max-width: 640px) {
+  .barra-superior,
+  .contenido-principal {
+    padding-inline: 16px;
+  }
+
+  .barra-superior__contexto span {
+    display: none;
+  }
+
+  .encabezado-pagina {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .encabezado-pagina__acciones,
+  .encabezado-pagina__acciones .boton {
+    width: 100%;
+  }
+
+  .resumen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tarjeta-metrica:last-child {
+    grid-column: auto;
+  }
+
+  .panel__encabezado,
+  .panel--acciones {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .indicador-demostracion {
+    align-self: flex-start;
+  }
+
+  .acceso-crud {
+    grid-template-columns: 40px minmax(0, 1fr) 18px;
+  }
+
+  .acceso-crud__cantidad {
+    display: none;
+  }
+
+  .acciones-rapidas {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .acciones-rapidas a {
+    flex: 1 1 46%;
+    justify-content: center;
+  }
+
+  .barra-tabla {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .buscador,
+  .selector-filtro {
+    width: 100%;
+  }
+
+  .selector-filtro select {
+    flex: 1;
+  }
+
+  .contador-resultados {
+    margin-left: 0;
+  }
+
+  .rejilla-formulario {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .campo--doble {
+    grid-column: auto;
+  }
+
+  .seccion-formulario,
+  .formulario__acciones {
+    padding-inline: 18px;
+  }
+
+  .aviso--restriccion,
+  .aviso--resultado {
+    margin-inline: 18px;
+  }
+
+  .formulario__acciones {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .formulario__acciones .boton {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
