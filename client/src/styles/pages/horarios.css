@@ -1,0 +1,175 @@
+.panel--horario {
+  overflow: hidden;
+}
+
+.controles-horario {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  gap: 16px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.selector-especialidad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.selector-especialidad button {
+  min-height: 33px;
+  padding: 0 11px;
+  color: var(--texto-tenue);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.68rem;
+}
+
+.selector-especialidad button:hover {
+  color: #b9c8d2;
+  background: rgb(255 255 255 / 2.5%);
+}
+
+.selector-especialidad button.activo {
+  color: #9ff4e9;
+  background: rgb(45 212 191 / 8%);
+  border-color: rgb(45 212 191 / 17%);
+}
+
+.periodo-horario {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.periodo-horario > span {
+  display: grid;
+  min-width: 132px;
+  gap: 2px;
+  color: #c6d4de;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.periodo-horario small {
+  color: var(--texto-tenue);
+  font-size: 0.61rem;
+  text-transform: uppercase;
+}
+
+.horario-semanal {
+  min-width: 1030px;
+  overflow-x: auto;
+}
+
+.horario-semanal__cabecera,
+.fila-horario {
+  display: grid;
+  grid-template-columns: minmax(230px, 1.5fr) repeat(6, minmax(92px, 0.72fr)) 40px;
+  align-items: center;
+  gap: 7px;
+}
+
+.horario-semanal__cabecera {
+  min-height: 46px;
+  padding: 0 16px;
+  color: #6f8699;
+  background: rgb(7 17 28 / 28%);
+  font-size: 0.62rem;
+  font-weight: 760;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.horario-semanal__cabecera > span:first-child {
+  text-align: left;
+}
+
+.fila-horario {
+  min-height: 106px;
+  padding: 13px 16px;
+  border-top: 1px solid var(--borde-suave);
+}
+
+.fila-horario:first-of-type {
+  border-top: 0;
+}
+
+.fila-horario__profesional {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+}
+
+.fila-horario__profesional > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.fila-horario__profesional strong {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fila-horario__profesional small {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--texto-tenue);
+  font-size: 0.65rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fila-horario__profesional .estado {
+  margin-top: 2px;
+}
+
+.bloque-turno {
+  display: grid;
+  min-height: 58px;
+  place-items: center;
+  align-content: center;
+  padding: 7px 5px;
+  color: #526879;
+  background: rgb(255 255 255 / 1.7%);
+  border: 1px solid transparent;
+  border-radius: 9px;
+  text-align: center;
+}
+
+.bloque-turno--asignado {
+  color: #88dbfb;
+  background: rgb(14 116 144 / 9%);
+  border-color: rgb(56 189 248 / 19%);
+}
+
+.bloque-turno strong {
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.68rem;
+}
+
+.bloque-turno small {
+  margin-top: 3px;
+  color: #6da8c0;
+  font-size: 0.58rem;
+}
+
+.bloque-turno__dia {
+  display: none;
+}
+
+.fila-horario__editar {
+  justify-self: end;
+}
+
