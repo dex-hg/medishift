@@ -36,18 +36,12 @@
   .aplicacion--compacta .marca__texto,
   .aplicacion--compacta .navegacion__titulo,
   .aplicacion--compacta .navegacion__enlace span,
-  .aplicacion--compacta .etiqueta-prototipo span,
   .aplicacion--compacta .boton-compactar span {
     display: initial;
   }
 
   .aplicacion--compacta .navegacion__enlace,
   .aplicacion--compacta .boton-compactar {
-    justify-content: flex-start;
-    padding-inline: 12px;
-  }
-
-  .aplicacion--compacta .etiqueta-prototipo {
     justify-content: flex-start;
     padding-inline: 12px;
   }

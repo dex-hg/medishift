@@ -3,11 +3,10 @@ import {
   ArrowRight,
   Building2,
   CalendarCheck2,
+  CalendarClock,
   CalendarPlus,
   Clock3,
-  Database,
   Plus,
-  ShieldCheck,
   UsersRound,
 } from 'lucide-react';
 import EncabezadoPagina from '../components/EncabezadoPagina';
@@ -53,7 +52,7 @@ function Inicio() {
     <>
       <EncabezadoPagina
         titulo="Panel operativo"
-        descripcion="Base visual del flujo manual de programación para el segundo avance."
+        descripcion="Resumen de profesionales, consultorios y horarios de atención."
         acciones={
           <Link className="boton boton--primario" to="/horarios/nuevo">
             <CalendarPlus size={18} />
@@ -102,10 +101,6 @@ function Inicio() {
               <p className="sobrelinea">Datos maestros</p>
               <h2>Preparar la programación</h2>
             </div>
-            <span className="indicador-demostracion">
-              <Database size={15} />
-              Sin conexión a API
-            </span>
           </div>
 
           <div className="accesos-crud">
@@ -128,28 +123,22 @@ function Inicio() {
           </div>
         </section>
 
-        <aside className="panel panel--estado">
-          <p className="sobrelinea">Alcance actual</p>
-          <h2>Qué está listo</h2>
-          <ul className="lista-alcance">
-            <li>
-              <span><ShieldCheck size={17} /></span>
-              <div>
-                <strong>Vistas del CRUD</strong>
-                <small>Listados y formularios con validación local.</small>
-              </div>
-            </li>
-            <li>
-              <span><Database size={17} /></span>
-              <div>
-                <strong>Datos de demostración</strong>
-                <small>Separados para reemplazarlos luego por respuestas de la API.</small>
-              </div>
-            </li>
-          </ul>
-          <div className="pendiente-api">
-            <span>Pendiente</span>
-            <p>Spring Boot, PostgreSQL, autenticación y reglas de superposición.</p>
+        <aside className="panel panel--agenda">
+          <p className="sobrelinea">Agenda semanal</p>
+          <h2>Próximos turnos</h2>
+          <div className="lista-turnos">
+            {turnos.slice(0, 3).map((turno) => {
+              const primerBloque = Object.entries(turno.bloques)[0];
+              return (
+                <div className="turno-resumen" key={turno.id}>
+                  <span><CalendarClock size={17} /></span>
+                  <div>
+                    <strong>{turno.profesional}</strong>
+                    <small>{primerBloque[0]} · {primerBloque[1][0]} · {turno.consultorio}</small>
+                  </div>
+                </div>
+              );
+            })}
           </div>
           <Link className="boton boton--secundario boton--ancho" to="/horarios">
             Ver horario semanal

@@ -7,7 +7,7 @@ function EncabezadoPagina({ ruta = [], titulo, descripcion, acciones }) {
       <div className="encabezado-pagina__texto">
         {ruta.length > 0 && (
           <nav className="migas" aria-label="Ruta de navegación">
-            <Link to="/">Inicio</Link>
+            <Link to="/panel">Inicio</Link>
             {ruta.map((elemento) => (
               <span className="migas__elemento" key={elemento.etiqueta}>
                 <ChevronRight size={13} aria-hidden="true" />
@@ -29,4 +29,3 @@ function EncabezadoPagina({ ruta = [], titulo, descripcion, acciones }) {
 }
 
 export default EncabezadoPagina;
-

@@ -72,7 +72,7 @@
 }
 
 .panel--principal,
-.panel--estado,
+.panel--agenda,
 .panel--acciones {
   padding: 24px;
 }
@@ -89,19 +89,6 @@
   margin-bottom: 0;
   font-size: 1.05rem;
   letter-spacing: -0.02em;
-}
-
-.indicador-demostracion {
-  display: inline-flex;
-  align-items: center;
-  padding: 7px 10px;
-  gap: 6px;
-  color: #a9bed0;
-  background: #0b1722;
-  border: 1px solid var(--borde-suave);
-  border-radius: 8px;
-  font-size: 0.68rem;
-  white-space: nowrap;
 }
 
 .accesos-crud {
@@ -190,24 +177,27 @@
   color: #577082;
 }
 
-.panel--estado > h2 {
+.panel--agenda > h2 {
   margin-bottom: 20px;
 }
 
-.lista-alcance {
+.lista-turnos {
   display: grid;
-  margin: 0;
-  padding: 0;
-  gap: 16px;
-  list-style: none;
+  margin-bottom: 20px;
+  gap: 10px;
 }
 
-.lista-alcance li {
+.turno-resumen {
   display: flex;
+  align-items: center;
+  padding: 11px;
   gap: 11px;
+  background: rgb(7 17 28 / 40%);
+  border: 1px solid var(--borde-suave);
+  border-radius: 10px;
 }
 
-.lista-alcance li > span {
+.turno-resumen > span {
   display: grid;
   flex: 0 0 30px;
   width: 30px;
@@ -218,42 +208,20 @@
   border-radius: 8px;
 }
 
-.lista-alcance div {
+.turno-resumen div {
   display: grid;
   gap: 4px;
 }
 
-.lista-alcance strong {
+.turno-resumen strong {
   font-size: 0.78rem;
 }
 
-.lista-alcance small {
+.turno-resumen small {
   color: var(--texto-tenue);
   font-size: 0.7rem;
   line-height: 1.45;
-}
-
-.pendiente-api {
-  margin: 22px 0 16px;
-  padding: 14px;
-  background: rgb(251 191 36 / 5%);
-  border: 1px solid rgb(251 191 36 / 14%);
-  border-radius: 10px;
-}
-
-.pendiente-api span {
-  color: var(--ambar);
-  font-size: 0.63rem;
-  font-weight: 750;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.pendiente-api p {
-  margin: 6px 0 0;
-  color: #b9a96d;
-  font-size: 0.7rem;
-  line-height: 1.5;
+  text-transform: capitalize;
 }
 
 .panel--acciones {
@@ -285,4 +253,3 @@
   color: var(--turquesa);
   border-color: rgb(45 212 191 / 28%);
 }
-

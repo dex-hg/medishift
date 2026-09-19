@@ -17,7 +17,7 @@ const gruposNavegacion = [
   {
     titulo: 'Principal',
     enlaces: [
-      { destino: '/', etiqueta: 'Inicio', icono: LayoutDashboard, fin: true },
+      { destino: '/panel', etiqueta: 'Inicio', icono: LayoutDashboard, fin: true },
       { destino: '/horarios', etiqueta: 'Horarios', icono: CalendarDays },
     ],
   },
@@ -81,10 +81,6 @@ function EstructuraAplicacion() {
         </nav>
 
         <div className="barra-lateral__pie">
-          <div className="etiqueta-prototipo">
-            <span className="etiqueta-prototipo__punto" />
-            <span>Vista preliminar</span>
-          </div>
           <button
             className="boton-compactar"
             type="button"
@@ -118,12 +114,11 @@ function EstructuraAplicacion() {
           </button>
           <div className="barra-superior__contexto">
             <Stethoscope size={18} />
-            <span>Clínica demostrativa</span>
+            <span>Clínica MediShift</span>
           </div>
           <div className="perfil">
             <span className="perfil__datos">
-              <strong>Administración</strong>
-              <small>Datos de demostración</small>
+              <strong>Administrador</strong>
             </span>
             <span className="perfil__avatar" aria-hidden="true">AD</span>
           </div>
@@ -138,4 +133,3 @@ function EstructuraAplicacion() {
 }
 
 export default EstructuraAplicacion;
-
