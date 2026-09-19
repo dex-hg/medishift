@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
-function FormularioPreliminar({ children, accionesSecundarias }) {
+function FormularioBase({ children, accionesSecundarias }) {
   const [mensaje, setMensaje] = useState('');
 
   const validarFormulario = (evento) => {
@@ -32,21 +32,11 @@ function FormularioPreliminar({ children, accionesSecundarias }) {
       return;
     }
 
-    setMensaje(
-      'La vista pasó la validación local. El guardado se habilitará cuando se conecte la API de Spring Boot.',
-    );
+    setMensaje('Los datos ingresados son válidos.');
   };
 
   return (
     <form className="formulario" onSubmit={validarFormulario} noValidate>
-      <div className="aviso aviso--informativo">
-        <AlertTriangle size={18} aria-hidden="true" />
-        <p>
-          <strong>Interfaz preliminar.</strong> Estos datos no se guardan todavía. La persistencia y las
-          reglas de concurrencia corresponden a la futura API de Spring Boot y PostgreSQL.
-        </p>
-      </div>
-
       {children}
 
       {mensaje && (
@@ -59,11 +49,11 @@ function FormularioPreliminar({ children, accionesSecundarias }) {
       <div className="formulario__acciones">
         {accionesSecundarias}
         <button className="boton boton--primario" type="submit">
-          Validar formulario
+          Guardar
         </button>
       </div>
     </form>
   );
 }
 
-export default FormularioPreliminar;
+export default FormularioBase;

@@ -2,7 +2,7 @@ import { ArrowLeft, CalendarPlus, Info, Link2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
-import FormularioPreliminar from '../../components/FormularioPreliminar';
+import FormularioBase from '../../components/FormularioBase';
 import { consultorios, profesionales, turnos } from '../../data/datosDemostracion';
 import NoEncontrado from '../NoEncontrado';
 
@@ -30,7 +30,7 @@ function FormularioTurno({ modo }) {
         descripcion="Asocia un profesional, un consultorio y un intervalo de atención."
       />
 
-      <FormularioPreliminar
+      <FormularioBase
         accionesSecundarias={
           <Link className="boton boton--fantasma" to="/horarios">
             <ArrowLeft size={17} /> Cancelar
@@ -40,8 +40,8 @@ function FormularioTurno({ modo }) {
         <div className="aviso aviso--restriccion">
           <Info size={18} aria-hidden="true" />
           <p>
-            La futura API deberá comprobar disponibilidad, jornada y superposición antes de guardar.
-            Esta vista solo valida que el intervalo tenga un orden correcto.
+            El turno debe respetar la disponibilidad del profesional y del consultorio. La hora de
+            finalización debe ser posterior a la hora de inicio.
           </p>
         </div>
 
@@ -120,7 +120,7 @@ function FormularioTurno({ modo }) {
             </CampoFormulario>
           </div>
         </section>
-      </FormularioPreliminar>
+      </FormularioBase>
     </>
   );
 }

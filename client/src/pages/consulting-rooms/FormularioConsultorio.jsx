@@ -2,7 +2,7 @@ import { ArrowLeft, Building2, Settings2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
-import FormularioPreliminar from '../../components/FormularioPreliminar';
+import FormularioBase from '../../components/FormularioBase';
 import { consultorios } from '../../data/datosDemostracion';
 import NoEncontrado from '../NoEncontrado';
 
@@ -25,7 +25,7 @@ function FormularioConsultorio({ modo }) {
         descripcion="Registra un ambiente físico que pueda reservarse en un turno."
       />
 
-      <FormularioPreliminar
+      <FormularioBase
         accionesSecundarias={
           <Link className="boton boton--fantasma" to="/consultorios">
             <ArrowLeft size={17} /> Cancelar
@@ -112,7 +112,7 @@ function FormularioConsultorio({ modo }) {
             </CampoFormulario>
           </div>
         </section>
-      </FormularioPreliminar>
+      </FormularioBase>
     </>
   );
 }

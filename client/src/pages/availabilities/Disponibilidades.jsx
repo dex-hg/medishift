@@ -98,7 +98,6 @@ function Disponibilidades() {
                           className="boton-icono boton-icono--peligro"
                           type="button"
                           disabled
-                          title="Disponible al conectar la API"
                           aria-label={`Eliminar disponibilidad de ${disponibilidad.profesional}`}
                         >
                           <Trash2 size={16} />

@@ -2,7 +2,7 @@ import { ArrowLeft, BriefcaseMedical, ContactRound } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
-import FormularioPreliminar from '../../components/FormularioPreliminar';
+import FormularioBase from '../../components/FormularioBase';
 import { profesionales } from '../../data/datosDemostracion';
 import NoEncontrado from '../NoEncontrado';
 
@@ -27,7 +27,7 @@ function FormularioProfesional({ modo }) {
         descripcion="Completa los datos mínimos para identificar al profesional y asignarle turnos."
       />
 
-      <FormularioPreliminar
+      <FormularioBase
         accionesSecundarias={
           <Link className="boton boton--fantasma" to="/profesionales">
             <ArrowLeft size={17} /> Cancelar
@@ -136,7 +136,7 @@ function FormularioProfesional({ modo }) {
             </CampoFormulario>
           </div>
         </section>
-      </FormularioPreliminar>
+      </FormularioBase>
     </>
   );
 }

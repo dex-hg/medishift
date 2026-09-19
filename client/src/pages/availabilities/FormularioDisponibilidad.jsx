@@ -2,7 +2,7 @@ import { ArrowLeft, CalendarRange, Clock3 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
-import FormularioPreliminar from '../../components/FormularioPreliminar';
+import FormularioBase from '../../components/FormularioBase';
 import { disponibilidades, profesionales } from '../../data/datosDemostracion';
 import NoEncontrado from '../NoEncontrado';
 
@@ -27,7 +27,7 @@ function FormularioDisponibilidad({ modo }) {
         descripcion="Define cuándo puede recibir turnos un profesional durante un periodo."
       />
 
-      <FormularioPreliminar
+      <FormularioBase
         accionesSecundarias={
           <Link className="boton boton--fantasma" to="/disponibilidades">
             <ArrowLeft size={17} /> Cancelar
@@ -118,7 +118,7 @@ function FormularioDisponibilidad({ modo }) {
             </CampoFormulario>
           </div>
         </section>
-      </FormularioPreliminar>
+      </FormularioBase>
     </>
   );
 }

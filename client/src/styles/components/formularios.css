@@ -21,15 +21,6 @@
   line-height: 1.55;
 }
 
-.aviso--informativo {
-  color: #b2c6d3;
-  background: rgb(56 189 248 / 4%);
-}
-
-.aviso--informativo svg {
-  color: var(--azul);
-}
-
 .aviso--restriccion {
   margin: 20px 24px 0;
   color: #b8c8d2;
@@ -172,4 +163,3 @@
   gap: 10px;
   background: rgb(7 17 28 / 28%);
 }
-
