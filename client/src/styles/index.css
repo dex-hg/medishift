@@ -1,10 +1,13 @@
 @import './base.css';
 @import './layout.css';
 @import './components/elementos.css';
+@import './pages/portada.css';
+@import './pages/portada-muestra.css';
+@import './pages/portada-secciones.css';
 @import './pages/inicio.css';
 @import './components/tablas.css';
 @import './pages/horarios.css';
 @import './components/formularios.css';
 @import './pages/no-encontrado.css';
+@import './pages/portada-responsive.css';
 @import './responsive.css';
-

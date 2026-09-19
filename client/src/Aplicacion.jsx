@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import EstructuraAplicacion from './components/EstructuraAplicacion';
+import Portada from './pages/Portada';
 import Inicio from './pages/Inicio';
 import Horarios from './pages/schedules/Horarios';
 import FormularioTurno from './pages/schedules/FormularioTurno';
@@ -14,8 +15,9 @@ import NoEncontrado from './pages/NoEncontrado';
 function Aplicacion() {
   return (
     <Routes>
+      <Route path="/" element={<Portada />} />
       <Route element={<EstructuraAplicacion />}>
-        <Route index element={<Inicio />} />
+        <Route path="panel" element={<Inicio />} />
         <Route path="horarios" element={<Horarios />} />
         <Route path="horarios/nuevo" element={<FormularioTurno modo="crear" />} />
         <Route path="horarios/:id/editar" element={<FormularioTurno modo="editar" />} />
@@ -34,9 +36,9 @@ function Aplicacion() {
           path="disponibilidades/:id/editar"
           element={<FormularioDisponibilidad modo="editar" />}
         />
-        <Route path="404" element={<NoEncontrado />} />
-        <Route path="*" element={<Navigate to="/404" replace />} />
       </Route>
+      <Route path="404" element={<NoEncontrado />} />
+      <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   );
 }

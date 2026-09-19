@@ -1,0 +1,83 @@
+@media (max-width: 900px) {
+  .portada__encabezado {
+    grid-template-columns: 1fr auto;
+  }
+
+  .portada__navegacion {
+    display: none;
+  }
+
+  .portada-hero {
+    grid-template-columns: 1fr;
+    padding-top: 65px;
+  }
+
+  .portada-hero__contenido {
+    max-width: 680px;
+  }
+
+  .muestra-horario {
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .portada__encabezado,
+  .portada-hero,
+  .portada-caracteristicas,
+  .portada-flujo,
+  .portada__pie {
+    width: min(calc(100% - 32px), 1180px);
+  }
+
+  .portada-marca small,
+  .portada__acceso .boton-registro {
+    display: none;
+  }
+
+  .portada-hero {
+    min-height: auto;
+    padding: 62px 0;
+  }
+
+  .portada-hero h1 {
+    font-size: clamp(2.35rem, 13vw, 3.25rem);
+  }
+
+  .portada-hero__acciones {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .portada-hero__acciones > * {
+    width: 100%;
+  }
+
+  .muestra-horario {
+    padding: 14px;
+    overflow-x: auto;
+  }
+
+  .muestra-horario__encabezado,
+  .muestra-horario__dias,
+  .muestra-horario__fila,
+  .muestra-horario__pie {
+    min-width: 520px;
+  }
+
+  .portada-caracteristicas__rejilla,
+  .portada-flujo {
+    grid-template-columns: 1fr;
+  }
+
+  .portada-flujo {
+    gap: 34px;
+  }
+
+  .portada__pie {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+  }
+}

@@ -1,0 +1,134 @@
+.muestra-horario {
+  padding: 18px;
+  background: linear-gradient(145deg, rgb(16 33 47 / 96%), rgb(8 21 33 / 96%));
+  border: 1px solid #274156;
+  border-radius: 18px;
+  box-shadow: 0 34px 90px rgb(0 0 0 / 34%);
+  transform: perspective(1200px) rotateY(-3deg) rotateX(1deg);
+}
+
+.muestra-horario__encabezado,
+.muestra-horario__pie,
+.muestra-profesional {
+  display: flex;
+  align-items: center;
+}
+
+.muestra-horario__encabezado {
+  justify-content: space-between;
+  padding: 4px 3px 17px;
+}
+
+.muestra-horario__encabezado > div {
+  display: grid;
+  gap: 4px;
+}
+
+.muestra-horario__encabezado span,
+.muestra-profesional small {
+  color: var(--texto-tenue);
+  font-size: 0.63rem;
+}
+
+.muestra-horario__encabezado strong {
+  font-size: 0.9rem;
+}
+
+.muestra-horario__estado {
+  padding: 6px 9px;
+  color: #8fe3d6 !important;
+  background: rgb(45 212 191 / 8%);
+  border: 1px solid rgb(45 212 191 / 15%);
+  border-radius: 999px;
+}
+
+.muestra-horario__dias,
+.muestra-horario__fila {
+  display: grid;
+  grid-template-columns: minmax(155px, 1.6fr) repeat(4, minmax(62px, 0.72fr));
+  align-items: center;
+  gap: 7px;
+}
+
+.muestra-horario__dias {
+  min-height: 35px;
+  padding-inline: 9px;
+  color: #61798b;
+  font-size: 0.57rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.muestra-horario__dias span:first-child {
+  text-align: left;
+}
+
+.muestra-horario__fila {
+  min-height: 82px;
+  padding: 10px 9px;
+  border-top: 1px solid var(--borde-suave);
+}
+
+.muestra-profesional {
+  gap: 9px;
+}
+
+.muestra-profesional > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: #8ef3e7;
+  background: rgb(20 184 166 / 13%);
+  border-radius: 9px;
+  font-size: 0.63rem;
+  font-weight: 750;
+}
+
+.muestra-profesional > div {
+  display: grid;
+  gap: 3px;
+}
+
+.muestra-profesional strong {
+  font-size: 0.68rem;
+}
+
+.muestra-turno {
+  display: grid;
+  min-height: 50px;
+  place-items: center;
+  align-content: center;
+  color: #83d9f9;
+  background: rgb(14 116 144 / 10%);
+  border: 1px solid rgb(56 189 248 / 18%);
+  border-radius: 8px;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.62rem;
+}
+
+.muestra-turno small {
+  margin-top: 3px;
+  color: #668fa3;
+  font-size: 0.51rem;
+}
+
+.muestra-turno--libre {
+  color: #586f80;
+  background: rgb(255 255 255 / 2%);
+  border-color: transparent;
+  font-family: inherit;
+}
+
+.muestra-horario__pie {
+  padding: 15px 8px 2px;
+  gap: 8px;
+  color: #708696;
+  font-size: 0.63rem;
+}
+
+.muestra-horario__pie svg {
+  color: var(--turquesa);
+}
