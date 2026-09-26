@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import EstructuraAplicacion from './components/EstructuraAplicacion';
 import Portada from './pages/Portada';
+import Registro from './pages/Registro';
 import Inicio from './pages/Inicio';
 import Horarios from './pages/schedules/Horarios';
 import FormularioTurno from './pages/schedules/FormularioTurno';
@@ -16,6 +17,7 @@ function Aplicacion() {
   return (
     <Routes>
       <Route path="/" element={<Portada />} />
+      <Route path="/registro" element={<Registro />} />
       <Route element={<EstructuraAplicacion />}>
         <Route path="panel" element={<Inicio />} />
         <Route path="horarios" element={<Horarios />} />
