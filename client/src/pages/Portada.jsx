@@ -57,7 +57,7 @@ function Portada() {
           <a href="#funcionamiento">Cómo funciona</a>
         </nav>
         <div className="portada__acceso">
-          <button className="boton-registro" type="button">Registrarse</button>
+          <Link className="boton-registro" to="/registro">Registrarse</Link>
           <Link className="boton-acceso" to="/panel">Iniciar sesión</Link>
         </div>
       </header>
@@ -79,9 +79,9 @@ function Portada() {
                 Iniciar sesión
                 <ArrowRight size={18} />
               </Link>
-              <button className="boton-registro boton-registro--grande" type="button">
+              <Link className="boton-registro boton-registro--grande" to="/registro">
                 Crear una cuenta
-              </button>
+              </Link>
             </div>
             <div className="portada-hero__ventajas" aria-label="Ventajas principales">
               <span><CheckCircle2 size={15} /> Programación semanal</span>
@@ -167,4 +167,3 @@ function Portada() {
 }
 
 export default Portada;
-
