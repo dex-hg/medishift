@@ -25,11 +25,13 @@
     width: min(290px, 86vw);
     padding: 22px 16px 18px;
     box-shadow: 18px 0 50px rgb(0 0 0 / 32%);
+    visibility: hidden;
     transform: translateX(-105%);
-    transition: transform 180ms ease;
+    transition: transform 180ms ease, visibility 180ms ease;
   }
 
   .barra-lateral--abierta {
+    visibility: visible;
     transform: translateX(0);
   }
 
@@ -59,7 +61,7 @@
     margin-left: auto;
   }
 
-  .boton-compactar {
+  .boton-compactar:not(.boton-salir) {
     display: none;
   }
 
