@@ -1,6 +1,6 @@
 # Backend de MediShift
 
-Spring Boot 4.1.1, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone el registro de una institución con su primera cuenta. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
+Spring Boot 4.1.1, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone el registro de una institución con su primera cuenta, además de iniciar, consultar y cerrar su sesión. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
 
 ## Configuración local
 
@@ -12,11 +12,12 @@ Copy-Item -LiteralPath .\.env.example -Destination .\.env
 
 Conserva los valores de un `.env` existente. El archivo está excluido de Git y no se debe compartir.
 
-| Variable | Configuración local |
-| --- | --- |
-| `MEDISHIFT_BD_URL` | `jdbc:postgresql://localhost:5432/MediShift` |
-| `MEDISHIFT_BD_USUARIO` | `postgres` |
-| `MEDISHIFT_BD_CLAVE` | Contraseña de PostgreSQL, obligatoria |
+| Variable                    | Configuración local                                           |
+| --------------------------- | -------------------------------------------------------------- |
+| `MEDISHIFT_BD_URL`        | `jdbc:postgresql://localhost:5432/MediShift`                 |
+| `MEDISHIFT_BD_USUARIO`    | `postgres`                                                   |
+| `MEDISHIFT_BD_CLAVE`      | Contraseña de PostgreSQL, obligatoria                         |
+| `MEDISHIFT_COOKIE_SEGURA` | `false` en localhost HTTP; `true` al servir mediante HTTPS |
 
 La URL debe coincidir con el nombre exacto de la base, incluidas las mayúsculas. El esquema se toma de la configuración del usuario de PostgreSQL; si necesitas especificarlo, añade `?currentSchema=NOMBRE_ESQUEMA` a la URL.
 
@@ -24,17 +25,29 @@ Spring Boot carga `.env` con `spring.config.import` en formato de propiedades y 
 
 ## Ejecutar
 
-Se requiere un JDK compatible con Java 21 y PostgreSQL activo. El Maven Wrapper descarga su distribución y dependencias en el primer uso.
+Se requiere un JDK compatible con Java 21 y PostgreSQL activo. El Maven Wrapper descarga su distribución y dependencias en el primer uso. El frontend y el backend son dos procesos separados: `pnpm dev` solo inicia Vite.
+
+Abre dos terminales desde la raíz `medishift`. En la primera, inicia el backend:
 
 ```powershell
+Set-Location .\server
 .\mvnw.cmd spring-boot:run
 ```
 
-En Linux o macOS utiliza `sh ./mvnw spring-boot:run`.
+Espera a que aparezcan la conexión PostgreSQL verificada y el mensaje de Tomcat iniciado en el puerto 8080. Mantén esta terminal abierta. Si ya estás dentro de `server`, ejecuta solo el comando del wrapper. En Linux o macOS utiliza `sh ./mvnw spring-boot:run`.
 
-Para probar el formulario, inicia el cliente en otra terminal desde `client` con `pnpm run dev` y abre `http://127.0.0.1:5173/registro`. El cliente envía `/api/registro` al backend de `localhost:8080` mediante el proxy de Vite ya configurado. Mantén ambos procesos activos durante el registro.
+En la segunda terminal, inicia el frontend:
+
+```powershell
+Set-Location .\client
+pnpm dev
+```
+
+Si ya estás dentro de `client`, ejecuta solo `pnpm dev`. Abre `http://127.0.0.1:5173/registro` o `/iniciar-sesion`. Vite redirige `/api/registro` y `/api/sesion` al backend en `localhost:8080`. Mantén ambas terminales abiertas mientras utilizas la aplicación.
 
 La conexión correcta muestra `Conexión con PostgreSQL verificada correctamente.`. La falta de contraseña, una clave vacía o una conexión inválida impiden arrancar. La comprobación inicial es de solo lectura. `spring.sql.init.mode=never` mantiene desactivada la ejecución automática de scripts y no se incluyen cambios de esquema.
+
+Si Vite muestra `ECONNREFUSED` al solicitar `/api/registro` o `/api/sesion`, comprueba la terminal del backend: ese mensaje indica que no pudo conectarse al servicio de `localhost:8080`. Inicia el backend o resuelve el error que impidió su arranque, y vuelve a intentar la solicitud. Si falla la conexión con PostgreSQL, revisa el servicio y la configuración local antes de reiniciar. No basta con tener Vite activo en el puerto 5173.
 
 ## Registro
 
@@ -72,14 +85,30 @@ El éxito responde con HTTP 201:
 
 Los errores tienen la forma `{"mensaje":"Descripción","errores":{"campo":"Descripción"}}`. Los errores sin un campo específico usan `errores: {}`.
 
-| Estado | Situación |
-| --- | --- |
-| 400 | Campos inválidos o JSON incorrecto |
-| 409 | Código de institución ya existente |
-| 503 | No se puede acceder a PostgreSQL |
-| 500 | Fallo interno con respuesta genérica |
+| Estado | Situación                            |
+| ------ | ------------------------------------- |
+| 400    | Campos inválidos o JSON incorrecto   |
+| 409    | Código de institución ya existente  |
+| 503    | No se puede acceder a PostgreSQL      |
+| 500    | Fallo interno con respuesta genérica |
 
-Las respuestas no incluyen contraseñas, hashes, SQL ni mensajes internos. Esta etapa proporciona el registro; no implementa inicio de sesión, sesiones o autorización. Solo se incorpora `spring-security-crypto` para el hash, sin activar la seguridad web completa.
+Las respuestas no incluyen contraseñas, hashes, SQL ni mensajes internos. Solo se incorpora `spring-security-crypto` para el hash, sin activar la seguridad web completa.
+
+## Inicio y cierre de sesión
+
+`POST /api/sesion` recibe tres campos de texto: `codigoInstitucion`, `correo` y `contrasena`. El código conserva sus mayúsculas y minúsculas, el correo se compara sin distinguirlas dentro de la institución y la contraseña se verifica exactamente, sin recortarla. Usa los mismos límites y reglas del registro para esos campos. Un ejemplo:
+
+```json
+{"codigoInstitucion":"Clinica-Lima","correo":"cuenta@institucion.pe","contrasena":"una-contraseña-de-ejemplo"}
+```
+
+Si la cuenta y la institución están activas y el hash PBKDF2 coincide, responde HTTP 200 con `idCuenta`, `idInstitucion`, `codigoInstitucion`, `nombreInstitucion` y `correo`, sin contraseña ni hash. Un código incorrecto, un correo ajeno a esa institución, una contraseña errónea o una cuenta inactiva producen el mismo error HTTP 401. La validación de campos y JSON produce 400; la falta de conexión con PostgreSQL, 503.
+
+El inicio reemplaza cualquier sesión anterior y rota su identificador. La sesión HTTP contiene únicamente los UUID de cuenta e institución. `GET /api/sesion` devuelve los mismos cinco datos con HTTP 200 si la sesión aún existe y ambos estados siguen activos; ante una cuenta o institución revocada, invalida la sesión y devuelve 401. `DELETE /api/sesion` cierra la sesión y devuelve 204, incluso si ya estaba cerrada. Los tres métodos incluyen `Cache-Control: no-store` en sus respuestas.
+
+La sesión caduca tras 30 minutos de inactividad. Viaja solo por cookie `HttpOnly` y `SameSite=Strict`; no se admite el identificador en la URL. `MEDISHIFT_COOKIE_SEGURA=false` permite probar en `localhost` por HTTP. Configura `MEDISHIFT_COOKIE_SEGURA=true` al servir mediante HTTPS para marcar la cookie como `Secure`. El cliente debe enviar la cookie en las solicitudes a `/api/sesion`; no debe guardar el identificador ni la contraseña en almacenamiento del navegador. Esta etapa no protege todavía futuros endpoints de gestión, que requerirán autorización al implementarse.
+
+Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Antes de publicar el servicio, debe incorporarse una política de limitación de intentos de autenticación. Los profesionales, consultorios y horarios del panel siguen siendo datos de demostración locales; el registro y la autenticación sí utilizan PostgreSQL.
 
 ## Pruebas
 
@@ -90,13 +119,13 @@ Las respuestas no incluyen contraseñas, hashes, SQL ni mensajes internos. Esta 
 Las pruebas habituales no acceden a la base. Cubren validación, normalización, hash, contrato HTTP, errores y orden de las operaciones transaccionales. Las pruebas reales se activan expresamente con credenciales válidas y el esquema existente:
 
 ```powershell
-.\mvnw.cmd "-Dmedishift.prueba-conexion=true" "-Dmedishift.prueba-registro=true" verify
+.\mvnw.cmd "-Dmedishift.prueba-conexion=true" "-Dmedishift.prueba-registro=true" "-Dmedishift.prueba-sesion=true" verify
 ```
 
-`RegistroPostgresqlTests` comprueba persistencia y hash, duplicados, correo por institución y reversión cuando falla la segunda inserción. Genera códigos y UUID aleatorios y elimina únicamente sus propias instituciones y cuentas por UUID al finalizar cada prueba. No ejecuta DDL. Sin las opciones indicadas, las pruebas reales quedan omitidas.
+`RegistroPostgresqlTests` comprueba persistencia y hash, duplicados, correo por institución y reversión cuando falla la segunda inserción. `SesionPostgresqlTests` verifica la misma cuenta real, la separación entre instituciones y la revocación por estado. Las pruebas generan códigos y UUID aleatorios y eliminan únicamente sus propias instituciones y cuentas por UUID al finalizar. No ejecutan DDL. Sin las opciones indicadas, las pruebas reales quedan omitidas.
 
 ## Archivos de Git
 
 Versiona los fuentes, pruebas, `pom.xml`, README, `.env.example` y los wrappers `mvnw`, `mvnw.cmd` y `.mvn/wrapper/maven-wrapper.properties`. Las credenciales y `target` están excluidos de Git.
 
-Referencias oficiales: [configuración externa de Spring Boot](https://docs.spring.io/spring-boot/reference/features/external-config.html), [bases SQL](https://docs.spring.io/spring-boot/reference/data/sql.html), [almacenamiento de contraseñas](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html) y [constructor de Pbkdf2PasswordEncoder](https://docs.spring.io/spring-security/reference/api/java/org/springframework/security/crypto/password/Pbkdf2PasswordEncoder.html).
+Referencias oficiales: [configuración externa de Spring Boot](https://docs.spring.io/spring-boot/reference/features/external-config.html), [propiedades del servidor y la sesión](https://docs.spring.io/spring-boot/appendix/application-properties/), [cookies SameSite](https://docs.spring.io/spring-boot/reference/web/servlet.html), [almacenamiento de contraseñas](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html) y [API de sesiones Servlet](https://jakarta.ee/specifications/servlet/6.1/apidocs/jakarta.servlet/jakarta/servlet/http/httpservletrequest).
