@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import EstructuraAplicacion from './components/EstructuraAplicacion';
 import Portada from './pages/Portada';
 import Registro from './pages/Registro';
+import InicioSesion from './pages/InicioSesion';
 import Inicio from './pages/Inicio';
 import Horarios from './pages/schedules/Horarios';
 import FormularioTurno from './pages/schedules/FormularioTurno';
@@ -18,6 +19,7 @@ function Aplicacion() {
     <Routes>
       <Route path="/" element={<Portada />} />
       <Route path="/registro" element={<Registro />} />
+      <Route path="/iniciar-sesion" element={<InicioSesion />} />
       <Route element={<EstructuraAplicacion />}>
         <Route path="panel" element={<Inicio />} />
         <Route path="horarios" element={<Horarios />} />

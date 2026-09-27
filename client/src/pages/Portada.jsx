@@ -58,7 +58,7 @@ function Portada() {
         </nav>
         <div className="portada__acceso">
           <Link className="boton-registro" to="/registro">Registrarse</Link>
-          <Link className="boton-acceso" to="/panel">Iniciar sesión</Link>
+          <Link className="boton-acceso" to="/iniciar-sesion">Iniciar sesión</Link>
         </div>
       </header>
 
@@ -75,7 +75,7 @@ function Portada() {
               semanales ordenados y fáciles de consultar.
             </p>
             <div className="portada-hero__acciones">
-              <Link className="boton-acceso boton-acceso--grande" to="/panel">
+              <Link className="boton-acceso boton-acceso--grande" to="/iniciar-sesion">
                 Iniciar sesión
                 <ArrowRight size={18} />
               </Link>

@@ -184,9 +184,12 @@ function Registro() {
                 <dt>Código</dt><dd>{resultado.codigoInstitucion}</dd>
                 <dt>Correo de la cuenta</dt><dd>{resultado.correo}</dd>
               </dl>
-              <p>El inicio de sesión estará disponible en la siguiente etapa.</p>
+              <p>Tu cuenta está vinculada al código de esta institución.</p>
               <div className="registro-formulario__acciones">
-                <Link className="boton boton--primario" to="/">Volver al inicio</Link>
+                <Link className="boton boton--primario" to="/iniciar-sesion"
+                  state={{ codigoInstitucion: resultado.codigoInstitucion, correo: resultado.correo }}>
+                  Continuar al inicio de sesión
+                </Link>
                 <button className="boton boton--fantasma" type="button" onClick={registrarOtraInstitucion}>
                   Registrar otra institución
                 </button>
@@ -262,6 +265,12 @@ function Registro() {
             </div>
             <p className="registro-formulario__alcance" role={enviando ? 'status' : undefined}>
               {enviando ? 'Estamos creando la institución y su primera cuenta.' : 'La cuenta quedará vinculada a esta institución.'}
+            </p>
+            <p className="registro-formulario__alcance">¿Ya tienes una cuenta?{' '}
+              <Link className="inicio-sesion__enlace" to="/iniciar-sesion" onClick={evitarSalidaEnCurso}
+                aria-disabled={enviando || undefined} tabIndex={enviando ? -1 : undefined}>
+                Iniciar sesión
+              </Link>
             </p>
           </form>
           </>}
