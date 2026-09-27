@@ -3,6 +3,7 @@ export const LIMITES_REGISTRO = Object.freeze({
   nombreInstitucion: 140,
   zonaHoraria: 64,
   correo: 254,
+  contrasena: 1024,
 });
 
 export const ZONAS_HORARIAS = [
@@ -26,6 +27,13 @@ function superaLimite(texto, limite) {
   return Array.from(texto).length > limite;
 }
 
+function contieneCaracteresInvalidos(texto) {
+  return Array.from(texto).some((caracter) => {
+    const codigo = caracter.codePointAt(0);
+    return codigo === 0 || (codigo >= 0xD800 && codigo <= 0xDFFF);
+  });
+}
+
 export function normalizarDatosRegistro(datos) {
   return {
     codigoInstitucion: obtenerTexto(datos, 'codigoInstitucion').trim(),
@@ -45,12 +53,16 @@ export function validarInstitucion(datos) {
     errores.codigoInstitucion = 'Ingresa el código de la institución.';
   } else if (superaLimite(codigoInstitucion, LIMITES_REGISTRO.codigoInstitucion)) {
     errores.codigoInstitucion = 'El código admite hasta 32 caracteres.';
+  } else if (contieneCaracteresInvalidos(codigoInstitucion)) {
+    errores.codigoInstitucion = 'El código contiene caracteres no válidos.';
   }
 
   if (!nombreInstitucion) {
     errores.nombreInstitucion = 'Ingresa el nombre de la institución.';
   } else if (superaLimite(nombreInstitucion, LIMITES_REGISTRO.nombreInstitucion)) {
     errores.nombreInstitucion = 'El nombre admite hasta 140 caracteres.';
+  } else if (contieneCaracteresInvalidos(nombreInstitucion)) {
+    errores.nombreInstitucion = 'El nombre contiene caracteres no válidos.';
   }
 
   if (!zonaHoraria.trim()) {
@@ -78,10 +90,16 @@ export function validarCuenta(datos) {
 
   if (!contrasena.trim()) {
     errores.contrasena = 'Ingresa una contraseña que no esté formada solo por espacios.';
+  } else if (superaLimite(contrasena, LIMITES_REGISTRO.contrasena)) {
+    errores.contrasena = 'La contraseña admite hasta 1024 caracteres.';
+  } else if (contieneCaracteresInvalidos(contrasena)) {
+    errores.contrasena = 'La contraseña contiene caracteres no válidos.';
   }
 
   if (!confirmacionContrasena.trim()) {
     errores.confirmacionContrasena = 'Repite tu contraseña.';
+  } else if (contieneCaracteresInvalidos(confirmacionContrasena)) {
+    errores.confirmacionContrasena = 'La confirmación contiene caracteres no válidos.';
   } else if (confirmacionContrasena !== contrasena) {
     errores.confirmacionContrasena = 'Las contraseñas deben coincidir exactamente.';
   }

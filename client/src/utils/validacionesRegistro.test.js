@@ -133,3 +133,27 @@ test('no modifica el objeto recibido durante normalización o validación', () =
   validarCuenta(datos);
   assert.deepEqual(datos, datosValidos);
 });
+
+test('acepta contraseñas de 1024 puntos Unicode y rechaza 1025 sin recortarlas', () => {
+  for (const caracter of ['a', '🩺']) {
+    const contrasena = caracter.repeat(LIMITES_REGISTRO.contrasena);
+    assert.deepEqual(validarCuenta({ ...datosValidos, contrasena, confirmacionContrasena: contrasena }), {});
+    assert.ok(validarCuenta({
+      ...datosValidos, contrasena: `${contrasena}${caracter}`, confirmacionContrasena: `${contrasena}${caracter}`,
+    }).contrasena);
+  }
+});
+
+test('rechaza NUL y sustitutos Unicode aislados en los campos enviados', () => {
+  for (const caracter of ['\u0000', '\uD800', '\uDC00']) {
+    for (const campo of ['codigoInstitucion', 'nombreInstitucion']) {
+      assert.ok(validarInstitucion({ ...datosValidos, [campo]: `Texto${caracter}` })[campo]);
+    }
+    assert.ok(validarCuenta({
+      ...datosValidos, contrasena: `Clave${caracter}`, confirmacionContrasena: `Clave${caracter}`,
+    }).contrasena);
+    assert.ok(validarCuenta({
+      ...datosValidos, confirmacionContrasena: `Clave${caracter}`,
+    }).confirmacionContrasena);
+  }
+});

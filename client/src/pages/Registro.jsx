@@ -2,8 +2,10 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Building2, CalendarDays, Check, CheckCircle2,
-  Eye, EyeOff, ShieldCheck, Sparkles, UserRound,
+  ShieldCheck, Sparkles, UserRound,
 } from 'lucide-react';
+import CampoRegistro from '../components/CampoRegistro';
+import { registrarInstitucion } from '../services/registro';
 import {
   LIMITES_REGISTRO, ZONAS_HORARIAS, normalizarDatosRegistro,
   validarCuenta, validarInstitucion,
@@ -14,54 +16,19 @@ const datosIniciales = {
   correo: '', contrasena: '', confirmacionContrasena: '',
 };
 
-function CampoRegistro({ identificador, nombre, etiqueta, ayuda, error, tipo = 'text', ...propiedades }) {
-  const [visible, setVisible] = useState(false);
-  const esContrasena = tipo === 'password';
-  const descripcion = [ayuda && `${identificador}-ayuda`, error && `${identificador}-error`]
-    .filter(Boolean).join(' ') || undefined;
-
-  return (
-    <div className={`registro-campo${error ? ' registro-campo--error' : ''}`}>
-      <label htmlFor={identificador}>{etiqueta} <span aria-hidden="true">*</span></label>
-      <div className="registro-campo__control">
-        <input
-          {...propiedades}
-          id={identificador}
-          name={nombre}
-          type={esContrasena && visible ? 'text' : tipo}
-          className={esContrasena ? 'registro-campo__contrasena' : undefined}
-          aria-invalid={Boolean(error)}
-          aria-describedby={descripcion}
-          required
-        />
-        {esContrasena && (
-          <button
-            className="registro-campo__visibilidad"
-            type="button"
-            aria-label={`${visible ? 'Ocultar' : 'Mostrar'} ${etiqueta.toLowerCase()}`}
-            aria-pressed={visible}
-            aria-controls={identificador}
-            onClick={() => setVisible(!visible)}
-          >
-            {visible ? <EyeOff size={19} aria-hidden="true" /> : <Eye size={19} aria-hidden="true" />}
-          </button>
-        )}
-      </div>
-      {ayuda && <small id={`${identificador}-ayuda`}>{ayuda}</small>}
-      {error && <p className="registro-campo__error" id={`${identificador}-error`}>{error}</p>}
-    </div>
-  );
-}
-
 function Registro() {
   const identificador = useId();
   const tituloFormulario = useRef(null);
   const avisoResultado = useRef(null);
+  const formulario = useRef(null);
   const campoConError = useRef(null);
+  const solicitudEnCurso = useRef(false);
   const [paso, setPaso] = useState(1);
   const [datos, setDatos] = useState(datosIniciales);
   const [errores, setErrores] = useState({});
   const [mensaje, setMensaje] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [resultado, setResultado] = useState(null);
 
   useEffect(() => {
     const tituloAnterior = document.title;
@@ -70,13 +37,17 @@ function Registro() {
   }, []);
 
   useEffect(() => { tituloFormulario.current?.focus(); }, [paso]);
-  useEffect(() => { if (mensaje) avisoResultado.current?.focus(); }, [mensaje]);
   useEffect(() => {
-    campoConError.current?.focus();
-    campoConError.current = null;
-  }, [errores]);
+    if (enviando) return;
+    if (campoConError.current) {
+      Array.from(formulario.current?.elements || [])
+        .find((campo) => campo.name === campoConError.current)?.focus();
+      campoConError.current = null;
+    } else if (mensaje || resultado) avisoResultado.current?.focus();
+  }, [errores, mensaje, paso, enviando, resultado]);
 
   const actualizarCampo = (evento) => {
+    if (solicitudEnCurso.current) return;
     const { name: nombre, value: valor } = evento.target;
     setDatos((anteriores) => ({ ...anteriores, [nombre]: valor }));
     setMensaje('');
@@ -88,24 +59,27 @@ function Registro() {
     });
   };
 
-  const revisarPaso = (evento) => {
+  const mostrarErrores = (erroresNuevos) => {
+    const camposInstitucion = ['nombreInstitucion', 'codigoInstitucion', 'zonaHoraria'];
+    const ordenCampos = [...camposInstitucion, 'correo', 'contrasena', 'confirmacionContrasena'];
+    campoConError.current = ordenCampos.find((campo) => erroresNuevos[campo]) || null;
+    if (camposInstitucion.some((campo) => erroresNuevos[campo])) setPaso(1);
+    setErrores(erroresNuevos);
+  };
+
+  const revisarPaso = async (evento) => {
     evento.preventDefault();
+    if (solicitudEnCurso.current || resultado) return;
     const datosNormalizados = normalizarDatosRegistro(datos);
     const erroresInstitucion = validarInstitucion(datosNormalizados);
     const erroresPaso = paso === 1 ? erroresInstitucion : {
       ...erroresInstitucion, ...validarCuenta(datosNormalizados),
     };
     setDatos(datosNormalizados);
-    setErrores(erroresPaso);
+    mostrarErrores(erroresPaso);
     setMensaje('');
 
     if (Object.keys(erroresPaso).length) {
-      if (paso === 2 && Object.keys(erroresInstitucion).length) {
-        setPaso(1);
-      } else {
-        campoConError.current = Array.from(evento.currentTarget.elements)
-          .find((campo) => erroresPaso[campo.name]);
-      }
       return;
     }
 
@@ -113,13 +87,40 @@ function Registro() {
       setPaso(2);
       return;
     }
-    setMensaje('Los datos son válidos. El registro todavía no se ha enviado.');
+    solicitudEnCurso.current = true;
+    setEnviando(true);
+    try {
+      const cuentaCreada = await registrarInstitucion(datosNormalizados);
+      setDatos((anteriores) => ({ ...anteriores, contrasena: '', confirmacionContrasena: '' }));
+      setResultado(cuentaCreada);
+    } catch (error) {
+      const erroresRespuesta = { ...(error.errores || {}) };
+      if (error.estado === 409 && !erroresRespuesta.codigoInstitucion) {
+        erroresRespuesta.codigoInstitucion = 'El código de institución ya está registrado.';
+      }
+      mostrarErrores(erroresRespuesta);
+      setMensaje(error.message || 'No se pudo completar el registro. Inténtalo nuevamente.');
+    } finally {
+      solicitudEnCurso.current = false;
+      setEnviando(false);
+    }
   };
 
   const volverInstitucion = () => {
+    if (solicitudEnCurso.current) return;
     setErrores({});
     setMensaje('');
     setPaso(1);
+  };
+
+  const registrarOtraInstitucion = () => {
+    setResultado(null);
+    setDatos(datosIniciales);
+    volverInstitucion();
+  };
+
+  const evitarSalidaEnCurso = (evento) => {
+    if (solicitudEnCurso.current) evento.preventDefault();
   };
 
   const camposInstitucion = [
@@ -135,7 +136,7 @@ function Registro() {
       ayuda: 'Se usará como identificador para acceder.', autoComplete: 'email',
       placeholder: 'nombre@institucion.pe', maxLength: LIMITES_REGISTRO.correo },
     { nombre: 'contrasena', etiqueta: 'Contraseña', tipo: 'password',
-      ayuda: 'Elige una contraseña personal y no la compartas.', autoComplete: 'new-password' },
+      ayuda: 'Elige una contraseña personal. Hasta 1024 caracteres.', autoComplete: 'new-password' },
     { nombre: 'confirmacionContrasena', etiqueta: 'Confirmar contraseña', tipo: 'password',
       autoComplete: 'new-password' },
   ];
@@ -143,11 +144,13 @@ function Registro() {
   return (
     <div className="registro">
       <header className="registro__encabezado">
-        <Link className="portada-marca" to="/" aria-label="MediShift, página principal">
+        <Link className="portada-marca" to="/" aria-label="MediShift, página principal"
+          onClick={evitarSalidaEnCurso} aria-disabled={enviando || undefined} tabIndex={enviando ? -1 : undefined}>
           <span className="portada-marca__simbolo" aria-hidden="true"><Sparkles size={20} /></span>
           <span><strong>MediShift</strong><small>Gestión operativa</small></span>
         </Link>
-        <Link className="registro__volver" to="/">
+        <Link className="registro__volver" to="/" onClick={evitarSalidaEnCurso}
+          aria-disabled={enviando || undefined} tabIndex={enviando ? -1 : undefined}>
           <ArrowLeft size={16} aria-hidden="true" /> Volver al inicio
         </Link>
       </header>
@@ -171,6 +174,25 @@ function Registro() {
         </section>
 
         <section className="registro-tarjeta" aria-labelledby={`${identificador}-formulario`}>
+          {resultado ? (
+            <div className="registro-confirmacion" ref={avisoResultado} tabIndex={-1} role="status">
+              <CheckCircle2 size={38} aria-hidden="true" />
+              <h2 id={`${identificador}-formulario`}>Registro completado</h2>
+              <p>La institución y su primera cuenta se han creado correctamente.</p>
+              <dl>
+                <dt>Institución</dt><dd>{resultado.nombreInstitucion}</dd>
+                <dt>Código</dt><dd>{resultado.codigoInstitucion}</dd>
+                <dt>Correo de la cuenta</dt><dd>{resultado.correo}</dd>
+              </dl>
+              <p>El inicio de sesión estará disponible en la siguiente etapa.</p>
+              <div className="registro-formulario__acciones">
+                <Link className="boton boton--primario" to="/">Volver al inicio</Link>
+                <button className="boton boton--fantasma" type="button" onClick={registrarOtraInstitucion}>
+                  Registrar otra institución
+                </button>
+              </div>
+            </div>
+          ) : <>
           <ol className="registro-pasos" aria-label="Pasos del registro">
             {[{ numero: 1, nombre: 'Institución' }, { numero: 2, nombre: 'Primera cuenta' }].map((etapa) => (
               <li key={etapa.numero} className={paso >= etapa.numero ? 'registro-pasos__activo' : ''}
@@ -181,7 +203,7 @@ function Registro() {
             ))}
           </ol>
 
-          <form className="registro-formulario" onSubmit={revisarPaso} noValidate>
+          <form ref={formulario} className="registro-formulario" onSubmit={revisarPaso} noValidate aria-busy={enviando}>
             <div className="registro-formulario__titulo">
               <span className="registro-formulario__icono" aria-hidden="true">
                 {paso === 1 ? <Building2 size={22} /> : <UserRound size={22} />}
@@ -198,7 +220,7 @@ function Registro() {
               <div className="registro-institucion">
                 <Building2 size={18} aria-hidden="true" />
                 <div><strong>{datos.nombreInstitucion}</strong><span>{datos.codigoInstitucion} · {datos.zonaHoraria}</span></div>
-                <button type="button" onClick={volverInstitucion}>Editar</button>
+                <button type="button" onClick={volverInstitucion} disabled={enviando}>Editar</button>
               </div>
             )}
 
@@ -208,13 +230,13 @@ function Registro() {
                 <CampoRegistro key={campo.nombre} {...campo}
                   identificador={`${identificador}-${campo.nombre}`}
                   value={datos[campo.nombre]} error={errores[campo.nombre]} onChange={actualizarCampo}
-                  maxLength={campo.maxLength} />
+                  maxLength={campo.maxLength} disabled={enviando} />
               ))}
               {paso === 1 && (
                 <div className={`registro-campo${errores.zonaHoraria ? ' registro-campo--error' : ''}`}>
                   <label htmlFor={`${identificador}-zonaHoraria`}>Zona horaria <span aria-hidden="true">*</span></label>
                   <select id={`${identificador}-zonaHoraria`} name="zonaHoraria" value={datos.zonaHoraria}
-                    onChange={actualizarCampo} required aria-invalid={Boolean(errores.zonaHoraria)}
+                    onChange={actualizarCampo} required disabled={enviando} aria-invalid={Boolean(errores.zonaHoraria)}
                     aria-describedby={`${identificador}-zona-ayuda${errores.zonaHoraria ? ` ${identificador}-zona-error` : ''}`}>
                     {ZONAS_HORARIAS.map((zona) => <option key={zona.valor} value={zona.valor}>{zona.etiqueta}</option>)}
                   </select>
@@ -225,20 +247,24 @@ function Registro() {
             </div>
 
             {mensaje && (
-              <div className="registro-resultado" ref={avisoResultado} tabIndex={-1} role="status">
-                <CheckCircle2 size={20} aria-hidden="true" /><p>{mensaje}</p>
+              <div className="registro-resultado registro-resultado--error" ref={avisoResultado} tabIndex={-1} role="alert">
+                <p>{mensaje}</p>
               </div>
             )}
             <div className="registro-formulario__acciones">
-              {paso === 2 && <button className="boton boton--fantasma" type="button" onClick={volverInstitucion}>
+              {paso === 2 && <button className="boton boton--fantasma" type="button" onClick={volverInstitucion} disabled={enviando}>
                 <ArrowLeft size={17} aria-hidden="true" /> Atrás
               </button>}
-              <button className="boton boton--primario" type="submit">
-                {paso === 1 ? 'Continuar' : 'Revisar registro'}<ArrowRight size={18} aria-hidden="true" />
+              <button className="boton boton--primario" type="submit" disabled={enviando}>
+                {enviando ? 'Registrando…' : paso === 1 ? 'Continuar' : 'Crear institución y cuenta'}
+                <ArrowRight size={18} aria-hidden="true" />
               </button>
             </div>
-            <p className="registro-formulario__alcance">Por ahora puedes revisar tus datos. La creación de cuentas se habilitará en el siguiente paso.</p>
+            <p className="registro-formulario__alcance" role={enviando ? 'status' : undefined}>
+              {enviando ? 'Estamos creando la institución y su primera cuenta.' : 'La cuenta quedará vinculada a esta institución.'}
+            </p>
           </form>
+          </>}
         </section>
       </main>
       <footer className="registro__pie">MediShift · Gestión de profesionales, consultorios y horarios.</footer>
