@@ -52,6 +52,26 @@ public final class ValidadorRegistro {
 		return new DatosRegistro(codigo, nombre, zona, correo, contrasena);
 	}
 
+	/** Aplica a inicio de sesión las mismas reglas de los tres campos compartidos. */
+	public static DatosCredenciales validarCredenciales(Object codigoBruto, Object correoBruto,
+			Object contrasenaBruta) {
+		Map<String, String> errores = new LinkedHashMap<>();
+		String codigo = recortarEspacios(leerTexto(codigoBruto, "codigoInstitucion", errores));
+		String correo = recortarEspacios(leerTexto(correoBruto, "correo", errores))
+				.toLowerCase(Locale.ROOT);
+		String contrasena = leerTexto(contrasenaBruta, "contrasena", errores);
+		validarTexto(codigo, "codigoInstitucion", 32, errores);
+		validarTexto(correo, "correo", 254, errores);
+		validarTexto(contrasena, "contrasena", 1024, errores);
+		if (!errores.containsKey("correo") && !FORMATO_CORREO.matcher(correo).matches()) {
+			errores.put("correo", "Ingresa un correo válido, por ejemplo nombre@institucion.pe.");
+		}
+		if (!errores.isEmpty()) {
+			throw new ValidacionRegistroException(errores);
+		}
+		return new DatosCredenciales(codigo, correo, contrasena);
+	}
+
 	private static String leerTexto(Object valor, String campo, Map<String, String> errores) {
 		if (!(valor instanceof String texto)) {
 			errores.put(campo, "Este campo debe contener texto.");
