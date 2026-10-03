@@ -16,7 +16,10 @@ public class FiltroNoCacheSesion extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest solicitud, HttpServletResponse respuesta,
 			FilterChain filtros) throws ServletException, IOException {
-		if (solicitud.getRequestURI().equals(solicitud.getContextPath() + "/api/sesion")) {
+		String ruta = solicitud.getRequestURI().substring(solicitud.getContextPath().length());
+		if (ruta.equals("/api/sesion") || ruta.equals("/api/especialidades")
+				|| ruta.equals("/api/profesionales") || ruta.startsWith("/api/profesionales/")
+				|| ruta.equals("/api/consultorios") || ruta.startsWith("/api/consultorios/")) {
 			respuesta.setHeader("Cache-Control", "no-store");
 		}
 		filtros.doFilter(solicitud, respuesta);
