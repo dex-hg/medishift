@@ -132,3 +132,13 @@
 .muestra-horario__pie svg {
   color: var(--turquesa);
 }
+
+.muestra-recurso {
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 9px;
+  border-top: 1px solid var(--borde-suave);
+  color: var(--turquesa);
+}

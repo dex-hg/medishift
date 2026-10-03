@@ -90,36 +90,27 @@ function Portada() {
             </div>
           </div>
 
-          <div className="muestra-horario" aria-label="Ejemplo de horario semanal">
+          <div className="muestra-horario" aria-label="Gestión de recursos de la institución">
             <div className="muestra-horario__encabezado">
               <div>
-                <span>Semana actual</span>
-                <strong>Horarios de atención</strong>
+                <span>Datos de tu institución</span>
+                <strong>Recursos para la atención</strong>
               </div>
-              <span className="muestra-horario__estado">Organizado</span>
+              <span className="muestra-horario__estado">Gestión centralizada</span>
             </div>
-            <div className="muestra-horario__dias">
-              <span>Profesional</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
-            </div>
-            <div className="muestra-horario__fila">
+            <div className="muestra-recurso">
               <div className="muestra-profesional">
-                <span>EV</span>
-                <div><strong>Elena Vargas</strong><small>Cardiología</small></div>
+                <span><UsersRound size={18} aria-hidden="true" /></span>
+                <div><strong>Profesionales</strong><small>Contacto, especialidad y estado</small></div>
               </div>
-              <span className="muestra-turno">08:00<small>13:00</small></span>
-              <span className="muestra-turno">14:00<small>18:00</small></span>
-              <span className="muestra-turno">08:00<small>13:00</small></span>
-              <span className="muestra-turno">14:00<small>18:00</small></span>
+              <CheckCircle2 size={18} aria-hidden="true" />
             </div>
-            <div className="muestra-horario__fila">
+            <div className="muestra-recurso">
               <div className="muestra-profesional">
-                <span>SM</span>
-                <div><strong>Sofía Mendoza</strong><small>Pediatría</small></div>
+                <span><Building2 size={18} aria-hidden="true" /></span>
+                <div><strong>Consultorios</strong><small>Ubicación, uso y estado</small></div>
               </div>
-              <span className="muestra-turno">08:00<small>14:00</small></span>
-              <span className="muestra-turno">08:00<small>14:00</small></span>
-              <span className="muestra-turno muestra-turno--libre">Libre</span>
-              <span className="muestra-turno">08:00<small>14:00</small></span>
+              <CheckCircle2 size={18} aria-hidden="true" />
             </div>
             <div className="muestra-horario__pie">
               <UsersRound size={17} />
