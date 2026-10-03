@@ -163,9 +163,6 @@ function EstructuraAplicacion({ sesion }) {
         </header>
 
         <main className="contenido-principal">
-          <p className="aviso-demostracion">
-            Los profesionales, consultorios y horarios de este panel son datos de demostración.
-          </p>
           <Outlet />
         </main>
       </div>
