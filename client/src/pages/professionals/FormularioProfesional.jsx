@@ -1,142 +1,101 @@
+import { useId } from 'react';
 import { ArrowLeft, BriefcaseMedical, ContactRound } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import FormularioBase from '../../components/FormularioBase';
-import { profesionales } from '../../data/datosDemostracion';
-import NoEncontrado from '../NoEncontrado';
+import { AvisoCatalogo } from '../../components/AvisoCatalogo';
+import { useFormularioCatalogo } from '../../hooks/useCatalogos';
+import { actualizarProfesional, crearProfesional, obtenerProfesional } from '../../services/catalogos';
+import { LIMITES_PROFESIONAL } from '../../utils/validacionesCatalogos';
+
+const DATOS_INICIALES = Object.freeze({
+  nombres: '', apellidos: '', colegiatura: '', correo: '', telefono: '',
+  categoria: '', estado: 'Activo', especialidad: '',
+});
 
 function FormularioProfesional({ modo }) {
   const { id } = useParams();
-  const profesional = modo === 'editar' ? profesionales.find((item) => item.id === id) : null;
-
-  if (modo === 'editar' && !profesional) {
-    return <NoEncontrado />;
-  }
-
-  const titulo = modo === 'editar' ? 'Editar profesional' : 'Nuevo profesional';
+  const identificador = useId();
+  const formulario = useFormularioCatalogo({
+    modo, id, iniciales: DATOS_INICIALES, obtener: obtenerProfesional,
+    crear: crearProfesional, actualizar: actualizarProfesional,
+    destino: '/profesionales', etiqueta: 'Profesional',
+  });
+  const campo = (nombre) => ({
+    id: `${identificador}-${nombre}`, name: nombre, value: formulario.datos[nombre],
+    onChange: formulario.actualizarCampo, maxLength: LIMITES_PROFESIONAL[nombre],
+    'aria-invalid': Boolean(formulario.errores[nombre]),
+  });
 
   return (
     <>
-      <EncabezadoPagina
-        ruta={[
-          { etiqueta: 'Profesionales', destino: '/profesionales' },
-          { etiqueta: modo === 'editar' ? profesional.id : 'Nuevo' },
-        ]}
-        titulo={titulo}
-        descripcion="Completa los datos mínimos para identificar al profesional y asignarle turnos."
-      />
-
-      <FormularioBase
-        accionesSecundarias={
-          <Link className="boton boton--fantasma" to="/profesionales">
-            <ArrowLeft size={17} /> Cancelar
-          </Link>
-        }
-      >
-        <section className="seccion-formulario">
-          <div className="seccion-formulario__titulo">
-            <ContactRound size={19} />
-            <div>
-              <h2>Datos personales</h2>
-              <p>Información de contacto para la gestión interna.</p>
-            </div>
-          </div>
-          <div className="rejilla-formulario">
-            <CampoFormulario etiqueta="Nombres" requerido>
-              <input
-                name="nombres"
-                type="text"
-                defaultValue={profesional?.nombres ?? ''}
-                minLength="2"
-                maxLength="60"
-                autoComplete="given-name"
-                required
-              />
-            </CampoFormulario>
-            <CampoFormulario etiqueta="Apellidos" requerido>
-              <input
-                name="apellidos"
-                type="text"
-                defaultValue={profesional?.apellidos ?? ''}
-                minLength="2"
-                maxLength="80"
-                autoComplete="family-name"
-                required
-              />
-            </CampoFormulario>
-            <CampoFormulario etiqueta="Correo institucional" requerido>
-              <input
-                name="correo"
-                type="email"
-                defaultValue={profesional?.correo ?? ''}
-                maxLength="120"
-                autoComplete="email"
-                placeholder="nombre@institucion.pe"
-                required
-              />
-            </CampoFormulario>
-            <CampoFormulario etiqueta="Teléfono" ayuda="Solo se usará como dato operativo.">
-              <input
-                name="telefono"
-                type="tel"
-                defaultValue={profesional?.telefono ?? ''}
-                pattern="[0-9 ]{9,12}"
-                maxLength="12"
-                autoComplete="tel"
-                placeholder="999 999 999"
-              />
-            </CampoFormulario>
-          </div>
+      <EncabezadoPagina ruta={[{ etiqueta: 'Profesionales', destino: '/profesionales' },
+        { etiqueta: modo === 'editar' ? 'Editar' : 'Nuevo' }]}
+        titulo={modo === 'editar' ? 'Editar profesional' : 'Nuevo profesional'}
+        descripcion="Completa los datos del profesional para registrarlo en tu institución." />
+      {formulario.cargando || formulario.errorCarga ? (
+        <section className="panel">
+          <AvisoCatalogo cargando={formulario.cargando} error={formulario.errorCarga}
+            reintentar={formulario.noEncontrado ? undefined : formulario.reintentar} />
+          <div className="formulario__acciones"><Link className="boton boton--fantasma" to="/profesionales">
+            <ArrowLeft size={17} aria-hidden="true" /> Volver a profesionales
+          </Link></div>
         </section>
-
-        <section className="seccion-formulario">
-          <div className="seccion-formulario__titulo">
-            <BriefcaseMedical size={19} />
-            <div>
-              <h2>Datos laborales</h2>
-              <p>Campos que relacionan al profesional con las reglas de programación.</p>
+      ) : (
+        <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando}
+          error={formulario.error} errores={formulario.errores}
+          accionesSecundarias={<Link className="boton boton--fantasma" to="/profesionales"
+            onClick={formulario.evitarSalida} aria-disabled={formulario.guardando || undefined}>
+            <ArrowLeft size={17} aria-hidden="true" /> Cancelar
+          </Link>}>
+          <section className="seccion-formulario">
+            <div className="seccion-formulario__titulo"><ContactRound size={19} aria-hidden="true" /><div>
+              <h2>Datos personales</h2><p>Información de contacto para la gestión interna.</p>
+            </div></div>
+            <div className="rejilla-formulario">
+              <CampoFormulario etiqueta="Nombres" requerido error={formulario.errores.nombres}>
+                <input {...campo('nombres')} type="text" autoComplete="given-name" required />
+              </CampoFormulario>
+              <CampoFormulario etiqueta="Apellidos" requerido error={formulario.errores.apellidos}>
+                <input {...campo('apellidos')} type="text" autoComplete="family-name" required />
+              </CampoFormulario>
+              <CampoFormulario etiqueta="Correo institucional" requerido error={formulario.errores.correo}>
+                <input {...campo('correo')} type="email" autoComplete="email" placeholder="nombre@institucion.pe" required />
+              </CampoFormulario>
+              <CampoFormulario etiqueta="Teléfono" ayuda="Opcional. Entre 7 y 15 dígitos, con prefijo + si corresponde."
+                error={formulario.errores.telefono}>
+                <input {...campo('telefono')} type="tel" autoComplete="tel" placeholder="+51 999 999 999" />
+              </CampoFormulario>
             </div>
-          </div>
-          <div className="rejilla-formulario">
-            <CampoFormulario etiqueta="Colegiatura" ayuda="Formato esperado: CMP 123456" requerido>
-              <input
-                name="colegiatura"
-                type="text"
-                defaultValue={profesional?.colegiatura ?? ''}
-                pattern="CMP [0-9]{6}"
-                placeholder="CMP 123456"
-                maxLength="10"
-                required
-              />
-            </CampoFormulario>
-            <CampoFormulario etiqueta="Especialidad" requerido>
-              <select name="especialidad" defaultValue={profesional?.especialidad ?? ''} required>
-                <option value="" disabled>Selecciona una especialidad</option>
-                <option>Cardiología</option>
-                <option>Pediatría</option>
-                <option>Neurología</option>
-                <option>Traumatología</option>
-                <option>Medicina general</option>
-              </select>
-            </CampoFormulario>
-            <CampoFormulario etiqueta="Categoría profesional" requerido>
-              <select name="categoria" defaultValue="Médico cirujano" required>
-                <option>Médico cirujano</option>
-                <option>Enfermería</option>
-                <option>Tecnología médica</option>
-                <option>Otra categoría</option>
-              </select>
-            </CampoFormulario>
-            <CampoFormulario etiqueta="Estado" requerido>
-              <select name="estado" defaultValue={profesional?.estado ?? 'Activo'} required>
-                <option>Activo</option>
-                <option>Inactivo</option>
-              </select>
-            </CampoFormulario>
-          </div>
-        </section>
-      </FormularioBase>
+          </section>
+          <section className="seccion-formulario">
+            <div className="seccion-formulario__titulo"><BriefcaseMedical size={19} aria-hidden="true" /><div>
+              <h2>Datos laborales</h2><p>Identificación laboral y especialidad del profesional.</p>
+            </div></div>
+            <div className="rejilla-formulario">
+              <CampoFormulario etiqueta="Colegiatura" requerido ayuda="Ingresa el código de su colegio profesional."
+                error={formulario.errores.colegiatura}>
+                <input {...campo('colegiatura')} type="text" placeholder="Código de colegiatura" required />
+              </CampoFormulario>
+              <CampoFormulario etiqueta="Especialidad" requerido ayuda="Selecciona una sugerencia o escribe una nueva especialidad."
+                error={formulario.errores.especialidad}>
+                <input {...campo('especialidad')} type="text" list={`${identificador}-especialidades`} required />
+              </CampoFormulario>
+              <CampoFormulario etiqueta="Categoría profesional" requerido error={formulario.errores.categoria}>
+                <input {...campo('categoria')} type="text" placeholder="Categoría del profesional" required />
+              </CampoFormulario>
+              <CampoFormulario etiqueta="Estado" requerido error={formulario.errores.estado}>
+                <select {...campo('estado')} required><option>Activo</option><option>Inactivo</option></select>
+              </CampoFormulario>
+            </div>
+            <datalist id={`${identificador}-especialidades`}>
+              {formulario.especialidades.map((especialidad) => <option key={especialidad.id} value={especialidad.nombre} />)}
+            </datalist>
+          </section>
+          <AvisoCatalogo error={formulario.errorEspecialidades} reintentar={formulario.reintentarEspecialidades} />
+        </FormularioBase>
+      )}
     </>
   );
 }
