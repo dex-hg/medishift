@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -100,7 +99,7 @@ class ControladorSesionTests {
 	void getRevalidaEnBaseYRevocaSesionInactiva() throws Exception {
 		MockHttpSession sesion = sesionValida();
 		when(repositorio.buscarSesion(perfil.idInstitucion(), perfil.idCuenta()))
-				.thenReturn(Optional.of(perfil), Optional.empty());
+				.thenReturn(Optional.of(perfil)).thenReturn(Optional.empty());
 		cliente.perform(get("/api/sesion").session(sesion))
 				.andExpect(status().isOk())
 				.andExpect(header().string("Cache-Control", "no-store"))
