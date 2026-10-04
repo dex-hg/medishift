@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 
-function FormularioBase({ children, accionesSecundarias, onGuardar, guardando = false, error = '', errores = {} }) {
+function FormularioBase({ children, accionesSecundarias, onGuardar, guardando = false, bloquearGuardado = false, error = '', errores = {} }) {
   const formulario = useRef(null);
   const aviso = useRef(null);
   const solicitudEnCurso = useRef(false);
@@ -20,7 +20,7 @@ function FormularioBase({ children, accionesSecundarias, onGuardar, guardando = 
 
   const guardarFormulario = async (evento) => {
     evento.preventDefault();
-    if (solicitudEnCurso.current || guardando || !onGuardar) return;
+    if (solicitudEnCurso.current || guardando || bloquearGuardado || !onGuardar) return;
     const elemento = evento.currentTarget;
     setErrorLocal('');
     if (!elemento.checkValidity()) {
@@ -53,7 +53,7 @@ function FormularioBase({ children, accionesSecundarias, onGuardar, guardando = 
       {!onGuardar && <p className="aviso">Este formulario está pendiente de conexión con el servidor.</p>}
       <div className="formulario__acciones">
         {accionesSecundarias}
-        <button className="boton boton--primario" type="submit" disabled={ocupado || !onGuardar}>
+        <button className="boton boton--primario" type="submit" disabled={ocupado || bloquearGuardado || !onGuardar}>
           {ocupado ? 'Guardando…' : 'Guardar'}
         </button>
       </div>
