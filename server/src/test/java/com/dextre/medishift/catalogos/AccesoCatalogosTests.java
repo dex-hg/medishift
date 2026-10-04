@@ -67,7 +67,7 @@ class AccesoCatalogosTests {
 	void cadaSolicitudRevalidaCuentaYRevocacionInvalidaSesion() {
 		MockHttpServletRequest solicitud = solicitudActiva("GET");
 		MockHttpSession sesion = (MockHttpSession) solicitud.getSession(false);
-		when(sesiones.consultar(institucion, cuenta)).thenReturn(Optional.of(perfil), Optional.empty());
+		when(sesiones.consultar(institucion, cuenta)).thenReturn(Optional.of(perfil)).thenReturn(Optional.empty());
 		assertEquals(institucion, acceso.obtenerInstitucion(solicitud));
 		assertThrows(AccesoNoAutorizadoException.class, () -> acceso.obtenerInstitucion(solicitud));
 		assertTrue(sesion.isInvalid());
