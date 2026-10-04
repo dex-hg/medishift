@@ -1,6 +1,6 @@
 # Backend de MediShift
 
-Spring Boot 4.1.1, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone el registro de una institución con su primera cuenta, además de iniciar, consultar y cerrar su sesión. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
+Spring Boot 4.1.1, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone registro, sesión y gestión de profesionales, consultorios, disponibilidades y horarios semanales. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
 
 ## Configuración local
 
@@ -108,7 +108,7 @@ El inicio reemplaza cualquier sesión anterior y rota su identificador. La sesi�
 
 La sesión caduca tras 30 minutos de inactividad. Viaja solo por cookie `HttpOnly` y `SameSite=Strict`; no se admite el identificador en la URL. `MEDISHIFT_COOKIE_SEGURA=false` permite probar en `localhost` por HTTP. Configura `MEDISHIFT_COOKIE_SEGURA=true` al servir mediante HTTPS para marcar la cookie como `Secure`. El cliente debe enviar la cookie en las solicitudes a `/api`; no debe guardar el identificador ni la contraseña en almacenamiento del navegador. Los endpoints de profesionales, consultorios y especialidades comprueban la sesión y el estado activo de la cuenta e institución. La institución se toma de la sesión y limita cada operación de gestión.
 
-Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Antes de publicar el servicio, debe incorporarse una política de limitación de intentos de autenticación. Profesionales y consultorios ya usan PostgreSQL y los ejemplos locales se han retirado. Disponibilidades y horarios quedan pendientes de implementación. El desarrollo se realiza en `C:\Proyectos\medishift`; la documentación de esta etapa se conserva en la carpeta del curso.
+Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Antes de publicar el servicio, debe incorporarse una política de limitación de intentos de autenticación. Profesionales, consultorios, disponibilidades y horarios ya usan PostgreSQL. Los horarios se crean como borrador y se aprueban por semana, con validación completa y reemplazo transaccional de versiones. Los límites temporales por profesional son 6 horas diarias y 36 semanales; su administración aún está pendiente.
 
 ## Pruebas
 
@@ -119,10 +119,12 @@ Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo
 Las pruebas habituales no acceden a la base. Cubren validación, normalización, hash, contrato HTTP, errores y orden de las operaciones transaccionales. Las pruebas reales se activan expresamente con credenciales válidas y el esquema existente:
 
 ```powershell
-.\mvnw.cmd "-Dmedishift.prueba-conexion=true" "-Dmedishift.prueba-registro=true" "-Dmedishift.prueba-sesion=true" verify
+.\mvnw.cmd "-Dmedishift.prueba-conexion=true" "-Dmedishift.prueba-registro=true" "-Dmedishift.prueba-sesion=true" "-Dmedishift.prueba-catalogos=true" "-Dmedishift.prueba-disponibilidades=true" "-Dmedishift.prueba-horarios=true" verify
 ```
 
 `RegistroPostgresqlTests` comprueba persistencia y hash, duplicados, correo por institución y reversión cuando falla la segunda inserción. `SesionPostgresqlTests` verifica la misma cuenta real, la separación entre instituciones y la revocación por estado. Las pruebas generan códigos y UUID aleatorios y eliminan únicamente sus propias instituciones y cuentas por UUID al finalizar. No ejecutan DDL. Sin las opciones indicadas, las pruebas reales quedan omitidas.
+
+Las pruebas de disponibilidades y programación también crean recursos temporales identificados por UUID. Comprueban vigencias inclusivas, ventanas contiguas, cruces, especialidades, permisos y bloqueos existentes, carga diaria y semanal, cobertura simultánea, revisiones de edición, concurrencia, conservación de versiones y protección de turnos iniciados o vinculados a asistencia. La edición de catálogos y disponibilidades revierte la transacción cuando deja inválido un turno futuro.
 
 ## Archivos de Git
 
