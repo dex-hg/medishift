@@ -173,3 +173,114 @@
   justify-self: end;
 }
 
+.resumen-programacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.resumen-programacion > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--texto-secundario);
+  font-size: 0.75rem;
+}
+
+.periodo-horario input[type='date'] {
+  color: var(--texto);
+  padding: 7px;
+  background: #091622;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  color-scheme: dark;
+}
+
+.calendario-programacion {
+  min-width: 1160px;
+}
+
+.calendario-programacion__fila {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(7, minmax(125px, 1fr));
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.calendario-programacion__fila > div,
+.calendario-programacion__cabecera > strong {
+  padding: 14px 9px;
+  border-right: 1px solid var(--borde-suave);
+}
+
+.calendario-programacion__cabecera {
+  color: var(--texto-secundario);
+  background: rgb(7 17 28 / 40%);
+  font-size: 0.73rem;
+}
+
+.calendario-programacion small {
+  display: block;
+  margin-top: 6px;
+  color: var(--texto-tenue);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.calendario-programacion__persona {
+  font-size: 0.8rem;
+}
+
+.calendario-programacion__dia {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.tarjeta-turno {
+  display: grid;
+  gap: 6px;
+  padding: 11px 8px;
+  color: var(--texto-secundario);
+  background: rgb(14 116 144 / 9%);
+  border: 1px solid rgb(56 189 248 / 19%);
+  border-radius: 9px;
+  font-size: 0.68rem;
+}
+
+.tarjeta-turno > strong { color: #88dbfb; }
+.tarjeta-turno small { margin-top: 0; }
+.tarjeta-turno .estado { justify-self: start; }
+.tarjeta-turno .acciones-tabla { margin-top: 3px; }
+
+.nota-programacion {
+  margin: 18px 24px;
+  color: var(--texto-secundario);
+  font-size: 0.73rem;
+  line-height: 1.6;
+}
+
+.nota-programacion a { color: var(--turquesa); text-decoration: underline; }
+.nota-programacion--compacta { margin: 14px 0; }
+
+.barra-recarga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 24px;
+  color: var(--texto-secundario);
+  font-size: 0.73rem;
+}
+
+.barra-recarga p { flex: 1 1 200px; margin: 0; }
+
+@media (max-width: 760px) {
+  .resumen-programacion,
+  .controles-horario { flex-wrap: wrap; }
+  .resumen-programacion { align-items: flex-start; }
+}
+
