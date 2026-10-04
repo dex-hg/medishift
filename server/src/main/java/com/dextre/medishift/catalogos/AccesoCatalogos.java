@@ -51,6 +51,20 @@ public class AccesoCatalogos {
 		throw new AccesoNoAutorizadoException();
 	}
 
+	/** El actor procede exclusivamente de la sesión autenticada, nunca del formulario. */
+	public UUID obtenerCuenta(HttpServletRequest solicitud) {
+		obtenerInstitucion(solicitud);
+		try {
+			HttpSession sesion = solicitud.getSession(false);
+			if (sesion != null && sesion.getAttribute("medishift.idCuenta") instanceof UUID cuenta) {
+				return cuenta;
+			}
+		} catch (IllegalStateException excepcion) {
+			// Una revocación concurrente tampoco permite registrar un actor sin sesión.
+		}
+		throw new AccesoNoAutorizadoException();
+	}
+
 	private void validarOrigen(HttpServletRequest solicitud) {
 		if (Set.of("GET", "HEAD", "OPTIONS").contains(solicitud.getMethod())) {
 			return;

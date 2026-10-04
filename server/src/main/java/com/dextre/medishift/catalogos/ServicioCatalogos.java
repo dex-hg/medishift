@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dextre.medishift.catalogos.DatosCatalogos.Consultorio;
 import com.dextre.medishift.catalogos.DatosCatalogos.Especialidad;
 import com.dextre.medishift.catalogos.DatosCatalogos.Profesional;
+import com.dextre.medishift.programacion.ReglasProgramacion;
 
 @Service
 public class ServicioCatalogos {
@@ -16,12 +17,14 @@ public class ServicioCatalogos {
 	private final RepositorioProfesionales profesionales;
 	private final RepositorioConsultorios consultorios;
 	private final RepositorioEspecialidades especialidades;
+	private final ReglasProgramacion programacion;
 
 	public ServicioCatalogos(RepositorioProfesionales profesionales, RepositorioConsultorios consultorios,
-			RepositorioEspecialidades especialidades) {
+			RepositorioEspecialidades especialidades, ReglasProgramacion programacion) {
 		this.profesionales = profesionales;
 		this.consultorios = consultorios;
 		this.especialidades = especialidades;
+		this.programacion = programacion;
 	}
 
 	@Transactional(readOnly = true)
@@ -53,6 +56,7 @@ public class ServicioCatalogos {
 		UUID especialidad = especialidades.resolver(profesional.especialidad());
 		profesionales.actualizar(institucion, identificador, profesional);
 		profesionales.asignarEspecialidad(institucion, identificador, especialidad);
+		programacion.validarCatalogosFuturos(institucion);
 		return buscarProfesional(institucion, identificador);
 	}
 
@@ -93,6 +97,7 @@ public class ServicioCatalogos {
 		UUID especialidad = consultorio.especialidad().isEmpty() ? null : especialidades.resolver(consultorio.especialidad());
 		consultorios.actualizar(institucion, identificador, consultorio);
 		consultorios.asignarEspecialidad(institucion, identificador, especialidad);
+		programacion.validarCatalogosFuturos(institucion);
 		return buscarConsultorio(institucion, identificador);
 	}
 
