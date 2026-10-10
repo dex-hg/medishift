@@ -8,6 +8,8 @@ El servidor utiliza arquitectura por capas, organizada por módulos funcionales:
 
 `ReglasProgramacion` delega las lecturas de disponibilidades, permisos y bloqueos en `RepositorioRestriccionesProgramacion`. Las decisiones de aceptación y los mensajes permanecen en las reglas. `ArquitecturaCapasTests` verifica las dependencias entre capas como parte de `verify`.
 
+El paquete `programacion.mensual` incorpora valores de dominio para meses completos e intervalos con fecha final explícita, incluidos nocturnos y cálculo por día calendario institucional. Esta base aún no está integrada con la API ni la persistencia semanal.
+
 ## Configuración local
 
 Ejecuta los comandos desde `server`. Configura ese mismo directorio de trabajo si utilizas un IDE. Completa la contraseña de PostgreSQL en tu `.env`. Si todavía no existe, crea una copia de la plantilla:
@@ -19,11 +21,11 @@ Copy-Item -LiteralPath .\.env.example -Destination .\.env
 Conserva los valores de un `.env` existente. El archivo está excluido de Git y no se debe compartir.
 
 | Variable                    | Configuración local                                           |
-| --------------------------- | -------------------------------------------------------------- |
-| `MEDISHIFT_BD_URL`        | `jdbc:postgresql://localhost:5432/MediShift`                 |
-| `MEDISHIFT_BD_USUARIO`    | `postgres`                                                   |
-| `MEDISHIFT_BD_CLAVE`      | Contraseña de PostgreSQL, obligatoria                         |
-| `MEDISHIFT_COOKIE_SEGURA` | `false` en localhost HTTP; `true` al servir mediante HTTPS |
+| --------------------------- | --------------------------------------------------------------|
+| `MEDISHIFT_BD_URL`          | `jdbc:postgresql://localhost:5432/MediShift`                  |
+| `MEDISHIFT_BD_USUARIO`      | `postgres`                                                    |
+| `MEDISHIFT_BD_CLAVE`        | Contraseña de PostgreSQL, obligatoria                         |
+| `MEDISHIFT_COOKIE_SEGURA`   | `false` en localhost HTTP; `true` al servir mediante HTTPS    |
 
 La URL debe coincidir con el nombre exacto de la base, incluidas las mayúsculas. El esquema se toma de la configuración del usuario de PostgreSQL; si necesitas especificarlo, añade `?currentSchema=NOMBRE_ESQUEMA` a la URL.
 
@@ -92,10 +94,10 @@ El éxito responde con HTTP 201:
 Los errores tienen la forma `{"mensaje":"Descripción","errores":{"campo":"Descripción"}}`. Los errores sin un campo específico usan `errores: {}`.
 
 | Estado | Situación                            |
-| ------ | ------------------------------------- |
+| ------ | -------------------------------------|
 | 400    | Campos inválidos o JSON incorrecto   |
-| 409    | Código de institución ya existente  |
-| 503    | No se puede acceder a PostgreSQL      |
+| 409    | Código de institución ya existente   |
+| 503    | No se puede acceder a PostgreSQL     |
 | 500    | Fallo interno con respuesta genérica |
 
 Las respuestas no incluyen contraseñas, hashes, SQL ni mensajes internos. Solo se incorpora `spring-security-crypto` para el hash, sin activar la seguridad web completa.
