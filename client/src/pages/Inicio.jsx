@@ -1,38 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, CalendarClock, Plus, UsersRound } from 'lucide-react';
 import EncabezadoPagina from '../components/EncabezadoPagina';
-import { obtenerConsultorios, obtenerProfesionales } from '../services/catalogos';
-import { listarDisponibilidades, listarRecursosHorario, listarSemana } from '../services/programacion';
+import { useResumenInicio } from '../hooks/useResumenInicio';
 import { fechaActual, lunesDeSemana, mostrarFecha } from '../utils/validacionesProgramacion';
 
 function Inicio() {
-  const navegar = useNavigate();
-  const [intento, setIntento] = useState(0);
-  const [resumen, setResumen] = useState({ estado: 'cargando', profesionales: [], consultorios: [], disponibilidades: [], semana: null });
-
-  useEffect(() => {
-    const controlador = new AbortController();
-    let vigente = true;
-    setResumen({ estado: 'cargando', profesionales: [], consultorios: [], disponibilidades: [], semana: null });
-    Promise.all([
-      obtenerProfesionales({ senal: controlador.signal }),
-      obtenerConsultorios({ senal: controlador.signal }),
-      listarDisponibilidades({ senal: controlador.signal }),
-      listarRecursosHorario({ senal: controlador.signal }),
-    ]).then(async ([profesionales, consultorios, disponibilidades, recursos]) => {
-      const semana = await listarSemana(lunesDeSemana(fechaActual(recursos.zonaHoraria)), { senal: controlador.signal });
-      if (vigente) setResumen({ estado: 'listo', profesionales, consultorios, disponibilidades, semana });
-    }).catch((error) => {
-      if (!vigente) return;
-      if (error.estado === 401) {
-        navegar('/iniciar-sesion', { replace: true, state: { destino: '/panel' } });
-        return;
-      }
-      setResumen({ estado: 'error', profesionales: [], consultorios: [], disponibilidades: [], semana: null, mensaje: error.message });
-    });
-    return () => { vigente = false; controlador.abort(); };
-  }, [intento, navegar]);
+  const { resumen, reintentar } = useResumenInicio();
 
   const { profesionales, consultorios, disponibilidades, semana } = resumen;
   const accesos = [
@@ -55,7 +28,7 @@ function Inicio() {
       {resumen.estado === 'error' && (
         <div className="aviso" role="alert">
           <p>{resumen.mensaje || 'No se pudieron cargar los registros.'}</p>
-          <button className="boton boton--secundario" type="button" onClick={() => setIntento((valor) => valor + 1)}>Reintentar</button>
+          <button className="boton boton--secundario" type="button" onClick={reintentar}>Reintentar</button>
         </div>
       )}
 
