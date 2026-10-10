@@ -2,6 +2,12 @@
 
 Spring Boot 4.1.1, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone registro, sesión y gestión de profesionales, consultorios, disponibilidades y horarios semanales. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
 
+## Arquitectura
+
+El servidor utiliza arquitectura por capas, organizada por módulos funcionales: controladores Spring MVC para HTTP y JSON, servicios y reglas para operaciones de negocio, y repositorios DAO JDBC para PostgreSQL. La interfaz visual se construye en el cliente React.
+
+`ReglasProgramacion` delega las lecturas de disponibilidades, permisos y bloqueos en `RepositorioRestriccionesProgramacion`. Las decisiones de aceptación y los mensajes permanecen en las reglas. `ArquitecturaCapasTests` verifica las dependencias entre capas como parte de `verify`.
+
 ## Configuración local
 
 Ejecuta los comandos desde `server`. Configura ese mismo directorio de trabajo si utilizas un IDE. Completa la contraseña de PostgreSQL en tu `.env`. Si todavía no existe, crea una copia de la plantilla:
