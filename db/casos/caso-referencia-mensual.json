@@ -1,0 +1,1091 @@
+{
+  "version": 1,
+  "naturaleza": "sintetico",
+  "institucion": "INST-PRUEBA",
+  "periodo": "2026-11",
+  "zonaHoraria": "America/Lima",
+  "advertencia": "Datos y parametros exclusivos del ejercicio; no son reglas institucionales confirmadas ni contrato de API.",
+  "parametrosPrueba": {
+    "limiteDiarioMinutos": 360,
+    "limiteSemanalMinutos": 2160,
+    "objetivoMensualMinutos": null,
+    "admiteNocturnos": true
+  },
+  "actividades": [
+    {
+      "codigo": "A01",
+      "nombre": "Consulta general de prueba",
+      "especialidad": "E01",
+      "requiereConsultorio": true
+    },
+    {
+      "codigo": "A02",
+      "nombre": "Actividad preventiva de prueba",
+      "especialidad": "E01",
+      "requiereConsultorio": true
+    }
+  ],
+  "profesionales": [
+    {
+      "codigo": "P01",
+      "actividades": [
+        "A01"
+      ],
+      "estado": "Activo"
+    },
+    {
+      "codigo": "P02",
+      "actividades": [
+        "A01",
+        "A02"
+      ],
+      "estado": "Activo"
+    },
+    {
+      "codigo": "P03",
+      "actividades": [
+        "A02"
+      ],
+      "estado": "Activo"
+    }
+  ],
+  "consultorios": [
+    {
+      "codigo": "C01",
+      "actividades": [
+        "A01",
+        "A02"
+      ],
+      "estado": "Activo"
+    },
+    {
+      "codigo": "C02",
+      "actividades": [
+        "A01",
+        "A02"
+      ],
+      "estado": "Activo"
+    }
+  ],
+  "disponibilidades": [
+    {
+      "profesional": "P01",
+      "diasSemana": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fechaInicio": "2026-10-26",
+      "fechaFin": "2026-12-06",
+      "estado": "Activo"
+    },
+    {
+      "profesional": "P02",
+      "diasSemana": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fechaInicio": "2026-10-26",
+      "fechaFin": "2026-12-06",
+      "estado": "Activo"
+    },
+    {
+      "profesional": "P03",
+      "diasSemana": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fechaInicio": "2026-10-26",
+      "fechaFin": "2026-12-06",
+      "estado": "Activo"
+    }
+  ],
+  "ausencias": [
+    {
+      "profesional": "P01",
+      "fecha": "2026-11-09",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "estado": "Aprobado"
+    },
+    {
+      "profesional": "P03",
+      "fecha": "2026-11-16",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "estado": "Aprobado"
+    }
+  ],
+  "bloqueos": [
+    {
+      "consultorio": "C02",
+      "fecha": "2026-11-12",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "estado": "Activo"
+    }
+  ],
+  "diasSinDemanda": [
+    "2026-11-01",
+    "2026-11-07",
+    "2026-11-08",
+    "2026-11-14",
+    "2026-11-15",
+    "2026-11-21",
+    "2026-11-22",
+    "2026-11-28",
+    "2026-11-29"
+  ],
+  "necesidades": [
+    {
+      "codigo": "N-2026-11-02-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-02",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-02-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-02",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-03-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-03",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-03-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-03",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-04-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-04",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-04-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-04",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-05-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-05",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-05-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-05",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-06-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-06",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 2
+    },
+    {
+      "codigo": "N-2026-11-06-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-06",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-09-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-09",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-09-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-09",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-10-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-10",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-10-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-10",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-11-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-11",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-11-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-11",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-12-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-12",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-12-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-12",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-13-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-13",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-13-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-13",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-16-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-16",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-16-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-16",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-17-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-17",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-17-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-17",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-18-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-18",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-18-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-18",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-19-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-19",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-19-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-19",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-20-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-20",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 2
+    },
+    {
+      "codigo": "N-2026-11-20-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-20",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-23-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-23",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-23-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-23",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-24-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-24",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-24-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-24",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-25-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-25",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-25-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-25",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-26-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-26",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-26-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-26",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-27-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-27",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-27-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-27",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-30-A01",
+      "actividad": "A01",
+      "fecha": "2026-11-30",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "cantidad": 1
+    },
+    {
+      "codigo": "N-2026-11-30-A02",
+      "actividad": "A02",
+      "fecha": "2026-11-30",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "cantidad": 1
+    }
+  ],
+  "asignacionesEsperadas": [
+    {
+      "codigo": "T-2026-11-02-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-02",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-02-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-02",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-03-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-03",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-03-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-03",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-04-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-04",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-04-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-04",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-05-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-05",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-05-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-05",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-06-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-06",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-06-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-06",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-06-A01-2",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C02",
+      "fecha": "2026-11-06",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-09-A01-1",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C01",
+      "fecha": "2026-11-09",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-09-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-09",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-10-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-10",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-10-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-10",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-11-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-11",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-11-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-11",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-12-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-12",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-12-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C01",
+      "fecha": "2026-11-12",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-13-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-13",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-13-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-13",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-16-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-16",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-16-A02-1",
+      "actividad": "A02",
+      "profesional": "P02",
+      "consultorio": "C02",
+      "fecha": "2026-11-16",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-17-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-17",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-17-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-17",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-18-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-18",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-18-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-18",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-19-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-19",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-19-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-19",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-20-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-20",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-20-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-20",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-20-A01-2",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C02",
+      "fecha": "2026-11-20",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-23-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-23",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-23-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-23",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-24-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-24",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-24-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-24",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-25-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-25",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-25-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-25",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-26-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-26",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-26-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-26",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-27-A01-1",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-11-27",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-27-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-27",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    },
+    {
+      "codigo": "T-2026-11-30-A01-1",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C01",
+      "fecha": "2026-11-30",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": true
+    },
+    {
+      "codigo": "T-2026-11-30-A02-1",
+      "actividad": "A02",
+      "profesional": "P03",
+      "consultorio": "C02",
+      "fecha": "2026-11-30",
+      "horaInicio": "11:00",
+      "horaFin": "14:00",
+      "fijada": false
+    }
+  ],
+  "asignacionesVecinas": [
+    {
+      "codigo": "V-2026-10-26-P01",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-10-26",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    },
+    {
+      "codigo": "V-2026-10-27-P01",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-10-27",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    },
+    {
+      "codigo": "V-2026-10-28-P01",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-10-28",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    },
+    {
+      "codigo": "V-2026-10-29-P01",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-10-29",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    },
+    {
+      "codigo": "V-2026-10-30-P01",
+      "actividad": "A01",
+      "profesional": "P01",
+      "consultorio": "C01",
+      "fecha": "2026-10-30",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    },
+    {
+      "codigo": "V-2026-12-01-P02",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C01",
+      "fecha": "2026-12-01",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    },
+    {
+      "codigo": "V-2026-12-02-P02",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C01",
+      "fecha": "2026-12-02",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    },
+    {
+      "codigo": "V-2026-12-03-P02",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C01",
+      "fecha": "2026-12-03",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    },
+    {
+      "codigo": "V-2026-12-04-P02",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C01",
+      "fecha": "2026-12-04",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    },
+    {
+      "codigo": "V-2026-12-05-P02",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C01",
+      "fecha": "2026-12-05",
+      "horaInicio": "08:00",
+      "horaFin": "14:00",
+      "fijada": true
+    }
+  ],
+  "asignacionesFijadas": [
+    {
+      "codigo": "T-2026-11-30-A01-1",
+      "actividad": "A01",
+      "profesional": "P02",
+      "consultorio": "C01",
+      "fecha": "2026-11-30",
+      "horaInicio": "08:00",
+      "horaFin": "11:00",
+      "fijada": true
+    }
+  ],
+  "resultadosEsperados": {
+    "diasMes": 30,
+    "diasConDemanda": 21,
+    "diasSinDemanda": 9,
+    "necesidades": 42,
+    "posicionesRequeridas": 44,
+    "asignaciones": 44,
+    "minutosRequeridos": 7920,
+    "minutosAsignados": 7920,
+    "minutosFaltantes": 0,
+    "porProfesional": {
+      "P01": {
+        "asignaciones": 19,
+        "minutos": 3420
+      },
+      "P02": {
+        "asignaciones": 5,
+        "minutos": 900
+      },
+      "P03": {
+        "asignaciones": 20,
+        "minutos": 3600
+      }
+    },
+    "semanasIntersectadas": [
+      "2026-10-26",
+      "2026-11-02",
+      "2026-11-09",
+      "2026-11-16",
+      "2026-11-23",
+      "2026-11-30"
+    ]
+  },
+  "unidadPlanificacion": {
+    "codigo": "SERV-PRUEBA",
+    "nombre": "Servicio sintetico",
+    "tipo": "servicio"
+  }
+}
