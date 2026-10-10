@@ -1,6 +1,5 @@
 package com.dextre.medishift.programacion;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import com.dextre.medishift.catalogos.CatalogoException;
@@ -20,14 +18,14 @@ import com.dextre.medishift.programacion.TiempoProgramacion.Ventana;
 @Component
 public class ReglasProgramacion {
 
-	private final JdbcTemplate consultas;
+	private final RepositorioRestriccionesProgramacion restricciones;
 	private final RepositorioProgramacion horarios;
 	private final RepositorioRecursosProgramacion recursos;
 	private final ReglasCargaProgramacion carga;
 
-	public ReglasProgramacion(JdbcTemplate consultas, RepositorioProgramacion horarios,
+	public ReglasProgramacion(RepositorioRestriccionesProgramacion restricciones, RepositorioProgramacion horarios,
 			RepositorioRecursosProgramacion recursos, ReglasCargaProgramacion carga) {
-		this.consultas = consultas;
+		this.restricciones = restricciones;
 		this.horarios = horarios;
 		this.recursos = recursos;
 		this.carga = carga;
@@ -73,13 +71,7 @@ public class ReglasProgramacion {
 	}
 
 	public List<Ventana> disponibilidades(UUID institucion, UUID profesional) {
-		return consultas.query("""
-				SELECT a.* FROM availability a JOIN professional p ON p.id_professional = a.id_professional
-				WHERE p.id_institution = ? AND p.id_professional = ? AND a.status_availability = 'active'
-				""", (fila, numero) -> new Ventana(fila.getInt("weekday_availability"),
-				fila.getTime("start_time_availability").toLocalTime(), fila.getTime("end_time_availability").toLocalTime(),
-				fila.getDate("valid_from_availability").toLocalDate(), fila.getDate("valid_to_availability").toLocalDate()),
-				institucion, profesional);
+		return restricciones.disponibilidades(institucion, profesional);
 	}
 
 	private void validarDisponibilidad(UUID institucion, Turno turno, ZoneId zona) {
@@ -100,18 +92,10 @@ public class ReglasProgramacion {
 	}
 
 	private void validarBloqueos(Turno turno) {
-		Boolean ausencia = consultas.queryForObject("""
-				SELECT EXISTS (SELECT 1 FROM professional_leave WHERE id_professional = ?
-				AND status_professional_leave = 'approved' AND start_at_professional_leave < ? AND end_at_professional_leave > ?)
-				""", Boolean.class, turno.profesional(), Timestamp.from(turno.fin()), Timestamp.from(turno.inicio()));
-		if (Boolean.TRUE.equals(ausencia)) {
+		if (restricciones.tieneAusenciaAprobada(turno.profesional(), turno.inicio(), turno.fin())) {
 			throw CatalogoException.conflicto("idProfesional", "El profesional tiene un permiso aprobado durante el turno.");
 		}
-		Boolean bloqueo = consultas.queryForObject("""
-				SELECT EXISTS (SELECT 1 FROM room_block WHERE id_room = ? AND status_room_block = 'active'
-				AND start_at_room_block < ? AND end_at_room_block > ?)
-				""", Boolean.class, turno.consultorio(), Timestamp.from(turno.fin()), Timestamp.from(turno.inicio()));
-		if (Boolean.TRUE.equals(bloqueo)) {
+		if (restricciones.tieneBloqueoActivo(turno.consultorio(), turno.inicio(), turno.fin())) {
 			throw CatalogoException.conflicto("idConsultorio", "El consultorio tiene un bloqueo activo durante el turno.");
 		}
 	}
