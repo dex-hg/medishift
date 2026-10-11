@@ -134,11 +134,13 @@ export function useFormularioProgramacion({ modo, id, iniciales, obtener, recurs
     return () => controlador.abort();
   }, [modo, id, iniciales, obtener, cargarRecursos, ajustarIniciales, intento, manejarSesion]);
 
-  const actualizarCampo = (evento) => {
+  const actualizarCampo = (evento, relacionados = {}) => {
     if (bloqueo.current) return;
     const { name: campo, value: valor } = evento.target;
-    setDatos((anteriores) => ({ ...anteriores, [campo]: valor }));
-    setErrores((anteriores) => ({ ...anteriores, [campo]: undefined }));
+    const cambios = { ...relacionados, [campo]: valor };
+    setDatos((anteriores) => ({ ...anteriores, ...cambios }));
+    setErrores((anteriores) => ({ ...anteriores,
+      ...Object.fromEntries(Object.keys(cambios).map((nombre) => [nombre, undefined])) }));
     setAvisoRecarga('');
   };
 
