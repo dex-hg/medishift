@@ -21,6 +21,7 @@ const gruposNavegacion = [
     enlaces: [
       { destino: '/panel', etiqueta: 'Inicio', icono: LayoutDashboard, fin: true },
       { destino: '/horarios', etiqueta: 'Horarios', icono: CalendarDays },
+      { destino: '/planes-mensuales', etiqueta: 'Planes mensuales', icono: CalendarDays },
     ],
   },
   {
