@@ -21,6 +21,13 @@ import com.dextre.medishift.programacion.DatosProgramacion.Turno;
 @Repository
 public class RepositorioProgramacion {
 
+	// to_jsonb permite desplegar el blindaje antes de aplicar la migración mensual.
+	private static final String FILTRO_SEMANAL =
+			"COALESCE(to_jsonb(h)->>'period_type_schedule', 'weekly') = 'weekly'";
+	private static final String TURNO_SEMANAL = """
+			 EXISTS (SELECT 1 FROM schedule h WHERE h.id_institution = t.id_institution
+			 AND h.id_schedule = t.id_schedule AND %s)
+			""".formatted(FILTRO_SEMANAL);
 	private static final String CONSULTA_TURNOS = """
 			SELECT t.*, p.first_name_professional || ' ' || p.last_name_professional AS profesional,
 			       r.code_room || ' · ' || r.name_room AS consultorio, e.name_specialty AS especialidad
@@ -44,21 +51,22 @@ public class RepositorioProgramacion {
 
 	public Optional<Horario> operativo(UUID institucion, LocalDate inicio) {
 		return consultas.query("""
-				SELECT * FROM schedule WHERE id_institution = ? AND period_start_schedule = ?
+				SELECT * FROM schedule h WHERE id_institution = ? AND period_start_schedule = ?
 				AND period_end_schedule = ? AND status_schedule IN ('draft','pending','approved','cancelled')
+				AND %s
 				ORDER BY version_schedule DESC LIMIT 1
-				""", (fila, numero) -> leerHorario(fila), institucion, inicio, inicio.plusDays(6)).stream().findFirst();
+				""".formatted(FILTRO_SEMANAL), (fila, numero) -> leerHorario(fila), institucion, inicio, inicio.plusDays(6)).stream().findFirst();
 	}
 
 	public Optional<Horario> aprobado(UUID institucion, LocalDate inicio) {
 		return consultas.query("""
-				SELECT * FROM schedule WHERE id_institution = ? AND period_start_schedule = ?
-				AND period_end_schedule = ? AND status_schedule = 'approved'
-				""", (fila, numero) -> leerHorario(fila), institucion, inicio, inicio.plusDays(6)).stream().findFirst();
+				SELECT * FROM schedule h WHERE id_institution = ? AND period_start_schedule = ?
+				AND period_end_schedule = ? AND status_schedule = 'approved' AND %s
+				""".formatted(FILTRO_SEMANAL), (fila, numero) -> leerHorario(fila), institucion, inicio, inicio.plusDays(6)).stream().findFirst();
 	}
 
 	public Horario buscarHorario(UUID institucion, UUID identificador) {
-		return consultas.query("SELECT * FROM schedule WHERE id_institution = ? AND id_schedule = ?",
+		return consultas.query("SELECT * FROM schedule h WHERE id_institution = ? AND id_schedule = ? AND " + FILTRO_SEMANAL,
 				(fila, numero) -> leerHorario(fila), institucion, identificador).stream().findFirst()
 				.orElseThrow(CatalogoException::noEncontrado);
 	}
@@ -68,9 +76,9 @@ public class RepositorioProgramacion {
 			throw CatalogoException.conflicto("fecha", "Selecciona una semana completa dentro del año 9999.");
 		}
 		Integer version = consultas.queryForObject("""
-				SELECT COALESCE(MAX(version_schedule), 0) + 1 FROM schedule
-				WHERE id_institution = ? AND period_start_schedule = ? AND period_end_schedule = ?
-				""", Integer.class, institucion, inicio, inicio.plusDays(6));
+				SELECT COALESCE(MAX(version_schedule), 0) + 1 FROM schedule h
+				WHERE id_institution = ? AND period_start_schedule = ? AND period_end_schedule = ? AND %s
+				""".formatted(FILTRO_SEMANAL), Integer.class, institucion, inicio, inicio.plusDays(6));
 		UUID identificador = UUID.randomUUID();
 		consultas.update("""
 				INSERT INTO schedule (id_schedule, id_institution, period_start_schedule, period_end_schedule,
@@ -80,12 +88,13 @@ public class RepositorioProgramacion {
 	}
 
 	public List<Turno> turnos(UUID institucion, UUID horario) {
-		return consultas.query(CONSULTA_TURNOS + " AND t.id_schedule = ? ORDER BY t.start_at_shift, t.id_shift",
+		return consultas.query(CONSULTA_TURNOS + " AND t.id_schedule = ? AND " + TURNO_SEMANAL
+				+ " ORDER BY t.start_at_shift, t.id_shift",
 				(fila, numero) -> leerTurno(fila), institucion, horario);
 	}
 
 	public Turno buscarTurno(UUID institucion, UUID identificador) {
-		return consultas.query(CONSULTA_TURNOS + " AND t.id_shift = ?", (fila, numero) -> leerTurno(fila),
+		return consultas.query(CONSULTA_TURNOS + " AND t.id_shift = ? AND " + TURNO_SEMANAL, (fila, numero) -> leerTurno(fila),
 				institucion, identificador).stream().findFirst().orElseThrow(CatalogoException::noEncontrado);
 	}
 
@@ -108,12 +117,15 @@ public class RepositorioProgramacion {
 	}
 
 	public void insertarTurno(UUID institucion, Turno turno) {
-		consultas.update("""
+		int insertados = consultas.update("""
 				INSERT INTO shift (id_shift, id_institution, id_schedule, id_professional, id_room,
 				id_specialty, start_at_shift, end_at_shift, status_shift, note_shift)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?)
-				""", turno.id(), institucion, turno.horario(), turno.profesional(), turno.consultorio(),
-				turno.especialidad(), Timestamp.from(turno.inicio()), Timestamp.from(turno.fin()), turno.observacion());
+				SELECT ?, ?, h.id_schedule, ?, ?, ?, ?, ?, 'draft', ? FROM schedule h
+				WHERE h.id_institution = ? AND h.id_schedule = ? AND h.status_schedule = 'draft' AND %s
+				""".formatted(FILTRO_SEMANAL), turno.id(), institucion, turno.profesional(), turno.consultorio(),
+				turno.especialidad(), Timestamp.from(turno.inicio()), Timestamp.from(turno.fin()), turno.observacion(),
+				institucion, turno.horario());
+		if (insertados != 1) { throw CatalogoException.noEncontrado(); }
 	}
 
 	public void actualizarTurno(UUID institucion, Turno turno) {
@@ -121,8 +133,9 @@ public class RepositorioProgramacion {
 				UPDATE shift SET id_professional = ?, id_room = ?, id_specialty = ?,
 				start_at_shift = ?, end_at_shift = ?, note_shift = ? WHERE id_institution = ? AND id_shift = ?
 				AND status_shift = 'draft' AND EXISTS (SELECT 1 FROM schedule h
-				WHERE h.id_schedule = shift.id_schedule AND h.status_schedule = 'draft')
-				""", turno.profesional(), turno.consultorio(), turno.especialidad(), Timestamp.from(turno.inicio()),
+				WHERE h.id_institution = shift.id_institution AND h.id_schedule = shift.id_schedule
+				AND h.status_schedule = 'draft' AND %s)
+				""".formatted(FILTRO_SEMANAL), turno.profesional(), turno.consultorio(), turno.especialidad(), Timestamp.from(turno.inicio()),
 				Timestamp.from(turno.fin()), turno.observacion(), institucion, turno.id());
 		if (modificados != 1) {
 			throw CatalogoException.conflicto("revision", "El turno cambió. Recarga el horario antes de editarlo.");
@@ -132,14 +145,16 @@ public class RepositorioProgramacion {
 	public void eliminarTurno(UUID institucion, UUID turno) {
 		int eliminados = consultas.update("""
 				DELETE FROM shift WHERE id_institution = ? AND id_shift = ? AND status_shift = 'draft'
-				AND EXISTS (SELECT 1 FROM schedule h WHERE h.id_schedule = shift.id_schedule AND h.status_schedule = 'draft')
-				""", institucion, turno);
+				AND EXISTS (SELECT 1 FROM schedule h WHERE h.id_institution = shift.id_institution
+				AND h.id_schedule = shift.id_schedule AND h.status_schedule = 'draft' AND %s)
+				""".formatted(FILTRO_SEMANAL), institucion, turno);
 		if (eliminados != 1) {
 			throw CatalogoException.conflicto("revision", "El turno cambió. Recarga el horario antes de eliminarlo.");
 		}
 	}
 
 	public void verificarSinEjecucion(UUID institucion, UUID horario) {
+		buscarHorario(institucion, horario);
 		Boolean ejecutado = consultas.queryForObject("""
 				SELECT EXISTS (SELECT 1 FROM shift t WHERE t.id_institution = ? AND t.id_schedule = ?
 				AND (t.start_at_shift <= clock_timestamp() OR EXISTS
@@ -152,24 +167,31 @@ public class RepositorioProgramacion {
 	}
 
 	public void cambiarEstado(UUID institucion, UUID horario, String estado) {
-		consultas.update("UPDATE shift SET status_shift = ? WHERE id_institution = ? AND id_schedule = ?"
-				+ " AND status_shift <> 'cancelled'", estado, institucion, horario);
-		consultas.update("UPDATE schedule SET status_schedule = ? WHERE id_institution = ? AND id_schedule = ?",
-				estado, institucion, horario);
+		int modificados = consultas.update("UPDATE schedule h SET status_schedule = ?"
+				+ " WHERE id_institution = ? AND id_schedule = ? AND " + FILTRO_SEMANAL, estado, institucion, horario);
+		if (modificados != 1) { throw CatalogoException.noEncontrado(); }
+		consultas.update("UPDATE shift t SET status_shift = ? WHERE id_institution = ? AND id_schedule = ?"
+				+ " AND status_shift <> 'cancelled' AND " + TURNO_SEMANAL, estado, institucion, horario);
 	}
 
 	public void aprobar(UUID institucion, UUID horario, UUID actor) {
+		int modificados = consultas.update("""
+				UPDATE schedule h SET status_schedule = 'approved', id_approver_user_account = ?,
+				approved_at_schedule = now() WHERE id_institution = ? AND id_schedule = ? AND %s
+				""".formatted(FILTRO_SEMANAL), actor, institucion, horario);
+		if (modificados != 1) { throw CatalogoException.noEncontrado(); }
 		consultas.update("""
-				UPDATE schedule SET status_schedule = 'approved', id_approver_user_account = ?,
-				approved_at_schedule = now() WHERE id_institution = ? AND id_schedule = ?
-				""", actor, institucion, horario);
-		consultas.update("""
-				UPDATE shift SET status_shift = 'approved' WHERE id_institution = ?
-				AND id_schedule = ? AND status_shift IN ('draft','pending')
-				""", institucion, horario);
+				UPDATE shift t SET status_shift = 'approved' WHERE id_institution = ?
+				AND id_schedule = ? AND status_shift IN ('draft','pending') AND %s
+				""".formatted(TURNO_SEMANAL), institucion, horario);
 	}
 
 	public void copiarContenido(UUID institucion, UUID anterior, UUID nuevo) {
+		buscarHorario(institucion, anterior);
+		Horario destino = buscarHorario(institucion, nuevo);
+		if (!"draft".equals(destino.estado())) {
+			throw CatalogoException.conflicto("estado", "Solo puedes copiar contenido a un borrador semanal.");
+		}
 		for (Turno turno : turnos(institucion, anterior)) {
 			if (!"cancelled".equals(turno.estado())) {
 				insertarTurno(institucion, new Turno(UUID.randomUUID(), nuevo, turno.profesional(), turno.consultorio(),
@@ -178,20 +200,23 @@ public class RepositorioProgramacion {
 			}
 		}
 		for (Requisito requisito : requisitos(anterior)) {
-			consultas.update("""
+			int insertados = consultas.update("""
 					INSERT INTO coverage_requirement (id_coverage_requirement, id_schedule, id_specialty,
 					start_at_coverage_requirement, end_at_coverage_requirement, required_count_coverage_requirement,
-					note_coverage_requirement) VALUES (?, ?, ?, ?, ?, ?, ?)
-					""", UUID.randomUUID(), nuevo, requisito.especialidad(), Timestamp.from(requisito.inicio()),
-					Timestamp.from(requisito.fin()), requisito.cantidad(), requisito.observacion());
+					note_coverage_requirement) SELECT ?, h.id_schedule, ?, ?, ?, ?, ? FROM schedule h
+					WHERE h.id_institution = ? AND h.id_schedule = ? AND h.status_schedule = 'draft' AND %s
+					""".formatted(FILTRO_SEMANAL), UUID.randomUUID(), requisito.especialidad(), Timestamp.from(requisito.inicio()),
+					Timestamp.from(requisito.fin()), requisito.cantidad(), requisito.observacion(), institucion, nuevo);
+			if (insertados != 1) { throw CatalogoException.noEncontrado(); }
 		}
 	}
 
 	public List<Requisito> requisitos(UUID horario) {
 		return consultas.query("""
-				SELECT * FROM coverage_requirement WHERE id_schedule = ?
-				ORDER BY start_at_coverage_requirement, end_at_coverage_requirement, id_specialty
-				""", (fila, numero) -> new Requisito(fila.getObject("id_specialty", UUID.class),
+				SELECT c.* FROM coverage_requirement c JOIN schedule h ON h.id_schedule = c.id_schedule
+				WHERE c.id_schedule = ? AND %s
+				ORDER BY c.start_at_coverage_requirement, c.end_at_coverage_requirement, c.id_specialty
+				""".formatted(FILTRO_SEMANAL), (fila, numero) -> new Requisito(fila.getObject("id_specialty", UUID.class),
 				fila.getTimestamp("start_at_coverage_requirement").toInstant(),
 				fila.getTimestamp("end_at_coverage_requirement").toInstant(),
 				fila.getInt("required_count_coverage_requirement"), fila.getString("note_coverage_requirement")), horario);
