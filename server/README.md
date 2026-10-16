@@ -136,11 +136,11 @@ Las pruebas de disponibilidades y programación también crean recursos temporal
 
 ## Transición al núcleo mensual
 
-La migración versionada V001 prepara unidades de planificación y cabeceras de mes completo. Está ensayada en esquemas PostgreSQL aislados y todavía no se aplica automáticamente a la base existente. El repositorio semanal distingue modalidades y funciona tanto con el esquema previo como con V001. Las consultas globales de conflictos conservan todas las modalidades.
+La pantalla `/planes-mensuales` permite al Administrador crear unidades y borradores de mes completo, consultar sus versiones y conservar auditoría. El rol se comprueba contra PostgreSQL en cada operación. La inicialización del primer administrador se ejecuta explícitamente en modo local sin servidor web; el registro público no concede roles.
 
-Para ejecutar el ensayo, añadir `-Dmedishift.prueba-migracion-mensual=true` a la verificación completa. La cuenta de prueba debe poder crear esquemas y la extensión `btree_gist` debe existir previamente. Cada esquema y sus fixtures se revierten por transacción; no se instala DDL en `public`.
+Para incluir las pruebas mensuales, añadir `-Dmedishift.prueba-migracion-mensual=true` y `-Dmedishift.prueba-planes-mensuales=true` a la verificación completa. La cuenta de prueba debe poder crear esquemas y `btree_gist` debe existir. Las pruebas de API confirman y revierten transacciones reales dentro de esquemas privados que se eliminan al terminar.
 
-El [procedimiento de migración y recuperación](../db/migraciones/README.md), el [contrato mensual futuro](contrato-planes-mensuales.md) y el [informe de validación](validacion-transicion-mensual.md) distinguen lo comprobado de lo pendiente. La aplicación sigue operando por semanas; las rutas y pantallas mensuales requieren la siguiente integración y autorización mínima.
+El procedimiento, los contratos implementados, la validación y los pendientes se concentran en el [plan de Avance 3](<C:/Users/DEXTRE/OneDrive/Documentos/.Universidad/Ciclo VI/Curso Integrador I Sistemas - Software/Avance 3/plan/PLAN-CONTINUACION-MEDISHIFT.md>). V001 se administra mediante `scripts/administrar_migracion_mensual.py`; Spring no ejecuta migraciones al arrancar. Actividades, asignaciones y aprobación mensual siguen pendientes.
 
 ## Archivos de Git
 
