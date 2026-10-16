@@ -134,6 +134,14 @@ Las pruebas habituales no acceden a la base. Cubren validación, normalización,
 
 Las pruebas de disponibilidades y programación también crean recursos temporales identificados por UUID. Comprueban vigencias inclusivas, ventanas contiguas, cruces, especialidades, permisos y bloqueos existentes, carga diaria y semanal, cobertura simultánea, revisiones de edición, concurrencia, conservación de versiones y protección de turnos iniciados o vinculados a asistencia. La edición de catálogos y disponibilidades revierte la transacción cuando deja inválido un turno futuro.
 
+## Transición al núcleo mensual
+
+La migración versionada V001 prepara unidades de planificación y cabeceras de mes completo. Está ensayada en esquemas PostgreSQL aislados y todavía no se aplica automáticamente a la base existente. El repositorio semanal distingue modalidades y funciona tanto con el esquema previo como con V001. Las consultas globales de conflictos conservan todas las modalidades.
+
+Para ejecutar el ensayo, añadir `-Dmedishift.prueba-migracion-mensual=true` a la verificación completa. La cuenta de prueba debe poder crear esquemas y la extensión `btree_gist` debe existir previamente. Cada esquema y sus fixtures se revierten por transacción; no se instala DDL en `public`.
+
+El [procedimiento de migración y recuperación](../db/migraciones/README.md), el [contrato mensual futuro](contrato-planes-mensuales.md) y el [informe de validación](validacion-transicion-mensual.md) distinguen lo comprobado de lo pendiente. La aplicación sigue operando por semanas; las rutas y pantallas mensuales requieren la siguiente integración y autorización mínima.
+
 ## Archivos de Git
 
 Versiona los fuentes, pruebas, `pom.xml`, README, `.env.example` y los wrappers `mvnw`, `mvnw.cmd` y `.mvn/wrapper/maven-wrapper.properties`. Las credenciales y `target` están excluidos de Git.
