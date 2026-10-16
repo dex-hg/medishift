@@ -21,7 +21,9 @@ public class FiltroNoCacheSesion extends OncePerRequestFilter {
 				|| ruta.equals("/api/profesionales") || ruta.startsWith("/api/profesionales/")
 				|| ruta.equals("/api/consultorios") || ruta.startsWith("/api/consultorios/")
 				|| ruta.equals("/api/disponibilidades") || ruta.startsWith("/api/disponibilidades/")
-				|| ruta.equals("/api/horarios") || ruta.startsWith("/api/horarios/")) {
+				|| ruta.equals("/api/horarios") || ruta.startsWith("/api/horarios/")
+				|| ruta.equals("/api/unidades-planificacion") || ruta.startsWith("/api/unidades-planificacion/")
+				|| ruta.equals("/api/planes-mensuales") || ruta.startsWith("/api/planes-mensuales/")) {
 			respuesta.setHeader("Cache-Control", "no-store");
 		}
 		filtros.doFilter(solicitud, respuesta);
