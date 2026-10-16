@@ -31,4 +31,13 @@ public class CatalogoException extends RuntimeException {
 		return new CatalogoException(HttpStatus.CONFLICT, mensaje, Map.of(campo, mensaje));
 	}
 
+	public static CatalogoException accesoDenegado() {
+		return new CatalogoException(HttpStatus.FORBIDDEN,
+				"La programación mensual requiere el rol Administrador.", Map.of());
+	}
+
+	public static CatalogoException noDisponible(String mensaje) {
+		return new CatalogoException(HttpStatus.SERVICE_UNAVAILABLE, mensaje, Map.of());
+	}
+
 }
