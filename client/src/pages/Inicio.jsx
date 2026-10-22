@@ -13,14 +13,14 @@ function Inicio() {
       cantidad: profesionales.length, destino: '/profesionales', icono: UsersRound, color: 'turquesa' },
     { titulo: 'Consultorios', descripcion: 'Ambientes registrados para la atención.',
       cantidad: consultorios.length, destino: '/consultorios', icono: Building2, color: 'azul' },
-    { titulo: 'Horarios', descripcion: `Semana actual: ${semana?.estado || 'cargando'}.`,
-      cantidad: semana?.turnos.length || 0, destino: '/horarios', icono: CalendarClock, color: 'azul' },
+    { titulo: 'Historial semanal', descripcion: `Programación anterior por semanas: ${semana?.estado || 'cargando'}.`,
+      cantidad: semana?.turnos.length || 0, destino: '/horarios/semanales', icono: CalendarClock, color: 'azul' },
   ];
 
   return (
     <>
       <EncabezadoPagina titulo="Panel operativo" descripcion="Registros y programación real de tu institución."
-        acciones={<Link className="boton boton--primario" to="/profesionales/nuevo"><Plus size={18} /> Nuevo profesional</Link>} />
+        acciones={<Link className="boton boton--primario" to="/horarios"><CalendarClock size={18} /> Organizar el mes</Link>} />
 
       {resumen.estado === 'cargando' && <p role="status">Cargando los registros de tu institución…</p>}
       {resumen.estado === 'error' && (
@@ -47,7 +47,7 @@ function Inicio() {
             </article>
             <article className="tarjeta-metrica">
               <span className="tarjeta-metrica__icono tarjeta-metrica__icono--azul"><CalendarClock size={21} /></span>
-              <div><span>Turnos de la semana actual</span><strong>{semana.turnos.length}</strong>
+              <div><span>Turnos semanales anteriores</span><strong>{semana.turnos.length}</strong>
                 <small>{semana.estado}{semana.version ? ` · Versión ${semana.version}` : ''}</small></div>
             </article>
           </section>
@@ -67,7 +67,7 @@ function Inicio() {
               </div>
             </section>
             <aside className="panel panel--agenda">
-              <p className="sobrelinea">Semana actual</p><h2>{semana.estado}</h2>
+              <p className="sobrelinea">Historial semanal independiente</p><h2>{semana.estado}</h2>
               <p className="nota-programacion nota-programacion--compacta">{mostrarFecha(semana.fechaInicio)} al {mostrarFecha(semana.fechaFin)}. Zona: {semana.zonaHoraria}.</p>
               {semana.estado === 'Borrador' && semana.versionAprobada && <p className="nota-programacion nota-programacion--compacta">
                 La versión aprobada {semana.versionAprobada} sigue vigente; los turnos mostrados pertenecen al borrador.</p>}
@@ -76,7 +76,7 @@ function Inicio() {
                   <small>{mostrarFecha(turno.fecha)} · {turno.horaInicio} a {turno.horaFin}</small><small>{turno.consultorio} · {turno.estado}</small></div>
               </div>)}{!semana.turnos.length && <div className="turno-resumen"><span><CalendarClock size={17} /></span>
                 <div><strong>No hay turnos registrados</strong><small>Selecciona un médico y un consultorio para crear el primer turno.</small></div></div>}</div>
-              <Link className="boton boton--secundario" to={`/horarios?fechaInicio=${semana.fechaInicio}`}>Ver semana</Link>
+              <Link className="boton boton--secundario" to={`/horarios/semanales?fechaInicio=${semana.fechaInicio}`}>Consultar semana anterior</Link>
             </aside>
           </div>
         </>
@@ -87,7 +87,7 @@ function Inicio() {
         <div className="acciones-rapidas">
           <Link to="/profesionales/nuevo"><Plus size={16} /> Profesional</Link>
           <Link to="/consultorios/nuevo"><Plus size={16} /> Consultorio</Link>
-          <Link to="/horarios/nuevo"><Plus size={16} /> Turno</Link>
+          <Link to="/horarios"><Plus size={16} /> Turno mensual</Link>
         </div>
       </section>
     </>

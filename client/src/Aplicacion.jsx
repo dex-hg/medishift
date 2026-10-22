@@ -5,6 +5,7 @@ import Registro from './pages/Registro';
 import InicioSesion from './pages/InicioSesion';
 import Inicio from './pages/Inicio';
 import Horarios from './pages/schedules/Horarios';
+import HorariosSemanales from './pages/schedules/HorariosSemanales';
 import FormularioTurno from './pages/schedules/FormularioTurno';
 import Profesionales from './pages/professionals/Profesionales';
 import FormularioProfesional from './pages/professionals/FormularioProfesional';
@@ -21,6 +22,7 @@ function Aplicacion() {
       <Route element={<RutaProtegida />}>
         <Route path="panel" element={<Inicio />} />
         <Route path="horarios" element={<Horarios />} />
+        <Route path="horarios/semanales" element={<HorariosSemanales />} />
         <Route path="planes-mensuales" element={<Navigate to="/horarios" replace />} />
         <Route path="horarios/nuevo" element={<FormularioTurno modo="crear" />} />
         <Route path="horarios/:id/editar" element={<FormularioTurno modo="editar" />} />

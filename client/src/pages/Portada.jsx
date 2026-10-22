@@ -13,24 +13,24 @@ const beneficios = [
   {
     icono: CalendarCheck2,
     titulo: 'Horarios organizados',
-    descripcion: 'Consulta la programación semanal por profesional, especialidad y consultorio.',
+    descripcion: 'Construye el calendario mensual por área, consultorio y profesional.',
   },
   {
     icono: Building2,
     titulo: 'Recursos centralizados',
-    descripcion: 'Mantén médicos, especialidades y consultorios en un mismo espacio.',
+    descripcion: 'Organiza tus consultorios en carpetas por área o servicio.',
   },
   {
     icono: Clock3,
     titulo: 'Jornadas visibles',
-    descripcion: 'Revisa las franjas asignadas y la distribución del trabajo durante la semana.',
+    descripcion: 'Revisa las horas asignadas a cada profesional durante el mes.',
   },
 ];
 
 const pasos = [
-  'Registra profesionales y consultorios.',
-  'Asigna a cada médico su consultorio, fecha y horas.',
-  'Construye y revisa el horario semanal.',
+  'Organiza tus áreas, consultorios y profesionales.',
+  'Arrastra un profesional al día y revisa las horas del turno.',
+  'Guarda y ajusta el horario de todo el mes.',
 ];
 
 function Marca() {
@@ -69,10 +69,10 @@ function Portada() {
               <CalendarCheck2 size={15} />
               Gestión de horarios médicos
             </span>
-            <h1>Organiza turnos médicos con una visión clara de cada recurso</h1>
+            <h1>El horario de tus médicos, todo el mes a la vista</h1>
             <p>
               Organiza a tus médicos y consultorios para preparar horarios
-              semanales ordenados y fáciles de consultar.
+              mensuales ordenados y fáciles de consultar.
             </p>
             <div className="portada-hero__acciones">
               <Link className="boton-acceso boton-acceso--grande" to="/iniciar-sesion">
@@ -84,9 +84,9 @@ function Portada() {
               </Link>
             </div>
             <div className="portada-hero__ventajas" aria-label="Ventajas principales">
-              <span><CheckCircle2 size={15} /> Programación semanal</span>
+              <span><CheckCircle2 size={15} /> Calendario mensual</span>
               <span><CheckCircle2 size={15} /> Control de consultorios</span>
-              <span><CheckCircle2 size={15} /> Asignación directa de turnos</span>
+              <span><CheckCircle2 size={15} /> Arrastrar y soltar profesionales</span>
             </div>
           </div>
 
@@ -138,7 +138,7 @@ function Portada() {
         <section className="portada-flujo" id="funcionamiento">
           <div className="portada-flujo__texto">
             <span>Flujo de trabajo</span>
-            <h2>De los datos básicos al horario semanal</h2>
+            <h2>De tus áreas al horario de todo el mes</h2>
             <p>La plataforma reúne cada paso de la programación en una secuencia sencilla.</p>
           </div>
           <ol>

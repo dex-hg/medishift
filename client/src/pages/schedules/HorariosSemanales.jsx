@@ -56,8 +56,8 @@ function HorariosSemanales() {
   };
 
   return <>
-    <EncabezadoPagina ruta={[{ etiqueta: 'Horarios' }]} titulo="Turnos semanales"
-      descripcion="Programación semanal. Cada profesional puede atender hasta 6 horas diarias y 36 semanales."
+    <EncabezadoPagina ruta={[{ etiqueta: 'Horarios', destino: '/horarios' }, { etiqueta: 'Historial semanal' }]} titulo="Programación semanal anterior"
+      descripcion="Esta programación es independiente del calendario mensual. Los registros anteriores se conservan aquí."
       acciones={editable && habilitado ? <Link className="boton boton--primario" to={`/horarios/nuevo?fecha=${fechaNuevoTurno}`}><Plus size={18} /> Nuevo turno</Link> : null} />
     <section className="panel panel--horario" aria-busy={consulta.cargando || consulta.ocupado}>
       <div className="controles-horario"><div className="periodo-horario">

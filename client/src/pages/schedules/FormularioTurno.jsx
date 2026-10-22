@@ -11,7 +11,7 @@ import { fechaActual, fechaValida, lunesDeSemana, validarTurno } from '../../uti
 import { consultoriosCompatibles, especialidadesProfesional,
   seleccionarEspecialidadTurno, seleccionarProfesionalTurno } from '../../utils/seleccionRecursosTurno';
 
-const destinoTurno = (turno) => `/horarios?fechaInicio=${lunesDeSemana(turno.fecha)}`;
+const destinoTurno = (turno) => `/horarios/semanales?fechaInicio=${lunesDeSemana(turno.fecha)}`;
 const ajustarIniciales = (datos, recursos) => ({ ...datos, fecha: datos.fecha || fechaActual(recursos.zonaHoraria) });
 const validarAntes = async (datos, { recursos, registro, senal }) => {
   const errores = validarTurno(datos, { recursos });
@@ -33,7 +33,7 @@ function FormularioTurno({ modo }) {
   const formulario = useFormularioProgramacion({ modo, id, iniciales, obtener: obtenerTurno, recursos: listarRecursosHorario,
     crear: crearTurno, actualizar: actualizarTurno, validarAntes, ajustarIniciales, destino: destinoTurno, etiqueta: 'Turno' });
   const lunesSeleccionado = lunesDeSemana(formulario.datos.fecha);
-  const semanaDestino = lunesSeleccionado ? `/horarios?fechaInicio=${lunesSeleccionado}` : '/horarios';
+  const semanaDestino = lunesSeleccionado ? `/horarios/semanales?fechaInicio=${lunesSeleccionado}` : '/horarios/semanales';
   const inmutable = formulario.registro && formulario.registro.estado !== 'Borrador';
   const campo = (nombre) => ({ id: `${identificador}-${nombre}`, name: nombre, value: formulario.datos[nombre],
     onChange: formulario.actualizarCampo, 'aria-invalid': Boolean(formulario.errores[nombre]) });
