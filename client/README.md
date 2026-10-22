@@ -23,6 +23,12 @@ node node_modules/vite/bin/vite.js build
 
 Las pruebas actuales verifican servicios y validaciones con transporte inyectado. No incluyen una suite de componentes ni demuestran por sí solas el flujo de navegador contra PostgreSQL.
 
+## Una sección para los horarios
+
+El menú contiene una sola entrada Horarios. `/horarios` abre Meses y áreas para Administrador; `?vista=semanal` o los enlaces existentes con `fechaInicio` abren los turnos semanales. `/planes-mensuales` redirige a la sección unificada. La sesión aporta `esAdministrador` como booleano desde el servidor; no se infieren roles a partir del correo o del nombre. Las cuentas sin ese permiso conservan la vista semanal y la API mensual sigue denegando su acceso.
+
+La vista mensual crea y consulta cabeceras por área o servicio. Las asignaciones y aprobaciones actuales siguen siendo semanales: reunir la navegación no une ambos modelos ni implementa la matriz mensual.
+
 ## Asignación directa y selección de recursos
 
 El encargado asigna fecha y horas directamente, sin un formulario previo de disponibilidad. El módulo de disponibilidades y sus rutas se retiraron. El formulario de turnos solicita profesional, especialidad y consultorio compatible, en ese orden. Una especialidad única se selecciona automáticamente; con varias, se requiere elección explícita. Los mensajes indican si faltan recursos activos y permiten revisar sus catálogos. El consultorio continúa siendo una selección explícita y obligatoria.
