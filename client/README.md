@@ -23,12 +23,12 @@ node node_modules/vite/bin/vite.js build
 
 Las pruebas actuales verifican servicios y validaciones con transporte inyectado. No incluyen una suite de componentes ni demuestran por sí solas el flujo de navegador contra PostgreSQL.
 
-## Selección de recursos y periodo disponible
+## Asignación directa y selección de recursos
 
-El formulario solicita profesional, especialidad y consultorio compatible, en ese orden. Una especialidad única se selecciona automáticamente; con varias, se requiere elección explícita. Los mensajes indican si faltan recursos activos y permiten revisar sus catálogos. El consultorio continúa siendo una selección explícita y obligatoria.
+El encargado asigna fecha y horas directamente, sin un formulario previo de disponibilidad. El módulo de disponibilidades y sus rutas se retiraron. El formulario de turnos solicita profesional, especialidad y consultorio compatible, en ese orden. Una especialidad única se selecciona automáticamente; con varias, se requiere elección explícita. Los mensajes indican si faltan recursos activos y permiten revisar sus catálogos. El consultorio continúa siendo una selección explícita y obligatoria.
 
 La programación y aprobación operativas siguen siendo semanales. El núcleo mensual ya dispone de valores de calendario e intervalo; su integración con persistencia y API corresponde a M02, y la matriz mensual a M11. Cambiar las etiquetas de semana a mes depende de esa integración.
 
 ## Ejemplo de separación
 
-El panel operativo sigue `Inicio.jsx -> useResumenInicio.js -> resumenInicio.js -> servicios API`. La vista presenta datos; el hook controla estados, cancelación y reintento; el servicio coordina las consultas y calcula la semana en la zona horaria institucional. Las reglas definitivas de acceso y programación siguen aplicándose en el servidor.
+El panel operativo sigue `Inicio.jsx -> useResumenInicio.js -> resumenInicio.js -> servicios API`. La vista presenta datos; el hook controla estados, cancelación y reintento; el servicio carga profesionales, consultorios y la semana actual en tres consultas paralelas. El backend calcula la semana en la zona institucional. Las reglas definitivas de acceso y programación siguen aplicándose en el servidor.

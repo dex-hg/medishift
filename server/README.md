@@ -1,12 +1,12 @@
 # Backend de MediShift
 
-Spring Boot 4.1.1, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone registro, sesión y gestión de profesionales, consultorios, disponibilidades y horarios semanales. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
+Spring Boot 4.1.1, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone registro, sesión y gestión de profesionales, consultorios y horarios semanales. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
 
 ## Arquitectura
 
 El servidor utiliza arquitectura por capas, organizada por módulos funcionales: controladores Spring MVC para HTTP y JSON, servicios y reglas para operaciones de negocio, y repositorios DAO JDBC para PostgreSQL. La interfaz visual se construye en el cliente React.
 
-`ReglasProgramacion` delega las lecturas de disponibilidades, permisos y bloqueos en `RepositorioRestriccionesProgramacion`. Las decisiones de aceptación y los mensajes permanecen en las reglas. `ArquitecturaCapasTests` verifica las dependencias entre capas como parte de `verify`.
+`ReglasProgramacion` delega las lecturas de ausencias y bloqueos en `RepositorioRestriccionesProgramacion`. Las decisiones de aceptación y los mensajes permanecen en las reglas. `ArquitecturaCapasTests` verifica las dependencias entre capas como parte de `verify`.
 
 El paquete `programacion.mensual` incorpora valores de dominio para meses completos e intervalos con fecha final explícita, incluidos nocturnos y cálculo por día calendario institucional. Esta base aún no está integrada con la API ni la persistencia semanal.
 
@@ -116,7 +116,7 @@ El inicio reemplaza cualquier sesión anterior y rota su identificador. La sesi�
 
 La sesión caduca tras 30 minutos de inactividad. Viaja solo por cookie `HttpOnly` y `SameSite=Strict`; no se admite el identificador en la URL. `MEDISHIFT_COOKIE_SEGURA=false` permite probar en `localhost` por HTTP. Configura `MEDISHIFT_COOKIE_SEGURA=true` al servir mediante HTTPS para marcar la cookie como `Secure`. El cliente debe enviar la cookie en las solicitudes a `/api`; no debe guardar el identificador ni la contraseña en almacenamiento del navegador. Los endpoints de profesionales, consultorios y especialidades comprueban la sesión y el estado activo de la cuenta e institución. La institución se toma de la sesión y limita cada operación de gestión.
 
-Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Antes de publicar el servicio, debe incorporarse una política de limitación de intentos de autenticación. Profesionales, consultorios, disponibilidades y horarios ya usan PostgreSQL. Los horarios se crean como borrador y se aprueban por semana, con validación completa y reemplazo transaccional de versiones. Los límites temporales por profesional son 6 horas diarias y 36 semanales; su administración aún está pendiente.
+Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Antes de publicar el servicio, debe incorporarse una política de limitación de intentos de autenticación. Profesionales, consultorios y horarios usan PostgreSQL. El encargado asigna los turnos directamente, sin registrar disponibilidades previamente. Los horarios se crean como borrador y se aprueban por semana, con validación completa y reemplazo transaccional de versiones. Los límites temporales por profesional son 6 horas diarias y 36 semanales; su administración aún está pendiente.
 
 ## Pruebas
 
@@ -127,12 +127,12 @@ Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo
 Las pruebas habituales no acceden a la base. Cubren validación, normalización, hash, contrato HTTP, errores y orden de las operaciones transaccionales. Las pruebas reales se activan expresamente con credenciales válidas y el esquema existente:
 
 ```powershell
-.\mvnw.cmd "-Dmedishift.prueba-conexion=true" "-Dmedishift.prueba-registro=true" "-Dmedishift.prueba-sesion=true" "-Dmedishift.prueba-catalogos=true" "-Dmedishift.prueba-disponibilidades=true" "-Dmedishift.prueba-horarios=true" verify
+.\mvnw.cmd "-Dmedishift.prueba-conexion=true" "-Dmedishift.prueba-registro=true" "-Dmedishift.prueba-sesion=true" "-Dmedishift.prueba-catalogos=true" "-Dmedishift.prueba-horarios=true" verify
 ```
 
 `RegistroPostgresqlTests` comprueba persistencia y hash, duplicados, correo por institución y reversión cuando falla la segunda inserción. `SesionPostgresqlTests` verifica la misma cuenta real, la separación entre instituciones y la revocación por estado. Las pruebas generan códigos y UUID aleatorios y eliminan únicamente sus propias instituciones y cuentas por UUID al finalizar. No ejecutan DDL. Sin las opciones indicadas, las pruebas reales quedan omitidas.
 
-Las pruebas de disponibilidades y programación también crean recursos temporales identificados por UUID. Comprueban vigencias inclusivas, ventanas contiguas, cruces, especialidades, permisos y bloqueos existentes, carga diaria y semanal, cobertura simultánea, revisiones de edición, concurrencia, conservación de versiones y protección de turnos iniciados o vinculados a asistencia. La edición de catálogos y disponibilidades revierte la transacción cuando deja inválido un turno futuro.
+Las pruebas de programación crean recursos temporales identificados por UUID. Comprueban creación, edición y aprobación sin disponibilidades; cruces de médico y consultorio, especialidades, ausencias y bloqueos existentes, carga diaria y semanal, cobertura, concurrencia e historial. La edición de catálogos revierte la transacción cuando deja inválido un turno futuro. El módulo y la API `/api/disponibilidades` se retiraron; la tabla histórica `availability` se conserva sin utilizarse para validar turnos. No se ejecutó una migración ni se eliminaron registros existentes.
 
 ## Transición al núcleo mensual
 
