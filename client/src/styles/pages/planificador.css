@@ -1,0 +1,135 @@
+.barra-mensual {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 17px 20px;
+  margin-bottom: 18px;
+}
+.barra-mensual__periodo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.barra-mensual__icono { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; color: var(--turquesa); background: rgb(45 212 191 / 9%); }
+.barra-mensual h2 { font-size: 1.1rem; margin: 3px 12px 0 0; text-transform: capitalize; }
+.barra-mensual small { font-size: .64rem; color: var(--texto-secundario); letter-spacing: .07em; text-transform: uppercase; }
+.barra-mensual input { padding: 8px; color: var(--texto); background: var(--fondo); border: 1px solid var(--borde); border-radius: 8px; max-width: 170px; }
+.planificador { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 18px; align-items: start; }
+.planificador__lateral, .planificador__principal { min-width: 0; }
+.planificador__lateral { display: grid; gap: 16px; }
+.planificador-arbol, .banco-profesionales { padding: 17px 14px; }
+.planificador-titulo { display: flex; align-items: center; justify-content: space-between; gap: 7px; margin-bottom: 10px; }
+.planificador-titulo > div { display: flex; align-items: center; gap: 8px; }
+.planificador h2 { margin: 0; font-size: .85rem; }
+.planificador-paso { flex-shrink: 0; display: inline-grid; width: 22px; height: 22px; place-items: center; background: rgb(45 212 191 / 10%); color: var(--turquesa); border: 1px solid rgb(45 212 191 / 20%); border-radius: 7px; font-size: .65rem; font-weight: 700; }
+.planificador-ayuda { color: var(--texto-secundario); font-size: .72rem; line-height: 1.65; margin: 10px 0; }
+.planificador-vacio { text-align: center; color: var(--texto-secundario); padding: 20px 6px; font-size: .8rem; line-height: 1.6; }
+.planificador-vacio > svg { color: var(--turquesa); margin-bottom: 10px; }
+.arbol-areas, .arbol-areas ul { list-style: none; padding: 0; margin: 0; }
+.arbol-areas { display: grid; gap: 8px; }
+.arbol-areas__carpeta { display: flex; align-items: center; gap: 1px; }
+.arbol-areas__carpeta > button:first-child { display: flex; align-items: center; gap: 7px; border: 0; background: transparent; flex: 1; min-width: 0; padding: 9px 0; cursor: pointer; text-align: left; }
+.arbol-areas__carpeta span { font-size: .76rem; font-weight: 650; flex: 1; overflow-wrap: anywhere; }
+.arbol-areas__carpeta svg { color: var(--ambar); flex-shrink: 0; }
+.arbol-areas__carpeta small { color: var(--texto-tenue); font-size: .65rem; }
+.arbol-areas__cerrado { transform: rotate(-90deg); }
+.arbol-areas > li > ul { border-left: 1px solid var(--borde); margin-left: 20px; padding-left: 10px; display: grid; gap: 3px; }
+.arbol-areas__consultorio { display: flex; align-items: center; gap: 8px; padding: 9px 8px; width: 100%; text-align: left; cursor: pointer; background: transparent; border: 1px solid transparent; border-radius: 7px; font-size: .72rem; color: var(--texto-secundario); }
+.arbol-areas__consultorio svg { flex-shrink: 0; }
+.arbol-areas__consultorio span { overflow-wrap: anywhere; }
+.arbol-areas__consultorio:hover { background: var(--panel-claro); }
+.arbol-areas__consultorio.seleccionado { color: #a8f3e9; background: rgb(45 212 191 / 8%); border-color: rgb(45 212 191 / 23%); }
+.arbol-areas__sin-hijos { padding: 7px 4px; font-size: .65rem; color: var(--texto-tenue); }
+.arbol-areas__pendientes { border-top: 1px solid var(--borde); margin-top: 15px; padding-top: 14px; color: var(--texto-secundario); font-size: .72rem; }
+.arbol-areas__pendientes p { margin: 5px 0; }
+.planificador-busqueda { display: flex; align-items: center; padding: 9px; gap: 7px; border: 1px solid var(--borde); border-radius: 8px; color: var(--texto-tenue); background: var(--fondo); }
+.planificador-busqueda input { width: 100%; min-width: 0; color: var(--texto); background: transparent; border: 0; font-size: .71rem; }
+.banco-profesionales__lista { display: grid; gap: 7px; margin-top: 12px; max-height: 440px; overflow-y: auto; }
+.profesional-arrastrable { display: flex; align-items: center; gap: 8px; background: var(--fondo-elevado); border: 1px solid var(--borde-suave); border-radius: 9px; padding: 11px 8px; text-align: left; cursor: grab; }
+.profesional-arrastrable > span:nth-child(2) { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.profesional-arrastrable strong { font-size: .73rem; overflow-wrap: anywhere; }
+.profesional-arrastrable small { font-size: .61rem; color: var(--texto-secundario); line-height: 1.4; }
+.profesional-arrastrable__avatar { display: grid; width: 30px; height: 34px; place-items: center; color: var(--azul); background: rgb(56 189 248 / 8%); border-radius: 8px; flex-shrink: 0; }
+.profesional-arrastrable > svg { color: var(--texto-tenue); flex-shrink: 0; }
+.profesional-arrastrable.seleccionado { border-color: var(--turquesa); background: rgb(45 212 191 / 6%); }
+.profesional-arrastrable:disabled { opacity: .45; cursor: default; }
+.planificador-enlace { display: inline-block; color: var(--turquesa); font-size: .72rem; margin-top: 13px; }
+.calendario-mensual { overflow: hidden; }
+.calendario-mensual__titulo { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 18px; border-bottom: 1px solid var(--borde-suave); }
+.calendario-mensual__titulo > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.calendario-mensual__titulo h2 { font-size: 1rem; }
+.calendario-mensual__titulo p { margin: 5px 0 0; font-size: .7rem; color: var(--texto-secundario); }
+.calendario-mensual__estado { padding: 6px 8px; border-radius: 6px; background: rgb(251 191 36 / 8%); color: var(--ambar); font-size: .62rem; white-space: nowrap; }
+.calendario-mensual__instruccion { padding: 11px 18px; margin: 0; color: #a2cfc8; background: rgb(45 212 191 / 3%); font-size: .71rem; line-height: 1.5; }
+.calendario-mensual__desplazamiento { overflow-x: auto; }
+.calendario-mensual__rejilla { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); min-width: 680px; }
+.calendario-mensual__dia-semana { text-align: center; padding: 12px 2px; color: var(--texto-tenue); font-size: .67rem; font-weight: 700; border-bottom: 1px solid var(--borde); text-transform: uppercase; }
+.calendario-mensual__dia-semana abbr { text-decoration: none; }
+.calendario-mensual__dia, .calendario-mensual__fuera { min-height: 135px; padding: 8px; border-bottom: 1px solid var(--borde-suave); border-right: 1px solid var(--borde-suave); }
+.calendario-mensual__dia { display: flex; flex-direction: column; gap: 7px; transition: background .12s; }
+.calendario-mensual__fuera { background: rgb(0 0 0 / 11%); }
+.calendario-mensual__dia.pasado { background: rgb(0 0 0 / 8%); }
+.calendario-mensual__dia.pasado .calendario-mensual__fecha { color: var(--texto-tenue); }
+.calendario-mensual__dia.hoy { background: rgb(56 189 248 / 3%); }
+.calendario-mensual__dia.destino { background: rgb(45 212 191 / 15%); box-shadow: inset 0 0 0 2px var(--turquesa); }
+.calendario-mensual__fecha { display: flex; align-items: center; justify-content: space-between; font-size: .77rem; color: var(--texto-secundario); min-height: 23px; }
+.calendario-mensual__fecha small { font-size: .56rem; color: var(--azul); }
+.calendario-mensual__dia.hoy time { background: var(--turquesa); color: var(--fondo); border-radius: 50%; width: 23px; height: 23px; display: grid; place-items: center; font-weight: 800; }
+.calendario-mensual__turnos { display: grid; gap: 5px; }
+.turno-mensual { display: grid; gap: 5px; padding: 8px 6px; width: 100%; border-radius: 6px; background: rgb(56 189 248 / 8%); border: 1px solid rgb(56 189 248 / 19%); text-align: left; cursor: pointer; color: #bce5f8; overflow-wrap: anywhere; }
+.turno-mensual[draggable='true'] { cursor: grab; }
+.turno-mensual:hover { border-color: var(--azul); }
+.turno-mensual > span:first-child { display: flex; align-items: center; justify-content: space-between; gap: 2px; }
+.turno-mensual strong { font-size: .61rem; font-variant-numeric: tabular-nums; }
+.turno-mensual span { font-size: .66rem; line-height: 1.4; }
+.turno-mensual small { font-size: .56rem; color: var(--texto-secundario); }
+.calendario-mensual__asignar { margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 3px; width: 100%; min-height: 29px; border: 1px dashed var(--borde); background: transparent; border-radius: 5px; color: var(--texto-tenue); font-size: .62rem; cursor: pointer; }
+.calendario-mensual__asignar:hover { color: var(--turquesa); border-color: var(--turquesa); background: rgb(45 212 191 / 4%); }
+.calendario-mensual__inicio { display: grid; justify-items: center; place-content: center; min-height: 400px; padding: 40px; }
+.calendario-mensual__inicio h3 { color: var(--texto); font-size: 1rem; }
+.calendario-mensual__inicio p { max-width: 320px; }
+.planificador-pie { color: var(--texto-secundario); line-height: 1.7; font-size: .71rem; margin-top: 15px; }
+.planificador-pie strong { color: var(--texto); }
+.planificador-aviso, .planificador-exito, .planificador-error { padding: 13px 16px; margin: 12px 0; border: 1px solid var(--borde); border-radius: 9px; font-size: .77rem; line-height: 1.65; }
+.planificador-exito { color: #a6edcf; border-color: rgb(74 222 128 / 22%); background: rgb(74 222 128 / 5%); }
+.planificador-error { color: #ffc4cc; border-color: rgb(251 113 133 / 25%); background: rgb(251 113 133 / 5%); }
+.planificador-error p { margin-bottom: 8px; }
+.planificador-legado { margin-top: 25px; padding-top: 16px; border-top: 1px solid var(--borde); color: var(--texto-tenue); font-size: .7rem; }
+.planificador-legado summary { cursor: pointer; width: fit-content; }
+.planificador-legado p { margin: 12px 0 0; }
+.ventana-planificador { width: min(610px, calc(100vw - 28px)); max-height: calc(100dvh - 40px); overflow-y: auto; border: 1px solid var(--borde); border-radius: 16px; background: var(--panel); color: var(--texto); padding: 0; box-shadow: var(--sombra); }
+.ventana-planificador::backdrop { background: rgb(0 6 13 / 78%); backdrop-filter: blur(4px); }
+.ventana-planificador__cabecera { display: flex; align-items: start; justify-content: space-between; gap: 20px; padding: 23px 23px 18px; border-bottom: 1px solid var(--borde); }
+.ventana-planificador__cabecera h2 { font-size: 1.1rem; margin: 0 0 7px; }
+.ventana-planificador__cabecera p { font-size: .77rem; color: var(--texto-secundario); line-height: 1.6; margin: 0; }
+.formulario-planificador { padding: 22px; }
+.formulario-planificador__campos { display: grid; gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.formulario-planificador__fila { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.formulario-planificador__fila--horas { grid-template-columns: 1.3fr 1fr 1fr; }
+.campo-planificador { display: grid; gap: 7px; min-width: 0; font-size: .75rem; }
+.campo-planificador > span { color: var(--texto-secundario); }
+.campo-planificador input, .campo-planificador select, .campo-planificador textarea { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--borde); border-radius: 8px; background: var(--fondo); color: var(--texto); font-size: .8rem; }
+.campo-planificador textarea { resize: vertical; }
+.campo-planificador small { color: #ffafbc; font-size: .7rem; line-height: 1.4; }
+.formulario-planificador__campos:disabled { opacity: .65; }
+.ventana-planificador__acciones { display: flex; justify-content: flex-end; gap: 9px; flex-wrap: wrap; padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--borde); }
+.ventana-planificador__acciones > button:first-child:has(svg) { margin-right: auto; color: var(--rojo); }
+@media (max-width: 1250px) {
+  .planificador { grid-template-columns: 235px minmax(0, 1fr); gap: 12px; }
+  .planificador-arbol, .banco-profesionales { padding: 14px 11px; }
+}
+@media (max-width: 900px) {
+  .planificador { grid-template-columns: 1fr; }
+  .planificador__lateral { grid-template-columns: 1fr 1fr; align-items: start; }
+  .banco-profesionales__lista { max-height: 250px; }
+  .barra-mensual { flex-wrap: wrap; }
+}
+@media (max-width: 550px) {
+  .barra-mensual { padding: 14px; }
+  .barra-mensual__periodo { gap: 6px; }
+  .barra-mensual__periodo > div { flex: 1; min-width: 180px; }
+  .barra-mensual__icono { width: 35px; height: 35px; }
+  .planificador__lateral { grid-template-columns: 1fr; }
+  .calendario-mensual__titulo { padding: 13px; gap: 8px; }
+  .calendario-mensual__titulo h2 { font-size: .85rem; }
+  .formulario-planificador, .ventana-planificador__cabecera { padding: 17px; }
+  .formulario-planificador__fila, .formulario-planificador__fila--horas { grid-template-columns: 1fr; }
+  .ventana-planificador__acciones .boton { flex: 1; }
+}
