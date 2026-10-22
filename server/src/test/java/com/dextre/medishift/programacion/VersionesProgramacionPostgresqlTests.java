@@ -148,8 +148,6 @@ class VersionesProgramacionPostgresqlTests extends SoporteProgramacionPostgresql
 
 	@Test
 	void rechazaProgramacionRetroactivaYProtegeAsistenciaAlReabrirOCancelar() throws Exception {
-		consultas.update("UPDATE availability SET valid_from_availability = ?::date WHERE id_professional = ?",
-				lunes.minusWeeks(6).toString(), profesional);
 		cliente.perform(json(post("/api/horarios"), turno(lunes.minusWeeks(5), "08:00", "10:00")))
 				.andExpect(status().isConflict()).andExpect(jsonPath("$.errores.fecha").exists());
 		String creado = crearTurno(lunes, "08:00", "10:00");

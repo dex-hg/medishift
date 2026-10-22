@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,7 +11,6 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.dextre.medishift.catalogos.CatalogoException;
-import com.dextre.medishift.programacion.TiempoProgramacion.Ventana;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -63,33 +61,6 @@ class TiempoProgramacionTests {
 	}
 
 	@Test
-	void uneVentanasContiguasAunqueLleguenDesordenadas() {
-		assertTrue(TiempoProgramacion.cubrirDisponibilidad(List.of(ventana(10, 12), ventana(8, 10)),
-				lunes, LocalTime.of(8, 0), LocalTime.of(12, 0)));
-	}
-
-	@Test
-	void rechazaUnMinutoSinCoberturaYVentanasFueraDeVigencia() {
-		Ventana tardia = new Ventana(1, LocalTime.of(10, 1), LocalTime.of(12, 0), lunes, lunes);
-		assertFalse(TiempoProgramacion.cubrirDisponibilidad(List.of(ventana(8, 10), tardia),
-				lunes, LocalTime.of(8, 0), LocalTime.of(12, 0)));
-		assertFalse(TiempoProgramacion.cubrirDisponibilidad(List.of(ventana(8, 12)),
-				lunes.plusWeeks(1), LocalTime.of(8, 0), LocalTime.of(12, 0)));
-	}
-
-	@Test
-	void vigenciaInclusivaDiaCorrectoYLimitesExactos() {
-		assertTrue(TiempoProgramacion.cubrirDisponibilidad(List.of(ventana(8, 12)),
-				lunes, LocalTime.of(8, 0), LocalTime.of(12, 0)));
-		assertFalse(TiempoProgramacion.cubrirDisponibilidad(List.of(ventana(8, 12)),
-				lunes.plusDays(1), LocalTime.of(8, 0), LocalTime.of(12, 0)));
-		assertFalse(TiempoProgramacion.cubrirDisponibilidad(List.of(ventana(8, 12)),
-				lunes, LocalTime.of(7, 59), LocalTime.of(12, 0)));
-		assertFalse(TiempoProgramacion.cubrirDisponibilidad(List.of(ventana(8, 12)),
-				lunes, LocalTime.of(8, 0), LocalTime.of(12, 1)));
-	}
-
-	@Test
 	void intervalosContiguosNoSeCruzanYRecortaDuracionALimites() {
 		Instant inicio = Instant.parse("2026-10-05T13:00:00Z");
 		Instant fin = inicio.plusSeconds(3600);
@@ -99,7 +70,4 @@ class TiempoProgramacionTests {
 		assertEquals(0, TiempoProgramacion.segundosDentro(inicio, fin, fin, fin.plusSeconds(3600)));
 	}
 
-	private Ventana ventana(int inicio, int fin) {
-		return new Ventana(1, LocalTime.of(inicio, 0), LocalTime.of(fin, 0), lunes, lunes);
-	}
 }

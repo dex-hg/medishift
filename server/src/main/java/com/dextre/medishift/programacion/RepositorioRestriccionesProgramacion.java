@@ -2,13 +2,10 @@ package com.dextre.medishift.programacion;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-
-import com.dextre.medishift.programacion.TiempoProgramacion.Ventana;
 
 /** Acceso a los datos que restringen la asignación de turnos. */
 @Repository
@@ -18,16 +15,6 @@ public class RepositorioRestriccionesProgramacion {
 
 	public RepositorioRestriccionesProgramacion(JdbcTemplate consultas) {
 		this.consultas = consultas;
-	}
-
-	public List<Ventana> disponibilidades(UUID institucion, UUID profesional) {
-		return consultas.query("""
-				SELECT a.* FROM availability a JOIN professional p ON p.id_professional = a.id_professional
-				WHERE p.id_institution = ? AND p.id_professional = ? AND a.status_availability = 'active'
-				""", (fila, numero) -> new Ventana(fila.getInt("weekday_availability"),
-				fila.getTime("start_time_availability").toLocalTime(), fila.getTime("end_time_availability").toLocalTime(),
-				fila.getDate("valid_from_availability").toLocalDate(), fila.getDate("valid_to_availability").toLocalDate()),
-				institucion, profesional);
 	}
 
 	public boolean tieneAusenciaAprobada(UUID profesional, Instant inicio, Instant fin) {

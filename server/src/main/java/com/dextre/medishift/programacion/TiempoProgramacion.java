@@ -11,7 +11,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -21,8 +20,6 @@ import com.dextre.medishift.catalogos.CatalogoException;
 
 /** Fechas locales de la institución; nunca depende de la zona del navegador o servidor. */
 public final class TiempoProgramacion {
-
-	public record Ventana(int diaSemana, LocalTime inicio, LocalTime fin, LocalDate desde, LocalDate hasta) { }
 
 	private TiempoProgramacion() { }
 
@@ -62,22 +59,6 @@ public final class TiempoProgramacion {
 
 	public static LocalDate inicioSemana(LocalDate fecha) {
 		return fecha.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-	}
-
-	public static boolean cubrirDisponibilidad(List<Ventana> ventanas, LocalDate fecha,
-			LocalTime inicio, LocalTime fin) {
-		if (!fin.isAfter(inicio)) { return false; }
-		LocalTime cubierto = inicio;
-		List<Ventana> vigentes = ventanas.stream()
-				.filter(ventana -> ventana.diaSemana() == fecha.getDayOfWeek().getValue()
-						&& !fecha.isBefore(ventana.desde()) && !fecha.isAfter(ventana.hasta()))
-				.sorted(Comparator.comparing(Ventana::inicio)).toList();
-		for (Ventana ventana : vigentes) {
-			if (ventana.inicio().isAfter(cubierto)) { return false; }
-			if (ventana.fin().isAfter(cubierto)) { cubierto = ventana.fin(); }
-			if (!cubierto.isBefore(fin)) { return true; }
-		}
-		return false;
 	}
 
 	public static boolean seSuperponen(Instant inicio, Instant fin, Instant otroInicio, Instant otroFin) {

@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import com.dextre.medishift.catalogos.CatalogoException;
 import com.dextre.medishift.programacion.DatosProgramacion.Horario;
 import com.dextre.medishift.programacion.DatosProgramacion.Turno;
-import com.dextre.medishift.programacion.TiempoProgramacion.Ventana;
 
 @Component
 public class ReglasProgramacion {
@@ -42,7 +41,7 @@ public class ReglasProgramacion {
 			if (fecha.isBefore(horario.inicio()) || fecha.isAfter(horario.fin())) {
 				throw CatalogoException.conflicto("fecha", "El turno debe quedar dentro de la semana del horario.");
 			}
-			validarDisponibilidad(institucion, turno, zona);
+			validarIntervalo(turno, zona);
 			validarBloqueos(turno);
 		}
 		Instant inicio = horario.inicio().atStartOfDay(zona).toInstant();
@@ -57,24 +56,12 @@ public class ReglasProgramacion {
 		}
 	}
 
-	/** Se llama después de modificar disponibilidades, dentro de la misma transacción y bloqueo institucional. */
-	public void validarCambioDisponibilidades(UUID institucion, UUID profesional) {
-		ZoneId zona = horarios.zona(institucion);
-		for (Turno turno : horarios.futuros(institucion, profesional)) {
-			validarDisponibilidad(institucion, turno, zona);
-		}
-	}
-
 	/** Protege turnos futuros después de actualizar catálogos; una excepción revierte toda la edición. */
 	public void validarCatalogosFuturos(UUID institucion) {
 		for (Turno turno : horarios.futuros(institucion, null)) { recursos.validar(institucion, turno); }
 	}
 
-	public List<Ventana> disponibilidades(UUID institucion, UUID profesional) {
-		return restricciones.disponibilidades(institucion, profesional);
-	}
-
-	private void validarDisponibilidad(UUID institucion, Turno turno, ZoneId zona) {
+	private void validarIntervalo(Turno turno, ZoneId zona) {
 		LocalDate fecha = turno.inicio().atZone(zona).toLocalDate();
 		LocalTime inicio = turno.inicio().atZone(zona).toLocalTime();
 		LocalTime fin = turno.fin().atZone(zona).toLocalTime();
@@ -84,10 +71,6 @@ public class ReglasProgramacion {
 		if (!TiempoProgramacion.resolver(fecha, inicio, zona).equals(turno.inicio())
 				|| !TiempoProgramacion.resolver(fecha, fin, zona).equals(turno.fin())) {
 			throw CatalogoException.conflicto("hora", "La zona horaria ya no coincide con los instantes del turno.");
-		}
-		if (!TiempoProgramacion.cubrirDisponibilidad(disponibilidades(institucion, turno.profesional()), fecha, inicio, fin)) {
-			throw CatalogoException.conflicto("disponibilidad", "El turno del " + fecha
-					+ " no está cubierto por la disponibilidad activa del profesional. Conserva una cobertura completa.");
 		}
 	}
 

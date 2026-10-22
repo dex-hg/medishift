@@ -55,7 +55,6 @@ abstract class SoporteProgramacionPostgresql {
 		especialidad = nuevaEspecialidad();
 		profesional = nuevoProfesional(cuenta, especialidad);
 		consultorio = nuevoConsultorio(cuenta, true, especialidad);
-		for (int dia = 1; dia <= 7; dia++) { disponibilidad(profesional, dia, "00:00", "23:59"); }
 	}
 
 	@AfterEach
@@ -135,7 +134,8 @@ abstract class SoporteProgramacionPostgresql {
 		return id;
 	}
 
-	protected UUID disponibilidad(UUID idProfesional, int dia, String inicio, String fin) {
+	/** Solo para comprobar compatibilidad con datos anteriores al retiro del módulo. */
+	protected UUID disponibilidadHistorica(UUID idProfesional, int dia, String inicio, String fin) {
 		UUID id = UUID.randomUUID();
 		consultas.update("INSERT INTO availability VALUES (?, ?, ?, ?::time, ?::time, ?::date, ?::date, 'active', '')",
 				id, idProfesional, dia, inicio, fin, lunes.minusWeeks(1).toString(), lunes.plusWeeks(2).toString());

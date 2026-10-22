@@ -40,34 +40,34 @@ class ReglasProgramacionPostgresqlTests extends SoporteProgramacionPostgresql {
 		cliente.perform(json(post("/api/horarios"), turno(profesional, otraSala, especialidad, lunes, "09:59", "11:00")))
 				.andExpect(status().isConflict());
 		UUID otraPersona = nuevoProfesional(cuenta, especialidad);
-		disponibilidad(otraPersona, 1, "00:00", "23:59");
 		cliente.perform(json(post("/api/horarios"), turno(otraPersona, consultorio, especialidad, lunes, "09:59", "11:00")))
 				.andExpect(status().isConflict());
 		crearTurno(lunes, "10:00", "12:00");
 	}
 
 	@Test
-	void disponibilidadContiguaCubreTodoElTurnoPeroUnHuecoNo() throws Exception {
-		consultas.update("DELETE FROM availability WHERE id_professional = ?", profesional);
-		disponibilidad(profesional, 1, "08:00", "10:00");
-		UUID segunda = disponibilidad(profesional, 1, "10:01", "12:00");
-		cliente.perform(json(post("/api/horarios"), turno(lunes, "08:00", "12:00")))
-				.andExpect(status().isConflict());
-		consultas.update("UPDATE availability SET start_time_availability = '10:00' WHERE id_availability = ?", segunda);
-		crearTurno(lunes, "08:00", "12:00");
+	void permiteCrearEditarYAprobarSinRegistrarDisponibilidades() throws Exception {
+		assertEquals(0, consultas.queryForObject("SELECT count(*) FROM availability WHERE id_professional = ?",
+				Integer.class, profesional));
+		String creado = crearTurno(lunes, "08:00", "10:00");
+		cliente.perform(json(put("/api/horarios/{id}", id(creado)), turno(lunes, "09:00", "12:00"))
+				.header("If-Match", revision(creado))).andExpect(status().isOk());
+		aprobar();
+		assertEquals(1, consultas.queryForObject("SELECT count(*) FROM shift WHERE id_institution = ? AND status_shift = 'approved'",
+				Integer.class, cuenta.institucion()));
 	}
 
 	@Test
-	void rechazaDiaIncorrectoVigenciaVencidaYDisponibilidadInactiva() throws Exception {
-		consultas.update("DELETE FROM availability WHERE id_professional = ?", profesional);
-		UUID ventana = disponibilidad(profesional, 2, "08:00", "12:00");
-		cliente.perform(json(post("/api/horarios"), turno(lunes, "08:00", "12:00"))).andExpect(status().isConflict());
+	void disponibilidadesHistoricasNoCondicionanLasAsignaciones() throws Exception {
+		UUID ventana = disponibilidadHistorica(profesional, 2, "08:00", "12:00");
+		crearTurno(lunes, "08:00", "10:00");
 		consultas.update("UPDATE availability SET weekday_availability = 1, valid_to_availability = ?::date "
 				+ "WHERE id_availability = ?", lunes.minusDays(1).toString(), ventana);
-		cliente.perform(json(post("/api/horarios"), turno(lunes, "08:00", "12:00"))).andExpect(status().isConflict());
+		crearTurno(lunes, "10:00", "12:00");
 		consultas.update("UPDATE availability SET valid_to_availability = ?::date, status_availability = 'inactive' "
 				+ "WHERE id_availability = ?", lunes.toString(), ventana);
-		cliente.perform(json(post("/api/horarios"), turno(lunes, "08:00", "12:00"))).andExpect(status().isConflict());
+		crearTurno(lunes, "12:00", "14:00");
+		aprobar();
 	}
 
 	@Test
@@ -133,7 +133,6 @@ class ReglasProgramacionPostgresqlTests extends SoporteProgramacionPostgresql {
 				horario, especialidad, Timestamp.from(instante(lunes, "08:00")), Timestamp.from(instante(lunes, "12:00")));
 		cliente.perform(json(post("/api/horarios/aprobar"), accion("aprobar", semana()))).andExpect(status().isConflict());
 		UUID otro = nuevoProfesional(cuenta, especialidad);
-		disponibilidad(otro, 1, "08:00", "12:00");
 		UUID sala = nuevoConsultorio(cuenta, true, especialidad);
 		cliente.perform(json(post("/api/horarios"), turno(otro, sala, especialidad, lunes, "08:00", "12:00")))
 				.andExpect(status().isCreated());
