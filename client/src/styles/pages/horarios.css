@@ -284,3 +284,10 @@
   .resumen-programacion { align-items: flex-start; }
 }
 
+.vistas-horario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+

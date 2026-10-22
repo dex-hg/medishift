@@ -23,11 +23,11 @@ function PlanesMensuales() {
   const error = consulta.errorOperacion || consulta.errorPlanes;
 
   return <>
-    <EncabezadoPagina ruta={[{ etiqueta: 'Planes mensuales' }]} titulo="Planes mensuales"
-      descripcion="Prepara un mes completo por departamento o servicio y consulta sus versiones."
+    <EncabezadoPagina ruta={[{ etiqueta: 'Horarios' }]} titulo="Horarios mensuales"
+      descripcion="Crea y consulta los meses de cada área o servicio."
       acciones={acceso && <button className="boton boton--secundario" type="button"
         disabled={consulta.guardando} onClick={() => setMostrarUnidad((valor) => !valor)}>
-        <Plus size={18} aria-hidden="true" /> {mostrarUnidad ? 'Cerrar formulario' : 'Nueva unidad'}
+        <Plus size={18} aria-hidden="true" /> {mostrarUnidad ? 'Cerrar formulario' : 'Nueva área o servicio'}
       </button>} />
     {consulta.restringido ? <section className="panel" aria-label="Acceso restringido">
       <div className="sin-resultados"><ShieldAlert size={32} aria-hidden="true" />
@@ -42,7 +42,7 @@ function PlanesMensuales() {
             error={consulta.errorOperacion} errores={consulta.errores}>
             <div className="seccion-formulario">
               <div className="seccion-formulario__titulo"><FolderPlus size={20} aria-hidden="true" /><div>
-                <h2>Nueva unidad de planificación</h2><p>Registra el departamento o servicio responsable del plan.</p>
+                <h2>Nueva área o servicio</h2><p>Registra el departamento o servicio cuyo horario vas a organizar.</p>
               </div></div>
               <div className="rejilla-formulario">
                 <CampoFormulario etiqueta="Código" requerido error={consulta.errores.codigo}>
@@ -64,10 +64,10 @@ function PlanesMensuales() {
           <div className="seccion-formulario">
             <p className="nota-programacion">Zona horaria institucional: {consulta.zonaHoraria}</p>
             <div className="rejilla-formulario">
-              <CampoFormulario etiqueta="Unidad de planificación" error={consulta.errores.idUnidad || consulta.errores.unidad}>
+              <CampoFormulario etiqueta="Área o servicio" error={consulta.errores.idUnidad || consulta.errores.unidad}>
                 <select value={consulta.idUnidad} disabled={consulta.guardando || !consulta.unidades.length}
                   onChange={(evento) => consulta.cambiarUnidad(evento.target.value)}>
-                  {!consulta.unidades.length && <option value="">Sin unidades registradas</option>}
+                  {!consulta.unidades.length && <option value="">Sin áreas registradas</option>}
                   {consulta.unidades.map((unidad) => <option key={unidad.id} value={unidad.id}>
                     {unidad.codigo} · {unidad.nombre}{unidad.estado === 'Inactivo' ? ' (Inactivo)' : ''}
                   </option>)}
@@ -91,7 +91,7 @@ function PlanesMensuales() {
           <AvisoCatalogo cargando={consulta.consultando} error={error} mensaje={consulta.mensaje}
             reintentar={consulta.recargar} />
           {consulta.unidad?.estado === 'Inactivo' && <p className="nota-programacion">
-            Esta unidad está inactiva. Puedes consultar su historial.</p>}
+            Esta área está inactiva. Puedes consultar su historial.</p>}
           {consulta.hayBorrador && <p className="nota-programacion">
             Este mes ya tiene una versión operativa. Consulta sus datos en la tabla.</p>}
           {!consulta.consultando && !consulta.errorPlanes && periodoValido(consulta.periodo) && (consulta.planes.length ?
@@ -103,8 +103,8 @@ function PlanesMensuales() {
                 <td><Estado valor={plan.estado} /></td><td>{plan.zonaHoraria}</td>
               </tr>)}</tbody>
             </table></div> : <div className="sin-resultados"><CalendarDays size={32} aria-hidden="true" />
-              <strong>{consulta.unidades.length ? 'No hay versiones para este mes' : 'Aún no hay unidades registradas'}</strong>
-              <p>{consulta.unidades.length ? 'Selecciona una unidad activa y crea el borrador mensual.'
+              <strong>{consulta.unidades.length ? 'No hay versiones para este mes' : 'Aún no hay áreas registradas'}</strong>
+              <p>{consulta.unidades.length ? 'Selecciona un área activa y crea el borrador mensual.'
                 : 'Registra un departamento o servicio para comenzar.'}</p>
             </div>)}
         </section>

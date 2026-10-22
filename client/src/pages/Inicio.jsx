@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, CalendarClock, Plus, UsersRound } from 'lucide-react';
 import EncabezadoPagina from '../components/EncabezadoPagina';
 import { useResumenInicio } from '../hooks/useResumenInicio';
-import { fechaActual, lunesDeSemana, mostrarFecha } from '../utils/validacionesProgramacion';
+import { mostrarFecha } from '../utils/validacionesProgramacion';
 
 function Inicio() {
   const { resumen, reintentar } = useResumenInicio();
@@ -14,7 +14,7 @@ function Inicio() {
     { titulo: 'Consultorios', descripcion: 'Ambientes registrados para la atención.',
       cantidad: consultorios.length, destino: '/consultorios', icono: Building2, color: 'azul' },
     { titulo: 'Horarios', descripcion: `Semana actual: ${semana?.estado || 'cargando'}.`,
-      cantidad: semana?.turnos.length || 0, destino: `/horarios?fechaInicio=${semana?.fechaInicio || lunesDeSemana(fechaActual())}`, icono: CalendarClock, color: 'azul' },
+      cantidad: semana?.turnos.length || 0, destino: '/horarios', icono: CalendarClock, color: 'azul' },
   ];
 
   return (
