@@ -184,7 +184,7 @@ function Registro() {
                 <dt>Código</dt><dd>{resultado.codigoInstitucion}</dd>
                 <dt>Correo de la cuenta</dt><dd>{resultado.correo}</dd>
               </dl>
-              <p>Tu cuenta está vinculada al código de esta institución.</p>
+              <p>Tu cuenta es la administradora de esta institución. Inicia sesión para organizar sus horarios.</p>
               <div className="registro-formulario__acciones">
                 <Link className="boton boton--primario" to="/iniciar-sesion"
                   state={{ codigoInstitucion: resultado.codigoInstitucion, correo: resultado.correo }}>
@@ -215,7 +215,7 @@ function Registro() {
                 <h2 ref={tituloFormulario} tabIndex={-1} id={`${identificador}-formulario`}>
                   {paso === 1 ? 'Datos de la institución' : 'Datos de la primera cuenta'}
                 </h2>
-                <p>{paso === 1 ? 'Identifica el centro que usará MediShift.' : 'Esta cuenta pertenecerá a tu institución.'}</p>
+                <p>{paso === 1 ? 'Identifica el centro que usará MediShift.' : 'Esta primera cuenta administrará la institución y sus horarios.'}</p>
               </div>
             </div>
 

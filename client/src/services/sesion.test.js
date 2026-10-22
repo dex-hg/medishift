@@ -10,7 +10,7 @@ const cuenta = Object.freeze({
   idCuenta: '0575aa71-daf6-425a-aec1-9d93a0df068d',
   idInstitucion: '532b3f90-eb0e-4f45-84cf-7cf3dc419ef7',
   codigoInstitucion: 'CLINICA-SUR', nombreInstitucion: 'Clínica Sur',
-  correo: 'persona@institucion.pe',
+  correo: 'persona@institucion.pe', esAdministrador: true,
 });
 const respuesta = (estado, contenido) => ({ status: estado, json: async () => contenido });
 
@@ -51,7 +51,8 @@ test('rechaza éxito de login con estado diferente de 200', async () => {
 });
 
 test('rechaza cuerpos de éxito incompletos o inválidos', async () => {
-  for (const contenido of [null, [], {}, { ...cuenta, idCuenta: 5 }, { ...cuenta, correo: ' ' }]) {
+  for (const contenido of [null, [], {}, { ...cuenta, idCuenta: 5 }, { ...cuenta, correo: ' ' },
+    { ...cuenta, esAdministrador: undefined }, { ...cuenta, esAdministrador: 'true' }]) {
     await assert.rejects(iniciarSesion(datosValidos, {
       ejecutarSolicitud: async () => respuesta(200, contenido),
     }), (error) => error.estado === 200 && error.tipo === 'respuesta');
@@ -59,6 +60,14 @@ test('rechaza cuerpos de éxito incompletos o inválidos', async () => {
   await assert.rejects(iniciarSesion(datosValidos, {
     ejecutarSolicitud: async () => ({ status: 200, json: async () => { throw new SyntaxError('HTML'); } }),
   }), (error) => error.tipo === 'respuesta');
+});
+
+test('conserva la ausencia de permisos sin inferirlos desde los datos de la cuenta', async () => {
+  const actual = await obtenerSesion({ ejecutarSolicitud: async () => respuesta(200, {
+    ...cuenta, esAdministrador: false, rol: 'administrador',
+  }) });
+  assert.equal(actual.esAdministrador, false);
+  assert.equal(Object.hasOwn(actual, 'rol'), false);
 });
 
 test('expone errores 400 permitidos por campo sin datos inesperados', async () => {

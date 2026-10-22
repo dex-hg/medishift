@@ -33,10 +33,11 @@ function extraerErrores(contenido) {
 function extraerCuenta(contenido) {
   if (!esObjeto(contenido) || !CAMPOS_CUENTA.every(
     (campo) => typeof contenido[campo] === 'string' && contenido[campo].trim(),
-  )) {
+  ) || typeof contenido.esAdministrador !== 'boolean') {
     throw new ErrorSesion('El servicio devolvió una respuesta inválida.', { tipo: 'respuesta' });
   }
-  return Object.fromEntries(CAMPOS_CUENTA.map((campo) => [campo, contenido[campo]]));
+  return { ...Object.fromEntries(CAMPOS_CUENTA.map((campo) => [campo, contenido[campo]])),
+    esAdministrador: contenido.esAdministrador };
 }
 
 async function solicitarSesion(metodo, { datos, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000 } = {}) {
