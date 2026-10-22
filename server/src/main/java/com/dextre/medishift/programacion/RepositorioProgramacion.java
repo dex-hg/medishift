@@ -116,6 +116,16 @@ public class RepositorioProgramacion {
 				""" + excluir, (fila, numero) -> leerTurno(fila), argumentos);
 	}
 
+	/** La API semanal heredada también respeta asignaciones mensuales todavía en borrador. */
+	public List<Turno> mensualesSinAprobarEn(UUID institucion, Instant inicio, Instant fin) {
+		return consultas.query(CONSULTA_TURNOS + """
+				 AND t.status_shift IN ('draft','pending') AND t.end_at_shift > ? AND t.start_at_shift < ?
+				 AND EXISTS (SELECT 1 FROM schedule h WHERE h.id_institution = t.id_institution
+				 AND h.id_schedule = t.id_schedule AND to_jsonb(h)->>'period_type_schedule' = 'monthly'
+				 AND h.status_schedule IN ('draft','pending','approved'))
+				""", (fila, numero) -> leerTurno(fila), institucion, Timestamp.from(inicio), Timestamp.from(fin));
+	}
+
 	public void insertarTurno(UUID institucion, Turno turno) {
 		int insertados = consultas.update("""
 				INSERT INTO shift (id_shift, id_institution, id_schedule, id_professional, id_room,

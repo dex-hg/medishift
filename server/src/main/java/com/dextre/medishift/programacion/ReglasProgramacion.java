@@ -47,7 +47,8 @@ public class ReglasProgramacion {
 		Instant inicio = horario.inicio().atStartOfDay(zona).toInstant();
 		Instant fin = horario.fin().plusDays(1).atStartOfDay(zona).toInstant();
 		UUID reemplazo = horarios.aprobado(institucion, horario.inicio()).map(Horario::id).orElse(null);
-		List<Turno> aprobados = horarios.aprobadosEn(institucion, inicio, fin, reemplazo);
+		List<Turno> aprobados = new ArrayList<>(horarios.aprobadosEn(institucion, inicio, fin, reemplazo));
+		aprobados.addAll(horarios.mensualesSinAprobarEn(institucion, inicio, fin));
 		validarSolapamientos(turnos, aprobados);
 		carga.validarHoras(turnos, aprobados, horario.inicio(), zona);
 		if (aprobar) {

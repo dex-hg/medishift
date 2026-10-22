@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.dextre.medishift.sesion.AccesoNoAutorizadoException;
 
 @RestControllerAdvice(assignableTypes = { ControladorCatalogos.class,
-		com.dextre.medishift.programacion.mensual.ControladorPlanesMensuales.class })
+		com.dextre.medishift.programacion.mensual.ControladorPlanesMensuales.class,
+		com.dextre.medishift.programacion.mensual.ControladorPlanificador.class })
 public class ManejadorErroresCatalogos {
 
 	public record RespuestaError(String mensaje, Map<String, String> errores) {
