@@ -67,59 +67,6 @@
       "estado": "Activo"
     }
   ],
-  "disponibilidades": [
-    {
-      "profesional": "P01",
-      "diasSemana": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7
-      ],
-      "horaInicio": "08:00",
-      "horaFin": "14:00",
-      "fechaInicio": "2026-10-26",
-      "fechaFin": "2026-12-06",
-      "estado": "Activo"
-    },
-    {
-      "profesional": "P02",
-      "diasSemana": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7
-      ],
-      "horaInicio": "08:00",
-      "horaFin": "14:00",
-      "fechaInicio": "2026-10-26",
-      "fechaFin": "2026-12-06",
-      "estado": "Activo"
-    },
-    {
-      "profesional": "P03",
-      "diasSemana": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7
-      ],
-      "horaInicio": "08:00",
-      "horaFin": "14:00",
-      "fechaInicio": "2026-10-26",
-      "fechaFin": "2026-12-06",
-      "estado": "Activo"
-    }
-  ],
   "ausencias": [
     {
       "profesional": "P01",

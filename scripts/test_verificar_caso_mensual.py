@@ -72,17 +72,8 @@ class PruebasCasoMensual(unittest.TestCase):
                 self.caso["zonaHoraria"] = valor
                 self.rechazar("zonaHoraria: el caso diurno solo admite America/Lima")
 
-    def test_hueco_un_minuto_en_disponibilidad(self):
-        disponibilidad = self.caso["disponibilidades"][0]
-        disponibilidad["horaFin"] = "10:00"
-        segunda = dict(disponibilidad, horaInicio="10:01", horaFin="14:00")
-        self.caso["disponibilidades"].append(segunda)
-        self.rechazar("disponibilidad no continua")
-
-    def test_disponibilidad_contigua_cubre_franja(self):
-        disponibilidad = self.caso["disponibilidades"][0]
-        disponibilidad["horaFin"] = "10:00"
-        self.caso["disponibilidades"].append(dict(disponibilidad, horaInicio="10:00", horaFin="14:00"))
+    def test_asignaciones_sin_disponibilidad_previa(self):
+        self.assertNotIn("disponibilidades", self.caso)
         self.assertEqual(verificar_caso(self.caso), self.caso["resultadosEsperados"])
 
     def test_ausencia_profesional_nueve_noviembre(self):

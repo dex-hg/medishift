@@ -137,18 +137,6 @@ def verificar_caso(datos):
     exigir(not dias_demanda.intersection(sin_demanda), "calendario: demanda y sin demanda se superponen")
     exigir(dias_demanda.union(sin_demanda) == calendario,
            "calendario: demandas y días sin demanda deben cubrir exactamente el mes completo")
-    disponibilidades = []
-    for elemento in lista(datos, "disponibilidades"):
-        objeto(elemento, "disponibilidad")
-        referencia(elemento, "profesional", profesionales, "disponibilidad")
-        desde = fecha(elemento.get("fechaInicio"), "disponibilidad.fechaInicio")
-        hasta = fecha(elemento.get("fechaFin"), "disponibilidad.fechaFin")
-        exigir(desde <= hasta, "disponibilidad: rango de fechas invertido")
-        dias = lista(elemento, "diasSemana")
-        exigir(bool(dias) and all(type(dia) is int and 1 <= dia <= 7 for dia in dias),
-               "disponibilidad: días ISO entre 1 y 7 requeridos")
-        intervalo(dict(elemento, fecha=desde.isoformat()), "disponibilidad")
-        disponibilidades.append((elemento, desde, hasta))
     restricciones = []
     for campo, recurso, indice, estado in (("ausencias", "profesional", profesionales, "Aprobado"),
                                            ("bloqueos", "consultorio", consultorios, "Activo")):
@@ -187,15 +175,6 @@ def verificar_caso(datos):
         exigir(dia in calendario if codigo in mensuales else
                inicio_semanas <= dia <= fin_semanas and dia not in calendario,
                f"{codigo}: fecha fuera del mes o de sus semanas completas vecinas")
-        tramos = sorted(intervalo(dict(elemento, fecha=dia.isoformat()), "disponibilidad")
-                        for elemento, desde, hasta in disponibilidades
-                        if elemento.get("estado") == "Activo" and elemento["profesional"] == profesional
-                        and desde <= dia <= hasta and dia.isoweekday() in elemento["diasSemana"])
-        cubierto = inicio
-        for desde, hasta in tramos:
-            if desde <= cubierto < hasta:
-                cubierto = max(cubierto, hasta)
-        exigir(cubierto >= fin, f"{codigo}: disponibilidad no continua para toda la franja")
         for campo, recurso, restriccion, (desde, hasta), estado in restricciones:
             exigir(not (restriccion.get("estado") == estado and turno.get(recurso) == restriccion[recurso]
                         and inicio < hasta and desde < fin), f"{codigo}: conflicto con {campo}")
