@@ -64,7 +64,7 @@ function FormularioTurno({ modo }) {
   return <>
     <EncabezadoPagina ruta={[{ etiqueta: 'Horarios', destino: semanaDestino }, { etiqueta: modo === 'editar' ? 'Editar' : 'Nuevo' }]}
       titulo={modo === 'editar' ? 'Editar turno' : 'Nuevo turno'}
-      descripcion="Asigna un turno dentro de la disponibilidad del profesional. Máximo 6 horas diarias y 36 semanales; no se admiten turnos que crucen medianoche." />
+      descripcion="Selecciona el médico, el consultorio y las horas del turno. Máximo actual: 6 horas diarias y 36 semanales; los turnos deben terminar el mismo día." />
     {formulario.cargando || formulario.errorCarga ? <section className="panel"><AvisoCatalogo cargando={formulario.cargando}
       error={formulario.errorCarga} reintentar={formulario.recargar} /><div className="formulario__acciones">{volver}</div></section>
       : inmutable ? <section className="panel"><div className="seccion-formulario"><h2>Turno {formulario.registro.estado.toLocaleLowerCase('es')}</h2>
@@ -100,8 +100,7 @@ function FormularioTurno({ modo }) {
               <textarea {...campo('observacion')} rows={3} maxLength={180} />
             </CampoFormulario>
           </div></section>
-          <p className="nota-programacion">Programa franjas futuras. Los turnos pasados o con asistencia conservan su historial. El servidor comprueba la disponibilidad vigente, los cruces y las horas acumuladas antes de guardar.
-            {' '}<Link to="/disponibilidades">Revisar disponibilidades</Link>.</p>
+          <p className="nota-programacion">Asigna los turnos directamente. El sistema comprueba los cruces de médico y consultorio, las ausencias registradas y las horas acumuladas antes de guardar.</p>
           <AvisoCatalogo mensaje={formulario.avisoRecarga} />
           {formulario.puedeRecargar && <div className="barra-recarga"><p>{formulario.conflicto
             ? 'Recarga la revisión vigente sin perder tus entradas, o revisa el estado de la semana.'

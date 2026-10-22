@@ -1,6 +1,6 @@
 import {
-  fechaValida, horaValida, lunesDeSemana, normalizarDisponibilidad, normalizarTurno,
-  REVISION, sumarDias, UUID, validarDisponibilidad, validarTurno,
+  fechaValida, horaValida, lunesDeSemana, normalizarTurno,
+  REVISION, sumarDias, UUID, validarTurno,
 } from '../utils/validacionesProgramacion.js';
 
 export class ErrorProgramacion extends Error {
@@ -13,9 +13,9 @@ export class ErrorProgramacion extends Error {
   }
 }
 
-const CAMPOS_ERROR = ['idProfesional', 'diaSemana', 'horaInicio', 'horaFin', 'fechaInicio', 'fechaFin', 'estado',
+const CAMPOS_ERROR = ['idProfesional', 'horaInicio', 'horaFin', 'fechaInicio', 'fechaFin', 'estado',
   'observacion', 'idConsultorio', 'idEspecialidad', 'fecha', 'revision', 'idHorario',
-  'disponibilidad', 'cobertura', 'hora', 'zonaHoraria', 'turnos'];
+  'cobertura', 'hora', 'zonaHoraria', 'turnos'];
 const esObjeto = (valor) => valor !== null && typeof valor === 'object' && !Array.isArray(valor);
 const esId = (valor) => typeof valor === 'string' && UUID.test(valor);
 const esRevision = (valor) => typeof valor === 'string' && REVISION.test(valor);
@@ -28,16 +28,6 @@ const zonaValida = (valor) => {
 
 function respuestaInvalida() {
   throw new ErrorProgramacion('El servicio devolvió una respuesta de programación inválida.', { tipo: 'respuesta' });
-}
-
-function extraerDisponibilidad(valor) {
-  const campos = ['id', 'idProfesional', 'profesional', 'diaSemana', 'horaInicio', 'horaFin', 'fechaInicio', 'fechaFin', 'estado', 'observacion', 'revision'];
-  if (!esObjeto(valor) || !esId(valor.id) || !esId(valor.idProfesional) || !texto(valor.profesional)
-    || !Number.isInteger(valor.diaSemana) || valor.diaSemana < 1 || valor.diaSemana > 7
-    || !horaValida(valor.horaInicio) || !horaValida(valor.horaFin) || valor.horaFin <= valor.horaInicio
-    || !fechaValida(valor.fechaInicio) || !fechaValida(valor.fechaFin) || valor.fechaFin < valor.fechaInicio
-    || !['Activo', 'Inactivo'].includes(valor.estado) || !texto(valor.observacion, true) || !esRevision(valor.revision)) respuestaInvalida();
-  return seleccionar(valor, campos);
 }
 
 function extraerTurno(valor) {
@@ -149,38 +139,30 @@ async function solicitar(ruta, metodo, convertir, {
   }
 }
 
-function rutaRegistro(recurso, id) {
+function rutaTurno(id) {
   if (!esId(id)) throw new ErrorProgramacion('El identificador no es válido.', { estado: 404, tipo: 'validacion' });
-  return `/api/${recurso}/${id}`;
+  return `/api/horarios/${id}`;
 }
 
-async function guardar(recurso, metodo, datos, opciones = {}) {
-  const disponibilidad = recurso === 'disponibilidades';
-  const errores = disponibilidad ? validarDisponibilidad(datos) : validarTurno(datos);
+async function guardarTurno(metodo, datos, opciones = {}) {
+  const errores = validarTurno(datos);
   if (Object.keys(errores).length) throw new ErrorProgramacion('Revisa los campos del formulario.', { errores, tipo: 'validacion' });
   if (metodo === 'PUT' && !esRevision(opciones.revision)) {
     throw new ErrorProgramacion('Recarga el registro antes de modificarlo.', { estado: 409, tipo: 'validacion' });
   }
-  return solicitar(metodo === 'PUT' ? rutaRegistro(recurso, opciones.id) : `/api/${recurso}`, metodo,
-    disponibilidad ? extraerDisponibilidad : extraerTurno,
-    { ...opciones, datos: disponibilidad ? normalizarDisponibilidad(datos) : normalizarTurno(datos) });
+  return solicitar(metodo === 'PUT' ? rutaTurno(opciones.id) : '/api/horarios', metodo,
+    extraerTurno, { ...opciones, datos: normalizarTurno(datos) });
 }
 
-function eliminar(recurso, id, opciones = {}) {
+export function eliminarTurno(id, opciones = {}) {
   if (!esRevision(opciones.revision)) throw new ErrorProgramacion('Recarga el registro antes de eliminarlo.', { estado: 409 });
-  return solicitar(rutaRegistro(recurso, id), 'DELETE', undefined, opciones);
+  return solicitar(rutaTurno(id), 'DELETE', undefined, opciones);
 }
 
-export const listarDisponibilidades = (opciones) => solicitar('/api/disponibilidades', 'GET', (datos) => extraerLista(datos, extraerDisponibilidad), opciones);
-export const obtenerDisponibilidad = (id, opciones) => solicitar(rutaRegistro('disponibilidades', id), 'GET', extraerDisponibilidad, opciones);
-export const crearDisponibilidad = (datos, opciones) => guardar('disponibilidades', 'POST', datos, opciones);
-export const actualizarDisponibilidad = (id, datos, opciones) => guardar('disponibilidades', 'PUT', datos, { ...opciones, id });
-export const eliminarDisponibilidad = (id, opciones) => eliminar('disponibilidades', id, opciones);
 export const listarRecursosHorario = (opciones) => solicitar('/api/horarios/recursos', 'GET', extraerRecursos, opciones);
-export const obtenerTurno = (id, opciones) => solicitar(rutaRegistro('horarios', id), 'GET', extraerTurno, opciones);
-export const crearTurno = (datos, opciones) => guardar('horarios', 'POST', datos, opciones);
-export const actualizarTurno = (id, datos, opciones) => guardar('horarios', 'PUT', datos, { ...opciones, id });
-export const eliminarTurno = (id, opciones) => eliminar('horarios', id, opciones);
+export const obtenerTurno = (id, opciones) => solicitar(rutaTurno(id), 'GET', extraerTurno, opciones);
+export const crearTurno = (datos, opciones) => guardarTurno('POST', datos, opciones);
+export const actualizarTurno = (id, datos, opciones) => guardarTurno('PUT', datos, { ...opciones, id });
 export const listarSemanaActual = (opciones) => solicitar('/api/horarios', 'GET', extraerSemana, opciones);
 export const listarSemana = (fechaInicio, opciones) => {
   if (!fechaValida(fechaInicio) || lunesDeSemana(fechaInicio) !== fechaInicio) {

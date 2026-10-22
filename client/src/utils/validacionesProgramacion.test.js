@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  fechaValida, horaValida, lunesDeSemana, normalizarDisponibilidad, normalizarTurno,
-  sumarDias, validarDisponibilidad, validarTurno,
+  fechaValida, horaValida, lunesDeSemana, normalizarTurno,
+  sumarDias, validarTurno,
 } from './validacionesProgramacion.js';
 
 const PROFESIONAL = '10000000-0000-0000-0000-000000000001';
@@ -11,8 +11,6 @@ const ESPECIALIDAD = '10000000-0000-0000-0000-000000000003';
 const SEGUNDA = '10000000-0000-0000-0000-000000000004';
 const turnoValido = () => ({ idProfesional: PROFESIONAL, idConsultorio: CONSULTORIO, idEspecialidad: ESPECIALIDAD,
   fecha: '2026-10-05', horaInicio: '08:00', horaFin: '14:00', observacion: '' });
-const disponibilidadValida = () => ({ idProfesional: PROFESIONAL, diaSemana: '1', fechaInicio: '2026-10-05',
-  fechaFin: '2026-10-11', horaInicio: '06:00', horaFin: '20:00', estado: 'Activo', observacion: '' });
 const recursosValidos = () => ({ profesionales: [{ id: PROFESIONAL, estado: 'Activo', especialidades: [{ id: ESPECIALIDAD }, { id: SEGUNDA }] }],
   consultorios: [{ id: CONSULTORIO, estado: 'Activo', usoGeneral: true, especialidades: [] }] });
 
@@ -25,25 +23,10 @@ test('calendario ISO valida bisiestos y normaliza domingo a lunes sin depender d
   for (const invalida of ['24:00', '8:00', '08:60', '08:00:00']) assert.equal(horaValida(invalida), false);
 });
 
-test('la disponibilidad admite ventanas superiores a seis horas y convierte weekday del formulario', () => {
-  assert.deepEqual(validarDisponibilidad(disponibilidadValida()), {});
-  assert.equal(normalizarDisponibilidad(disponibilidadValida()).diaSemana, 1);
-  assert.ok(validarDisponibilidad({ ...disponibilidadValida(), diaSemana: true }).diaSemana);
-  assert.ok(validarDisponibilidad({ ...disponibilidadValida(), diaSemana: '8' }).diaSemana);
-});
-
-test('la vigencia debe contener al menos una ocurrencia del día seleccionado', () => {
-  const datos = { ...disponibilidadValida(), fechaInicio: '2026-10-06', fechaFin: '2026-10-07' };
-  assert.ok(validarDisponibilidad(datos).diaSemana);
-  assert.deepEqual(validarDisponibilidad({ ...datos, diaSemana: '2' }), {});
-  assert.ok(validarDisponibilidad({ ...datos, fechaFin: '2026-10-05' }).fechaFin);
-});
-
-test('las franjas y turnos no cruzan medianoche y el turno admite exactamente seis horas', () => {
+test('el turno no cruza medianoche y admite exactamente seis horas', () => {
   assert.deepEqual(validarTurno(turnoValido()), {});
   assert.ok(validarTurno({ ...turnoValido(), horaFin: '14:01' }).horaFin);
   assert.ok(validarTurno({ ...turnoValido(), horaInicio: '22:00', horaFin: '02:00' }).horaFin);
-  assert.ok(validarDisponibilidad({ ...disponibilidadValida(), horaFin: '06:00' }).horaFin);
 });
 
 test('jornada diaria acumula turnos y excluye el turno que se está editando', () => {
@@ -82,13 +65,12 @@ test('especialidades secundarias y consultorio general son compatibles', () => {
 test('DTO omite identificadores de tenant, revisión y etiquetas de respuesta', () => {
   const bruto = { ...turnoValido(), idInstitucion: 'ajeno', id: 'registro', revision: 'revision', profesional: 'Nombre' };
   assert.deepEqual(normalizarTurno(bruto), turnoValido());
-  assert.ok(!Object.hasOwn(normalizarDisponibilidad({ ...disponibilidadValida(), revision: 'r' }), 'revision'));
 });
 
 test('observaciones respetan límites, Unicode y los tipos de texto', () => {
   assert.deepEqual(validarTurno({ ...turnoValido(), observacion: '😀'.repeat(180) }), {});
   assert.ok(validarTurno({ ...turnoValido(), observacion: '😀'.repeat(181) }).observacion);
   assert.ok(validarTurno({ ...turnoValido(), observacion: '\ud800' }).observacion);
-  assert.ok(validarDisponibilidad({ ...disponibilidadValida(), observacion: '\0' }).observacion);
-  assert.ok(validarDisponibilidad({ ...disponibilidadValida(), horaInicio: 800 }).horaInicio);
+  assert.ok(validarTurno({ ...turnoValido(), observacion: '\0' }).observacion);
+  assert.ok(validarTurno({ ...turnoValido(), horaInicio: 800 }).horaInicio);
 });

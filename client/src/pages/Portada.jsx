@@ -18,7 +18,7 @@ const beneficios = [
   {
     icono: Building2,
     titulo: 'Recursos centralizados',
-    descripcion: 'Mantén profesionales, ambientes y disponibilidades en un mismo espacio.',
+    descripcion: 'Mantén médicos, especialidades y consultorios en un mismo espacio.',
   },
   {
     icono: Clock3,
@@ -29,7 +29,7 @@ const beneficios = [
 
 const pasos = [
   'Registra profesionales y consultorios.',
-  'Define disponibilidades por día y franja.',
+  'Asigna a cada médico su consultorio, fecha y horas.',
   'Construye y revisa el horario semanal.',
 ];
 
@@ -71,7 +71,7 @@ function Portada() {
             </span>
             <h1>Organiza turnos médicos con una visión clara de cada recurso</h1>
             <p>
-              Centraliza profesionales, consultorios y disponibilidades para preparar horarios
+              Organiza a tus médicos y consultorios para preparar horarios
               semanales ordenados y fáciles de consultar.
             </p>
             <div className="portada-hero__acciones">
@@ -86,7 +86,7 @@ function Portada() {
             <div className="portada-hero__ventajas" aria-label="Ventajas principales">
               <span><CheckCircle2 size={15} /> Programación semanal</span>
               <span><CheckCircle2 size={15} /> Control de consultorios</span>
-              <span><CheckCircle2 size={15} /> Disponibilidad médica</span>
+              <span><CheckCircle2 size={15} /> Asignación directa de turnos</span>
             </div>
           </div>
 

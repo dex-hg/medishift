@@ -11,8 +11,6 @@ import Profesionales from './pages/professionals/Profesionales';
 import FormularioProfesional from './pages/professionals/FormularioProfesional';
 import Consultorios from './pages/consulting-rooms/Consultorios';
 import FormularioConsultorio from './pages/consulting-rooms/FormularioConsultorio';
-import Disponibilidades from './pages/availabilities/Disponibilidades';
-import FormularioDisponibilidad from './pages/availabilities/FormularioDisponibilidad';
 import NoEncontrado from './pages/NoEncontrado';
 
 function Aplicacion() {
@@ -33,15 +31,6 @@ function Aplicacion() {
         <Route path="consultorios" element={<Consultorios />} />
         <Route path="consultorios/nuevo" element={<FormularioConsultorio modo="crear" />} />
         <Route path="consultorios/:id/editar" element={<FormularioConsultorio modo="editar" />} />
-        <Route path="disponibilidades" element={<Disponibilidades />} />
-        <Route
-          path="disponibilidades/nueva"
-          element={<FormularioDisponibilidad modo="crear" />}
-        />
-        <Route
-          path="disponibilidades/:id/editar"
-          element={<FormularioDisponibilidad modo="editar" />}
-        />
       </Route>
       <Route path="404" element={<NoEncontrado />} />
       <Route path="*" element={<Navigate to="/404" replace />} />

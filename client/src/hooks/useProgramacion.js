@@ -159,9 +159,8 @@ export function useFormularioProgramacion({ modo, id, iniciales, obtener, recurs
       const opciones = { senal: controlador.signal, revision: registro?.revision };
       const respuesta = modo === 'editar' ? await actualizar(id, datos, opciones) : await crear(datos, opciones);
       const resultado = modo === 'editar' ? 'actualizado' : 'registrado';
-      const participio = etiqueta === 'Disponibilidad' ? `${resultado.slice(0, -1)}a` : resultado;
       if (vigente.current) navegar(typeof destino === 'function' ? destino(respuesta) : destino, { replace: true,
-        state: { mensaje: `${etiqueta} ${participio} correctamente.` } });
+        state: { mensaje: `${etiqueta} ${resultado} correctamente.` } });
     } catch (fallo) {
       if (vigente.current && !manejarSesion(fallo)) {
         setError(fallo.message);

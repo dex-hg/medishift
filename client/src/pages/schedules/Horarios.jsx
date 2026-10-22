@@ -91,7 +91,7 @@ function Horarios() {
               </article>)}
             </div>)}
           </div>)}
-        </div></div> : <div className="sin-resultados"><CalendarClock size={30} /><strong>No hay turnos en esta semana</strong><p>Registra disponibilidades y crea el primer turno para comenzar el borrador.</p></div>}
+        </div></div> : <div className="sin-resultados"><CalendarClock size={30} /><strong>No hay turnos en esta semana</strong><p>Selecciona un médico, un consultorio y las horas para crear el primer turno.</p></div>}
       </>}
       {consulta.conflicto && <p className="nota-programacion">La versión vigente cambió o hay una restricción de programación. Recarga para revisar el estado actual antes de continuar.</p>}
     </section>

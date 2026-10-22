@@ -4,7 +4,6 @@ export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 export const REVISION = /^[0-9a-f]{64}$/i;
 const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const FORMATO_HORA = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
-const CAMPOS_DISPONIBILIDAD = ['idProfesional', 'diaSemana', 'horaInicio', 'horaFin', 'fechaInicio', 'fechaFin', 'estado', 'observacion'];
 const CAMPOS_TURNO = ['idProfesional', 'idConsultorio', 'idEspecialidad', 'fecha', 'horaInicio', 'horaFin', 'observacion'];
 
 export function fechaValida(valor) {
@@ -45,30 +44,21 @@ export function mostrarFecha(fecha) {
     .format(new Date(`${fecha}T12:00:00Z`));
 }
 
-export function normalizarDisponibilidad(datos = {}) {
-  return Object.fromEntries(CAMPOS_DISPONIBILIDAD.map((campo) => [campo,
-    campo === 'diaSemana' ? Number(datos[campo]) : typeof datos[campo] === 'string' ? datos[campo].trim() : datos[campo] ?? '',
-  ]));
-}
-
 export function normalizarTurno(datos = {}) {
   return Object.fromEntries(CAMPOS_TURNO.map((campo) => [campo,
     typeof datos[campo] === 'string' ? datos[campo].trim() : datos[campo] ?? '',
   ]));
 }
 
-function validarBase(datos, campos, longitudObservacion) {
+function validarCamposTurno(datos) {
   const errores = {};
-  for (const campo of campos) {
-    if (campo === 'diaSemana') continue;
+  for (const campo of CAMPOS_TURNO) {
     if (typeof datos?.[campo] !== 'string') errores[campo] = 'Este campo debe contener texto.';
   }
-  for (const campo of campos.filter((nombre) => nombre.startsWith('id'))) {
+  for (const campo of ['idProfesional', 'idConsultorio', 'idEspecialidad']) {
     if (!UUID.test(datos?.[campo])) errores[campo] = 'Selecciona un registro válido.';
   }
-  for (const campo of campos.filter((nombre) => nombre.startsWith('fecha'))) {
-    if (!fechaValida(datos?.[campo])) errores[campo] = 'Ingresa una fecha válida.';
-  }
+  if (!fechaValida(datos?.fecha)) errores.fecha = 'Ingresa una fecha válida.';
   for (const campo of ['horaInicio', 'horaFin']) {
     if (!horaValida(datos?.[campo])) errores[campo] = 'Ingresa la hora con formato HH:mm.';
   }
@@ -77,7 +67,7 @@ function validarBase(datos, campos, longitudObservacion) {
   }
   if (typeof datos?.observacion === 'string') {
     const contenido = datos.observacion.trim();
-    if ([...contenido].length > longitudObservacion) errores.observacion = `Admite hasta ${longitudObservacion} caracteres.`;
+    if ([...contenido].length > 180) errores.observacion = 'Admite hasta 180 caracteres.';
     if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(contenido)
       || [...contenido].some((caracter) => caracter.length === 1 && /[\ud800-\udfff]/u.test(caracter))) {
       errores.observacion = 'La observación contiene un carácter no permitido.';
@@ -86,27 +76,9 @@ function validarBase(datos, campos, longitudObservacion) {
   return errores;
 }
 
-export function validarDisponibilidad(datos) {
-  const normalizados = normalizarDisponibilidad(datos);
-  const errores = validarBase(normalizados, CAMPOS_DISPONIBILIDAD, 240);
-  if (!['number', 'string'].includes(typeof datos?.diaSemana) || !/^[1-7]$/.test(String(datos?.diaSemana))) {
-    errores.diaSemana = 'Selecciona un día entre lunes y domingo.';
-  }
-  if (!['Activo', 'Inactivo'].includes(normalizados.estado)) errores.estado = 'Selecciona Activo o Inactivo.';
-  if (fechaValida(normalizados.fechaInicio) && fechaValida(normalizados.fechaFin) && normalizados.fechaFin < normalizados.fechaInicio) {
-    errores.fechaFin = 'La fecha final debe ser igual o posterior a la inicial.';
-  }
-  if (!errores.diaSemana && !errores.fechaInicio && !errores.fechaFin) {
-    const primerDia = new Date(`${normalizados.fechaInicio}T12:00:00Z`).getUTCDay() || 7;
-    const primerOcurrencia = sumarDias(normalizados.fechaInicio, (normalizados.diaSemana - primerDia + 7) % 7);
-    if (primerOcurrencia > normalizados.fechaFin) errores.diaSemana = 'El intervalo de fechas no contiene el día seleccionado.';
-  }
-  return errores;
-}
-
 export function validarTurno(datos, { recursos, turnos = [], idActual } = {}) {
   const normalizados = normalizarTurno(datos);
-  const errores = validarBase(normalizados, CAMPOS_TURNO, 180);
+  const errores = validarCamposTurno(normalizados);
   const duracion = duracionTurno(normalizados);
   if (duracion > LIMITES_JORNADA.diarios) errores.horaFin = 'El turno admite hasta 6 horas diarias por profesional.';
   if (recursos) {

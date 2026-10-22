@@ -4,7 +4,6 @@ import {
   Building2,
   CalendarDays,
   ChevronLeft,
-  Clock3,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -29,7 +28,6 @@ const gruposNavegacion = [
     enlaces: [
       { destino: '/profesionales', etiqueta: 'Profesionales', icono: UsersRound },
       { destino: '/consultorios', etiqueta: 'Consultorios', icono: Building2 },
-      { destino: '/disponibilidades', etiqueta: 'Disponibilidades', icono: Clock3 },
     ],
   },
 ];
