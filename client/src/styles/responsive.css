@@ -3,6 +3,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .resumen .tarjeta-metrica:last-child {
+    grid-column: 1 / -1;
+  }
+
   .rejilla-inicio {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -180,7 +184,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .tarjeta-metrica:last-child {
+  .resumen .tarjeta-metrica:last-child {
     grid-column: auto;
   }
 

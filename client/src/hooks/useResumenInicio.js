@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { obtenerResumenInicio } from '../services/resumenInicio.js';
 
 function crearResumenInicial(estado = 'cargando') {
-  return { estado, profesionales: [], consultorios: [], disponibilidades: [], semana: null };
+  return { estado, profesionales: [], consultorios: [], semana: null };
 }
 
 export function useResumenInicio() {

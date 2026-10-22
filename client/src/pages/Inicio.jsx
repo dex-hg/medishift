@@ -7,14 +7,12 @@ import { fechaActual, lunesDeSemana, mostrarFecha } from '../utils/validacionesP
 function Inicio() {
   const { resumen, reintentar } = useResumenInicio();
 
-  const { profesionales, consultorios, disponibilidades, semana } = resumen;
+  const { profesionales, consultorios, semana } = resumen;
   const accesos = [
     { titulo: 'Profesionales', descripcion: 'Datos laborales, especialidad y estado del personal.',
       cantidad: profesionales.length, destino: '/profesionales', icono: UsersRound, color: 'turquesa' },
     { titulo: 'Consultorios', descripcion: 'Ambientes registrados para la atención.',
       cantidad: consultorios.length, destino: '/consultorios', icono: Building2, color: 'azul' },
-    { titulo: 'Disponibilidades', descripcion: 'Franjas semanales y fechas de vigencia del personal.',
-      cantidad: disponibilidades.length, destino: '/disponibilidades', icono: CalendarClock, color: 'turquesa' },
     { titulo: 'Horarios', descripcion: `Semana actual: ${semana?.estado || 'cargando'}.`,
       cantidad: semana?.turnos.length || 0, destino: `/horarios?fechaInicio=${semana?.fechaInicio || lunesDeSemana(fechaActual())}`, icono: CalendarClock, color: 'azul' },
   ];
@@ -48,13 +46,6 @@ function Inicio() {
                 <small>de {consultorios.length} registrados</small></div>
             </article>
             <article className="tarjeta-metrica">
-              <span className="tarjeta-metrica__icono tarjeta-metrica__icono--verde"><CalendarClock size={21} /></span>
-              <div><span>Disponibilidades vigentes</span>
-                <strong>{disponibilidades.filter((item) => item.estado === 'Activo' && item.fechaInicio <= fechaActual(semana.zonaHoraria)
-                  && item.fechaFin >= fechaActual(semana.zonaHoraria)).length}</strong>
-                <small>de {disponibilidades.length} franjas registradas</small></div>
-            </article>
-            <article className="tarjeta-metrica">
               <span className="tarjeta-metrica__icono tarjeta-metrica__icono--azul"><CalendarClock size={21} /></span>
               <div><span>Turnos de la semana actual</span><strong>{semana.turnos.length}</strong>
                 <small>{semana.estado}{semana.version ? ` · Versión ${semana.version}` : ''}</small></div>
@@ -84,7 +75,7 @@ function Inicio() {
                 <span><CalendarClock size={17} /></span><div><strong>{turno.profesional}</strong>
                   <small>{mostrarFecha(turno.fecha)} · {turno.horaInicio} a {turno.horaFin}</small><small>{turno.consultorio} · {turno.estado}</small></div>
               </div>)}{!semana.turnos.length && <div className="turno-resumen"><span><CalendarClock size={17} /></span>
-                <div><strong>No hay turnos registrados</strong><small>Declara disponibilidades y prepara el borrador semanal.</small></div></div>}</div>
+                <div><strong>No hay turnos registrados</strong><small>Selecciona un médico y un consultorio para crear el primer turno.</small></div></div>}</div>
               <Link className="boton boton--secundario" to={`/horarios?fechaInicio=${semana.fechaInicio}`}>Ver semana</Link>
             </aside>
           </div>
@@ -96,7 +87,6 @@ function Inicio() {
         <div className="acciones-rapidas">
           <Link to="/profesionales/nuevo"><Plus size={16} /> Profesional</Link>
           <Link to="/consultorios/nuevo"><Plus size={16} /> Consultorio</Link>
-          <Link to="/disponibilidades/nueva"><Plus size={16} /> Disponibilidad</Link>
           <Link to="/horarios/nuevo"><Plus size={16} /> Turno</Link>
         </div>
       </section>
