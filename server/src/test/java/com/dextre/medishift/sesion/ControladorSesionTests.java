@@ -52,7 +52,7 @@ class ControladorSesionTests {
 		when(codificador.encode("verificacion-interna-medishift")).thenReturn("hash-ficticio");
 		ServicioSesion servicio = new ServicioSesion(repositorio, codificador);
 		perfil = new RespuestaSesion(UUID.randomUUID(), UUID.randomUUID(),
-				"Clinica-Lima", "Clínica Lima", "cuenta@institucion.pe");
+				"Clinica-Lima", "Clínica Lima", "cuenta@institucion.pe", false);
 		cliente = MockMvcBuilders.standaloneSetup(new ControladorSesion(servicio))
 				.setControllerAdvice(new ManejadorErroresSesion())
 				.addFilters(new FiltroNoCacheSesion()).build();

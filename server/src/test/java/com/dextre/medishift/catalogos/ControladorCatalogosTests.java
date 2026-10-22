@@ -61,7 +61,7 @@ class ControladorCatalogosTests {
 		sesion.setAttribute("medishift.idCuenta", cuenta);
 		sesion.setAttribute("medishift.idInstitucion", institucion);
 		when(sesiones.consultar(institucion, cuenta)).thenReturn(Optional.of(
-				new RespuestaSesion(cuenta, institucion, "Clinica", "Clínica", "cuenta@institucion.pe")));
+				new RespuestaSesion(cuenta, institucion, "Clinica", "Clínica", "cuenta@institucion.pe", false)));
 		cliente = MockMvcBuilders.standaloneSetup(new ControladorCatalogos(
 				new AccesoCatalogos(sesiones, "http://localhost:5173"), catalogos))
 				.setControllerAdvice(new ManejadorErroresCatalogos()).addFilters(new FiltroNoCacheSesion()).build();

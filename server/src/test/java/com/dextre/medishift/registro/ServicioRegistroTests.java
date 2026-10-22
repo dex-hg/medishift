@@ -12,6 +12,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
+import com.dextre.medishift.acceso.RepositorioAccesoMensual;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +29,7 @@ import static org.mockito.Mockito.when;
 class ServicioRegistroTests {
 
 	private RepositorioRegistro repositorio;
+	private RepositorioAccesoMensual accesos;
 	private PasswordEncoder codificador;
 	private PlatformTransactionManager gestor;
 	private SimpleTransactionStatus estado;
@@ -37,24 +40,29 @@ class ServicioRegistroTests {
 	@BeforeEach
 	void preparar() {
 		repositorio = mock(RepositorioRegistro.class);
+		accesos = mock(RepositorioAccesoMensual.class);
+		when(accesos.resolverRolAdministrador()).thenReturn(1);
 		codificador = mock(PasswordEncoder.class);
 		gestor = mock(PlatformTransactionManager.class);
 		estado = new SimpleTransactionStatus();
 		when(gestor.getTransaction(any(TransactionDefinition.class))).thenReturn(estado);
 		when(codificador.encode(" clave-de-prueba ")).thenReturn("hash-de-prueba");
-		servicio = new ServicioRegistro(repositorio, codificador, gestor);
+		servicio = new ServicioRegistro(repositorio, accesos, codificador, gestor);
 	}
 
 	@Test
 	void calculaHashAntesDeAbrirTransaccionYPersisteIdsRelacionados() {
 		RespuestaRegistro respuesta = servicio.registrar(solicitud);
 		ArgumentCaptor<DatosRegistro> datos = ArgumentCaptor.forClass(DatosRegistro.class);
-		InOrder orden = inOrder(codificador, gestor, repositorio);
+		InOrder orden = inOrder(codificador, gestor, repositorio, accesos);
 		orden.verify(codificador).encode(" clave-de-prueba ");
 		orden.verify(gestor).getTransaction(any(TransactionDefinition.class));
 		orden.verify(repositorio).insertarInstitucion(eq(respuesta.idInstitucion()), datos.capture());
 		orden.verify(repositorio).insertarCuenta(respuesta.idCuenta(), respuesta.idInstitucion(),
 				"cuenta@institucion.pe", "hash-de-prueba");
+		orden.verify(accesos).resolverRolAdministrador();
+		orden.verify(accesos).asignarAdministrador(respuesta.idCuenta(), 1);
+		orden.verify(accesos).registrarAltaInstitucion(respuesta.idInstitucion(), respuesta.idCuenta());
 		orden.verify(gestor).commit(estado);
 
 		assertEquals("Clinica-Lima", respuesta.codigoInstitucion());
@@ -78,6 +86,16 @@ class ServicioRegistroTests {
 		assertThrows(InstitucionDuplicadaException.class, () -> servicio.registrar(solicitud));
 		verify(repositorio, never()).insertarCuenta(any(), any(), any(), any());
 		verify(gestor).rollback(estado);
+		verifyNoInteractions(accesos);
+	}
+
+	@Test
+	void falloAlAsignarRolOAuditarRevierteElRegistroCompleto() {
+		doThrow(new DataIntegrityViolationException("Fallo de auditoría"))
+				.when(accesos).registrarAltaInstitucion(any(), any());
+		assertThrows(DataIntegrityViolationException.class, () -> servicio.registrar(solicitud));
+		verify(gestor).rollback(estado);
+		verify(gestor, never()).commit(any());
 	}
 
 	@Test

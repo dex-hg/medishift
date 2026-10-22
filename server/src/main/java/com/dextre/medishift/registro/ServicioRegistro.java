@@ -7,16 +7,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.dextre.medishift.acceso.RepositorioAccesoMensual;
+
 @Service
 public class ServicioRegistro {
 
 	private final RepositorioRegistro repositorio;
+	private final RepositorioAccesoMensual accesos;
 	private final PasswordEncoder codificador;
 	private final TransactionTemplate transacciones;
 
-	public ServicioRegistro(RepositorioRegistro repositorio, PasswordEncoder codificador,
+	public ServicioRegistro(RepositorioRegistro repositorio, RepositorioAccesoMensual accesos, PasswordEncoder codificador,
 			PlatformTransactionManager gestorTransacciones) {
 		this.repositorio = repositorio;
+		this.accesos = accesos;
 		this.codificador = codificador;
 		this.transacciones = new TransactionTemplate(gestorTransacciones);
 	}
@@ -31,6 +35,10 @@ public class ServicioRegistro {
 		return transacciones.execute(estado -> {
 			repositorio.insertarInstitucion(idInstitucion, datos);
 			repositorio.insertarCuenta(idCuenta, idInstitucion, datos.correo(), hashContrasena);
+			// Solo se asigna la cuenta creadora de esta nueva institución.
+			int rol = accesos.resolverRolAdministrador();
+			accesos.asignarAdministrador(idCuenta, rol);
+			accesos.registrarAltaInstitucion(idInstitucion, idCuenta);
 			return new RespuestaRegistro(idInstitucion, idCuenta, datos.codigoInstitucion(),
 					datos.nombreInstitucion(), datos.correo());
 		});

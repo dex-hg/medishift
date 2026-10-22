@@ -4,17 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,37 +24,20 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @EnabledIfSystemProperty(named = "medishift.prueba-registro", matches = "true")
-class RegistroPostgresqlTests {
+class RegistroPostgresqlTests extends SoporteCuentasPostgresql {
 
-	@Autowired
-	private JdbcTemplate consultas;
-	@Autowired
-	private PlatformTransactionManager gestor;
-	@Autowired
-	private PasswordEncoder codificador;
 	private final List<UUID> institucionesPrueba = new ArrayList<>();
 	private RepositorioRegistro repositorio;
 	private ServicioRegistro servicio;
 
 	@BeforeEach
-	void prepararFixtures() {
+	void prepararRegistro() {
 		repositorio = spy(new RepositorioRegistro(consultas));
 		doAnswer(invocacion -> {
 			institucionesPrueba.add(invocacion.getArgument(0));
 			return invocacion.callRealMethod();
 		}).when(repositorio).insertarInstitucion(any(), any());
-		servicio = new ServicioRegistro(repositorio, codificador, gestor);
-	}
-
-	@AfterEach
-	void eliminarSoloFixturesPorUuid() {
-		new TransactionTemplate(gestor).executeWithoutResult(estado -> {
-			for (UUID idInstitucion : institucionesPrueba) {
-				consultas.update("DELETE FROM user_account WHERE id_institution = ?", idInstitucion);
-				consultas.update("DELETE FROM institution WHERE id_institution = ?", idInstitucion);
-			}
-		});
-		institucionesPrueba.clear();
+		servicio = new ServicioRegistro(repositorio, accesos, codificador, gestor);
 	}
 
 	@Test
@@ -87,8 +65,15 @@ class RegistroPostgresqlTests {
 				SELECT count(*) FROM user_account
 				WHERE id_user_account = ? AND id_institution = ? AND created_at_user_account IS NOT NULL
 				""", Integer.class, respuesta.idCuenta(), respuesta.idInstitucion()));
-		assertEquals(0, consultas.queryForObject(
-				"SELECT count(*) FROM user_role WHERE id_user_account = ?", Integer.class, respuesta.idCuenta()));
+		assertEquals(1, consultas.queryForObject("""
+				SELECT count(*) FROM user_role ur JOIN role r ON r.id_role = ur.id_role
+				WHERE ur.id_user_account = ? AND r.code_role = 'administrador'
+				""", Integer.class, respuesta.idCuenta()));
+		assertEquals(1, consultas.queryForObject("""
+				SELECT count(*) FROM audit_event WHERE id_institution = ?
+				AND id_actor_user_account = ? AND action_audit_event = 'register_admin'
+				AND after_audit_event->>'origen' = 'registro_institucion'
+				""", Integer.class, respuesta.idInstitucion(), respuesta.idCuenta()));
 	}
 
 	@Test
@@ -108,7 +93,7 @@ class RegistroPostgresqlTests {
 		String codigo = codigoPrueba();
 		PasswordEncoder codificadorInvalido = mock(PasswordEncoder.class);
 		when(codificadorInvalido.encode(any())).thenReturn(" ");
-		ServicioRegistro servicioConFallo = new ServicioRegistro(repositorio, codificadorInvalido, gestor);
+		ServicioRegistro servicioConFallo = new ServicioRegistro(repositorio, accesos, codificadorInvalido, gestor);
 		assertThrows(DataIntegrityViolationException.class,
 				() -> servicioConFallo.registrar(solicitud(codigo, "clave-de-prueba")));
 		assertEquals(0, consultas.queryForObject("SELECT count(*) FROM institution WHERE code_institution = ?",
@@ -127,6 +112,21 @@ class RegistroPostgresqlTests {
 				SELECT count(*) FROM user_account
 				WHERE id_institution IN (?, ?) AND email_user_account = 'cuenta@medishift.test'
 				""", Integer.class, primera.idInstitucion(), segunda.idInstitucion()));
+	}
+
+	@Test
+	void falloDeAuditoriaRevierteInstitucionCuentaRolYVinculo() {
+		consultas.execute("""
+				CREATE FUNCTION rechazar_alta_de_prueba() RETURNS trigger LANGUAGE plpgsql AS $$
+				BEGIN RAISE EXCEPTION 'Fallo de prueba' USING ERRCODE = 'P0001'; END; $$;
+				CREATE TRIGGER rechazar_alta_de_prueba BEFORE INSERT ON audit_event
+				FOR EACH ROW EXECUTE FUNCTION rechazar_alta_de_prueba();
+				""");
+		assertThrows(org.springframework.dao.DataAccessException.class,
+				() -> servicio.registrar(solicitud(codigoPrueba(), "clave-de-prueba")));
+		for (String tabla : List.of("institution", "user_account", "role", "user_role", "audit_event")) {
+			assertEquals(0, consultas.queryForObject("SELECT count(*) FROM " + tabla, Integer.class), tabla);
+		}
 	}
 
 	private String codigoPrueba() {

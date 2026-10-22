@@ -34,7 +34,7 @@ class ServicioSesionTests {
 		when(codificador.encode("verificacion-interna-medishift")).thenReturn("hash-ficticio");
 		servicio = new ServicioSesion(repositorio, codificador);
 		perfil = new RespuestaSesion(UUID.randomUUID(), UUID.randomUUID(),
-				"Clinica-Lima", "Clínica Lima", "cuenta@institucion.pe");
+				"Clinica-Lima", "Clínica Lima", "cuenta@institucion.pe", false);
 		solicitud = new SolicitudSesion(" Clinica-Lima ", " CUENTA@Institucion.PE ", " Clave exacta ");
 	}
 

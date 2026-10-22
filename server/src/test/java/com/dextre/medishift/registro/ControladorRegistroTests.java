@@ -17,6 +17,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
+import com.dextre.medishift.acceso.RepositorioAccesoMensual;
+
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,7 +51,7 @@ class ControladorRegistroTests {
 		gestor = mock(PlatformTransactionManager.class);
 		when(gestor.getTransaction(any(TransactionDefinition.class))).thenReturn(new SimpleTransactionStatus());
 		when(codificador.encode(any())).thenReturn("hash-de-prueba");
-		ServicioRegistro servicio = new ServicioRegistro(repositorio, codificador, gestor);
+		ServicioRegistro servicio = new ServicioRegistro(repositorio, mock(RepositorioAccesoMensual.class), codificador, gestor);
 		cliente = MockMvcBuilders.standaloneSetup(new ControladorRegistro(servicio))
 				.setControllerAdvice(new ManejadorErroresRegistro()).build();
 	}

@@ -40,7 +40,7 @@ class AccesoCatalogosTests {
 		acceso = new AccesoCatalogos(sesiones, "http://localhost:5173,http://127.0.0.1:5173");
 		institucion = UUID.randomUUID();
 		cuenta = UUID.randomUUID();
-		perfil = new RespuestaSesion(cuenta, institucion, "Clinica", "Clínica", "cuenta@institucion.pe");
+		perfil = new RespuestaSesion(cuenta, institucion, "Clinica", "Clínica", "cuenta@institucion.pe", false);
 	}
 
 	@Test

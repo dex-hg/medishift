@@ -28,7 +28,10 @@ public class RepositorioSesion {
 	public Optional<CuentaAutenticable> buscarCredenciales(String codigoInstitucion, String correo) {
 		return consultas.query("""
 				SELECT u.id_user_account, u.id_institution, i.code_institution,
-				       i.name_institution, u.email_user_account, u.password_hash_user_account
+				       i.name_institution, u.email_user_account, u.password_hash_user_account,
+				       EXISTS (SELECT 1 FROM user_role ur JOIN role r ON r.id_role = ur.id_role
+				               WHERE ur.id_user_account = u.id_user_account
+				                 AND r.code_role = 'administrador') AS es_administrador
 				FROM institution i
 				JOIN user_account u ON u.id_institution = i.id_institution
 				WHERE i.code_institution = ?
@@ -43,7 +46,10 @@ public class RepositorioSesion {
 	public Optional<RespuestaSesion> buscarSesion(UUID idInstitucion, UUID idCuenta) {
 		return consultas.query("""
 				SELECT u.id_user_account, u.id_institution, i.code_institution,
-				       i.name_institution, u.email_user_account
+				       i.name_institution, u.email_user_account,
+				       EXISTS (SELECT 1 FROM user_role ur JOIN role r ON r.id_role = ur.id_role
+				               WHERE ur.id_user_account = u.id_user_account
+				                 AND r.code_role = 'administrador') AS es_administrador
 				FROM user_account u
 				JOIN institution i ON i.id_institution = u.id_institution
 				WHERE u.id_institution = ? AND u.id_user_account = ?
@@ -57,7 +63,7 @@ public class RepositorioSesion {
 		return new RespuestaSesion(fila.getObject("id_user_account", UUID.class),
 				fila.getObject("id_institution", UUID.class), fila.getString("code_institution"),
 				fila.getString("name_institution"),
-				fila.getString("email_user_account").toLowerCase(Locale.ROOT));
+				fila.getString("email_user_account").toLowerCase(Locale.ROOT), fila.getBoolean("es_administrador"));
 	}
 
 }

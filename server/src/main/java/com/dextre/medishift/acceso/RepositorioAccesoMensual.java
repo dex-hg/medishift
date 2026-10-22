@@ -84,4 +84,13 @@ public class RepositorioAccesoMensual {
 				                    'rol', 'administrador', 'origen', 'local'))
 				""", UUID.randomUUID(), institucion, cuenta, institucion, cuenta);
 	}
+
+	public void registrarAltaInstitucion(UUID institucion, UUID cuenta) {
+		consultas.update("""
+				INSERT INTO audit_event (id_audit_event, id_institution, id_actor_user_account,
+				 entity_name_audit_event, entity_id_audit_event, action_audit_event, after_audit_event)
+				VALUES (?, ?, ?, 'user_account', ?, 'register_admin',
+				 jsonb_build_object('rol', 'administrador', 'origen', 'registro_institucion'))
+				""", UUID.randomUUID(), institucion, cuenta, cuenta);
+	}
 }
