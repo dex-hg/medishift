@@ -1,6 +1,6 @@
 # Backend de MediShift
 
-Spring Boot 4.1.1, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone registro, sesión y gestión de profesionales, consultorios y horarios semanales. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
+Spring Boot 4.1.2, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone registro, sesión y gestión de profesionales, consultorios y horarios semanales. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
 
 ## Arquitectura
 
