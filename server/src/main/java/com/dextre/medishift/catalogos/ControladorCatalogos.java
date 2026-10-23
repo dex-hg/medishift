@@ -100,8 +100,14 @@ public class ControladorCatalogos {
 
 	@GetMapping("/especialidades")
 	public List<Especialidad> listarEspecialidades(HttpServletRequest solicitud) {
-		acceso.obtenerInstitucion(solicitud);
-		return servicio.listarEspecialidades();
+		return servicio.listarEspecialidades(acceso.obtenerInstitucion(solicitud));
+	}
+
+	@PostMapping(value = "/especialidades", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Especialidad> crearEspecialidad(@RequestBody Map<String, Object> datos, HttpServletRequest solicitud) {
+		UUID institucion = acceso.obtenerInstitucion(solicitud);
+		return ResponseEntity.status(HttpStatus.CREATED).body(servicio.crearEspecialidad(institucion,
+				ValidadorCatalogos.validarEspecialidad(datos)));
 	}
 
 }

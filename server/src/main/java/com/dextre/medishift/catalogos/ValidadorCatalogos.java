@@ -82,6 +82,13 @@ public final class ValidadorCatalogos {
 				Map.of("id", "Envía un identificador UUID completo."));
 	}
 
+	public static String validarEspecialidad(Map<String, Object> solicitud) {
+		Map<String, String> errores = iniciarValidacion(solicitud, Set.of("nombre"));
+		String nombre = texto(solicitud, "nombre", 100, true, errores);
+		lanzarErrores(errores);
+		return nombre;
+	}
+
 	public static String normalizarTexto(String texto) {
 		return ESPACIOS.matcher(Normalizer.normalize(texto, Normalizer.Form.NFC)).replaceAll(" ").trim();
 	}

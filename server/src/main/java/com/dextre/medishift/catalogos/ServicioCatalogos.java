@@ -42,7 +42,7 @@ public class ServicioCatalogos {
 		especialidades.bloquearInstitucion(institucion);
 		UUID identificador = UUID.randomUUID();
 		profesionales.verificarDuplicados(institucion, identificador, profesional);
-		UUID especialidad = especialidades.resolver(profesional.especialidad());
+		UUID especialidad = especialidades.resolver(institucion, profesional.especialidad());
 		profesionales.insertar(institucion, identificador, profesional);
 		profesionales.asignarEspecialidad(institucion, identificador, especialidad);
 		return buscarProfesional(institucion, identificador);
@@ -53,7 +53,7 @@ public class ServicioCatalogos {
 		especialidades.bloquearInstitucion(institucion);
 		profesionales.bloquear(institucion, identificador);
 		profesionales.verificarDuplicados(institucion, identificador, profesional);
-		UUID especialidad = especialidades.resolver(profesional.especialidad());
+		UUID especialidad = especialidades.resolver(institucion, profesional.especialidad());
 		profesionales.actualizar(institucion, identificador, profesional);
 		profesionales.asignarEspecialidad(institucion, identificador, especialidad);
 		programacion.validarCatalogosFuturos(institucion);
@@ -82,7 +82,7 @@ public class ServicioCatalogos {
 		especialidades.bloquearInstitucion(institucion);
 		UUID identificador = UUID.randomUUID();
 		consultorios.verificarDuplicados(institucion, identificador, consultorio);
-		UUID especialidad = consultorio.especialidad().isEmpty() ? null : especialidades.resolver(consultorio.especialidad());
+		UUID especialidad = consultorio.especialidad().isEmpty() ? null : especialidades.resolver(institucion, consultorio.especialidad());
 		consultorios.insertar(institucion, identificador, consultorio);
 		consultorios.asignarEspecialidad(institucion, identificador, especialidad);
 		return buscarConsultorio(institucion, identificador);
@@ -94,7 +94,7 @@ public class ServicioCatalogos {
 		consultorios.bloquear(institucion, identificador);
 		consultorios.verificarDuplicados(institucion, identificador, consultorio);
 		consultorios.verificarCambioEspecialidad(institucion, identificador, consultorio.especialidad());
-		UUID especialidad = consultorio.especialidad().isEmpty() ? null : especialidades.resolver(consultorio.especialidad());
+		UUID especialidad = consultorio.especialidad().isEmpty() ? null : especialidades.resolver(institucion, consultorio.especialidad());
 		consultorios.actualizar(institucion, identificador, consultorio);
 		consultorios.asignarEspecialidad(institucion, identificador, especialidad);
 		programacion.validarCatalogosFuturos(institucion);
@@ -109,8 +109,13 @@ public class ServicioCatalogos {
 	}
 
 	@Transactional(readOnly = true)
-	public List<Especialidad> listarEspecialidades() {
-		return especialidades.listar();
+	public List<Especialidad> listarEspecialidades(UUID institucion) {
+		return especialidades.listar(institucion);
+	}
+
+	@Transactional
+	public Especialidad crearEspecialidad(UUID institucion, String nombre) {
+		return especialidades.crear(institucion, nombre);
 	}
 
 }

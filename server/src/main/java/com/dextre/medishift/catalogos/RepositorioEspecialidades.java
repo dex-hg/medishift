@@ -22,10 +22,26 @@ public class RepositorioEspecialidades {
 		this.consultas = consultas;
 	}
 
-	public List<Especialidad> listar() {
-		return consultas.query("SELECT id_specialty, name_specialty FROM specialty ORDER BY lower(name_specialty), id_specialty",
+	public List<Especialidad> listar(UUID institucion) {
+		return consultas.query("""
+				SELECT id_specialty, name_specialty FROM specialty WHERE id_institution IS NULL OR id_institution = ?
+				ORDER BY lower(name_specialty), id_specialty
+				""",
 				(fila, numero) -> new Especialidad(fila.getObject("id_specialty", UUID.class),
-						fila.getString("name_specialty")));
+						fila.getString("name_specialty")), institucion);
+	}
+
+	public Especialidad buscar(UUID institucion, UUID identificador) {
+		return listar(institucion).stream().filter(especialidad -> especialidad.id().equals(identificador)).findFirst()
+				.orElseThrow(() -> CatalogoException.conflicto("idEspecialidad", "Selecciona una especialidad de tu catálogo."));
+	}
+
+	public Especialidad crear(UUID institucion, String nombre) {
+		bloquearInstitucion(institucion);
+		if (listar(institucion).stream().anyMatch(especialidad -> ValidadorCatalogos.normalizarTexto(especialidad.nombre()).equalsIgnoreCase(nombre))) {
+			throw CatalogoException.conflicto("nombre", "Ya existe una especialidad con ese nombre. Selecciónala en la lista.");
+		}
+		return buscar(institucion, resolver(institucion, nombre));
 	}
 
 	/** Serializa las reglas de duplicados que el esquema no distingue por mayúsculas. */
@@ -33,11 +49,11 @@ public class RepositorioEspecialidades {
 		bloquear("catalogos:" + institucion);
 	}
 
-	public UUID resolver(String nombre) {
+	public UUID resolver(UUID institucion, String nombre) {
 		String normalizado = ValidadorCatalogos.normalizarTexto(nombre).toLowerCase(Locale.ROOT);
-		String codigo = crearCodigo(normalizado);
+		String codigo = crearCodigo(institucion + ":" + normalizado);
 		bloquear("especialidad:" + codigo);
-		List<Especialidad> existentes = listar();
+		List<Especialidad> existentes = listar(institucion);
 		for (Especialidad existente : existentes) {
 			if (ValidadorCatalogos.normalizarTexto(existente.nombre()).toLowerCase(Locale.ROOT).equals(normalizado)) {
 				return existente.id();
@@ -45,9 +61,9 @@ public class RepositorioEspecialidades {
 		}
 		UUID identificador = UUID.randomUUID();
 		consultas.update("""
-				INSERT INTO specialty (id_specialty, code_specialty, name_specialty)
-				VALUES (?, ?, ?) ON CONFLICT (code_specialty) DO NOTHING
-				""", identificador, codigo, nombre);
+				INSERT INTO specialty (id_specialty, code_specialty, name_specialty, id_institution)
+				VALUES (?, ?, ?, ?) ON CONFLICT (code_specialty) DO NOTHING
+				""", identificador, codigo, nombre, institucion);
 		Especialidad especialidad = consultas.query("""
 				SELECT id_specialty, name_specialty FROM specialty WHERE code_specialty = ?
 				""", (fila, numero) -> new Especialidad(fila.getObject("id_specialty", UUID.class),
