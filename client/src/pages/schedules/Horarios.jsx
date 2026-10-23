@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, FolderPlus, RefreshCw } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, FileDown, FolderPlus, RefreshCw } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import usePlanificadorMensual from '../../hooks/usePlanificadorMensual';
@@ -12,6 +12,7 @@ import BancoProfesionales from './BancoProfesionales';
 import CalendarioMensual from './CalendarioMensual';
 import DialogoTurnoMensual from './DialogoTurnoMensual';
 import DialogoAreaConsultorio from './DialogoAreaConsultorio';
+import DialogoReporteMensual from './DialogoReporteMensual';
 
 export default function Horarios() {
   const { sesion } = useOutletContext();
@@ -20,6 +21,7 @@ export default function Horarios() {
   const [idProfesional, setIdProfesional] = useState('');
   const [editor, setEditor] = useState(null);
   const [accion, setAccion] = useState(null);
+  const [reporteAbierto, setReporteAbierto] = useState(false);
   const { datos, periodo, cargando, guardando } = consulta;
   const ocupado = cargando || guardando;
   const consultorio = datos?.consultorios.find((registro) => registro.id === idConsultorio);
@@ -67,8 +69,11 @@ export default function Horarios() {
   return <>
     <EncabezadoPagina ruta={[{ etiqueta: 'Horarios' }]} titulo="Horarios mensuales"
       descripcion="Organiza a tus profesionales por área, consultorio y día. Todo el mes en un solo calendario."
-      acciones={sesion.esAdministrador && <button className="boton boton--secundario" type="button" disabled={ocupado || !datos}
-        onClick={() => { consulta.limpiarError(); setAccion({ tipo: 'area' }); }}><FolderPlus size={17} /> Nueva área</button>} />
+      acciones={sesion.esAdministrador && <>
+        <button className="boton boton--secundario" type="button" disabled={ocupado || !datos || Boolean(consulta.errorCarga)}
+          onClick={() => setReporteAbierto(true)}><FileDown size={17} /> Exportar horario</button>
+        <button className="boton boton--secundario" type="button" disabled={ocupado || !datos}
+          onClick={() => { consulta.limpiarError(); setAccion({ tipo: 'area' }); }}><FolderPlus size={17} /> Nueva área</button></>} />
     <div className="panel barra-mensual"><div className="barra-mensual__periodo"><span className="barra-mensual__icono"><CalendarDays size={23} /></span>
       <div><small>Planificación mensual</small><h2>{nombreMes(periodo)}</h2></div>
       <button className="boton-icono" type="button" disabled={ocupado} aria-label="Mes anterior" onClick={() => cambiarMes(desplazarMes(periodo, -1))}><ChevronLeft size={18} /></button>
@@ -100,5 +105,7 @@ export default function Horarios() {
       actualizarRevision={(turno) => { setEditor((anterior) => ({ ...anterior, turno })); consulta.limpiarError(); }} />}
     {accion && datos && <DialogoAreaConsultorio accion={accion} datos={datos} ocupado={guardando || cargando} error={consulta.error || consulta.errorCarga}
       errores={consulta.errores} guardar={guardarOrganizacion} cerrar={() => setAccion(null)} recargar={consulta.recargar} />}
+    {reporteAbierto && datos && <DialogoReporteMensual datos={datos} periodo={periodo} idConsultorio={idConsultorio}
+      idProfesional={idProfesional} institucion={sesion.nombreInstitucion} cerrar={() => setReporteAbierto(false)} />}
   </>;
 }
