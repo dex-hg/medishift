@@ -83,12 +83,19 @@ def crear_demostracion(api):
     calendario = api.solicitar("/api/planificador?periodo=" + periodo)
     areas = {area["codigo"]: area for area in calendario["areas"]}
     consultorios = {sala["codigo"]: sala for sala in calendario["consultorios"]}
+    especialidades = {registro["nombre"]: registro for registro in api.solicitar("/api/especialidades")}
+    for nombre in ("Dermatología", "Odontología", "Medicina general"):
+        if nombre not in especialidades:
+            especialidades[nombre] = api.solicitar("/api/especialidades", {"nombre": nombre})
     salas_creadas = []
-    for codigo, nombre, cantidad in (("DER", "Dermatología", 2), ("ODO", "Odontología", 3)):
+    for codigo, nombre, cantidad in (("DER", "Dermatología", 2), ("ODO", "Odontología", 3), ("MG", "Medicina general", 1)):
         if codigo not in areas:
-            areas[codigo] = api.solicitar("/api/unidades-planificacion", {
-                "codigo": codigo, "nombre": nombre, "tipo": "Servicio",
+            areas[codigo] = api.solicitar("/api/planificador/areas", {
+                "codigo": codigo, "nombre": nombre, "idEspecialidad": especialidades[nombre]["id"],
             })
+        if areas[codigo].get("idEspecialidad") != especialidades[nombre]["id"]:
+            raise ValueError("El área de demostración requiere configurar su especialidad desde Horarios. "
+                             "Se conservan sus turnos; corrige primero cualquier asignación incompatible.")
         for numero in range(1, cantidad + 1):
             clave = f"{codigo}-{numero:02}"
             if clave not in consultorios:
@@ -117,7 +124,7 @@ def crear_demostracion(api):
         if observacion in observaciones:
             continue
         profesional = personas[registrados[f"DEMO-{numero + 1:04}"]["id"]]
-        sala = salas_creadas[(0, 1, 0, 2, 3, 4, 0, 2)[numero]]
+        sala = salas_creadas[(0, 1, 0, 2, 3, 4, 5, 5)[numero]]
         # Un turno por profesional; los consultorios repetidos usan días diferentes.
         fecha = inicio + Intervalo(days=(0, 0, 1, 0, 0, 0, 2, 1)[numero])
         api.solicitar("/api/planificador/turnos", {
