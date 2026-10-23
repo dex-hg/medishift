@@ -31,8 +31,9 @@ function recurso(valor, consultorio = false) {
     especialidades: lista(valor.especialidades, especialidad) };
   if (consultorio) {
     if (!esTexto(valor.codigo) || typeof valor.usoGeneral !== 'boolean'
-      || (valor.idArea !== null && !esId(valor.idArea))) respuestaInvalida();
-    return { ...resultado, codigo: valor.codigo, idArea: valor.idArea, usoGeneral: valor.usoGeneral };
+      || (valor.idArea !== null && !esId(valor.idArea))
+      || (valor.idEspecialidadArea !== null && !esId(valor.idEspecialidadArea))) respuestaInvalida();
+    return { ...resultado, codigo: valor.codigo, idArea: valor.idArea, idEspecialidadArea: valor.idEspecialidadArea, usoGeneral: valor.usoGeneral };
   }
   if (typeof valor.colegiatura !== 'string') respuestaInvalida();
   return { ...resultado, colegiatura: valor.colegiatura };
@@ -54,8 +55,10 @@ function extraerCalendario(valor, periodo) {
   try { new Intl.DateTimeFormat('es-PE', { timeZone: valor.zonaHoraria }); } catch { respuestaInvalida(); }
   const areas = lista(valor.areas, (area) => {
     if (!esObjeto(area) || !esId(area.id) || !esTexto(area.nombre) || !esTexto(area.codigo)
-      || !['Activo', 'Inactivo'].includes(area.estado)) respuestaInvalida();
-    return { id: area.id, nombre: area.nombre, codigo: area.codigo, estado: area.estado };
+      || !['Activo', 'Inactivo'].includes(area.estado) || (area.idEspecialidad !== null && !esId(area.idEspecialidad))
+      || typeof area.especialidad !== 'string' || (area.idEspecialidad !== null && !esTexto(area.especialidad))) respuestaInvalida();
+    return { id: area.id, nombre: area.nombre, codigo: area.codigo, estado: area.estado,
+      idEspecialidad: area.idEspecialidad, especialidad: area.especialidad };
   });
   const planes = lista(valor.planes, (plan) => {
     if (!esObjeto(plan) || !esId(plan.id) || !esId(plan.idUnidad) || plan.periodo !== periodo
@@ -64,7 +67,7 @@ function extraerCalendario(valor, periodo) {
   });
   const turnos = lista(valor.turnos, extraerTurno);
   if (turnos.some((turno) => !turno.fecha.startsWith(`${periodo}-`))) respuestaInvalida();
-  return { zonaHoraria: valor.zonaHoraria, areas, planes, turnos,
+  return { zonaHoraria: valor.zonaHoraria, areas, planes, turnos, especialidades: lista(valor.especialidades, especialidad),
     consultorios: lista(valor.consultorios, (valor) => recurso(valor, true)),
     profesionales: lista(valor.profesionales, (valor) => recurso(valor)) };
 }
@@ -136,4 +139,16 @@ export function crearConsultorioEnArea(datos, opciones) {
 export function vincularConsultorio(id, idArea, opciones) {
   if (!esId(id) || !esId(idArea)) throw new ErrorProgramacion('Selecciona un consultorio y un área válidos.');
   return solicitar(`/api/planificador/consultorios/${id}/area`, 'PUT', { ...opciones, datos: { idArea } });
+}
+
+export function crearAreaEspecializada(datos, opciones) {
+  if (!esId(datos?.idEspecialidad)) return Promise.reject(new ErrorProgramacion('Selecciona una especialidad.', { errores: { idEspecialidad: 'Selecciona una especialidad.' } }));
+  return solicitar('/api/planificador/areas', 'POST', { ...opciones, datos: {
+    codigo: typeof datos.codigo === 'string' ? datos.codigo.trim() : '', nombre: typeof datos.nombre === 'string' ? datos.nombre.trim() : '', idEspecialidad: datos.idEspecialidad,
+  } });
+}
+
+export function configurarEspecialidadArea(id, idEspecialidad, opciones) {
+  if (!esId(id) || !esId(idEspecialidad)) return Promise.reject(new ErrorProgramacion('Selecciona un área y una especialidad válidas.'));
+  return solicitar(`/api/planificador/areas/${id}/especialidad`, 'PUT', { ...opciones, datos: { idEspecialidad } });
 }

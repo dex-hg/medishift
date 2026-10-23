@@ -14,11 +14,12 @@ export default function CalendarioMensual({ periodo, consultorio, area, turnos, 
   };
   return <section className="panel calendario-mensual" aria-label="Calendario mensual">
     <div className="calendario-mensual__titulo"><div><span className="planificador-paso">3</span><div>
-      <h2>{consultorio ? consultorio.nombre : 'Tu horario mensual'}</h2><p>{area ? `${area.nombre} · ${consultorio.codigo}` : 'Selecciona un consultorio en las carpetas de la izquierda'}</p>
+      <h2>{consultorio ? consultorio.nombre : 'Tu horario mensual'}</h2><p>{area ? `${area.nombre} · ${consultorio.codigo}${area.especialidad ? ` · ${area.especialidad}` : ''}` : 'Selecciona un consultorio en las carpetas de la izquierda'}</p>
     </div></div><span className="calendario-mensual__estado">{editable ? 'Borrador mensual' : 'Solo lectura'}</span></div>
     {!consultorio ? <div className="planificador-vacio calendario-mensual__inicio"><CalendarDays size={40} /><h3>Un mes completo, un solo lugar</h3>
       <p>Selecciona un consultorio, elige un profesional y asígnalo al día que necesites.</p></div> : <>
-      <p className="calendario-mensual__instruccion" role="status">{!editable ? 'Este consultorio o su plan mensual no admite cambios.'
+      <p className="calendario-mensual__instruccion" role="status">{!area?.idEspecialidad ? 'Configura la especialidad de esta área para asignar nuevos turnos.'
+        : !editable ? 'Este consultorio o su plan mensual no admite cambios.'
         : seleccionado ? 'Profesional seleccionado. Pulsa «Asignar» en un día o arrástralo hasta allí.'
           : 'Arrastra un profesional a un día. También puedes pulsar «Asignar» para elegirlo.'}</p>
       <div className="calendario-mensual__desplazamiento"><div className="calendario-mensual__rejilla">

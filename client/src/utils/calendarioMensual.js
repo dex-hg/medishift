@@ -44,6 +44,7 @@ export function leerArrastre(contenido) {
 
 export function especialidadesCompatibles(profesional, consultorio) {
   return (profesional?.especialidades || []).filter((especialidad) => consultorio
+    && (!consultorio.idArea || consultorio.idEspecialidadArea === especialidad.id)
     && (consultorio.usoGeneral || consultorio.especialidades.some((registro) => registro.id === especialidad.id)));
 }
 

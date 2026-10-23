@@ -17,6 +17,7 @@ export default function DialogoTurnoMensual({ editor, datos, periodo, hoy, ocupa
   const errores = { ...erroresServidor, ...erroresLocales };
   const profesional = datos.profesionales.find((registro) => registro.id === formulario.idProfesional);
   const consultorio = datos.consultorios.find((registro) => registro.id === formulario.idConsultorio);
+  const areaSeleccionada = datos.areas.find((registro) => registro.id === formulario.idArea);
   const especialidades = especialidadesCompatibles(profesional, consultorio);
   const plan = datos.planes.find((registro) => registro.id === editor.turno?.idPlan);
   const editable = (!editor.turno || editor.turno.fecha >= hoy) && (!editor.turno || editor.turno.estado === 'Borrador')
@@ -27,7 +28,12 @@ export default function DialogoTurnoMensual({ editor, datos, periodo, hoy, ocupa
     setErroresLocales({});
     setFormulario((anterior) => {
       const siguiente = { ...anterior, [campo]: valor };
-      if (campo === 'idArea') { siguiente.idConsultorio = ''; siguiente.idEspecialidad = ''; }
+      if (campo === 'idArea') {
+        siguiente.idConsultorio = ''; siguiente.idEspecialidad = '';
+        const nuevaArea = datos.areas.find((registro) => registro.id === valor);
+        const persona = datos.profesionales.find((registro) => registro.id === siguiente.idProfesional);
+        if (!persona?.especialidades.some((especialidad) => especialidad.id === nuevaArea?.idEspecialidad)) siguiente.idProfesional = '';
+      }
       if (['idProfesional', 'idConsultorio'].includes(campo)) {
         const persona = datos.profesionales.find((registro) => registro.id === siguiente.idProfesional);
         const espacio = datos.consultorios.find((registro) => registro.id === siguiente.idConsultorio);
@@ -60,13 +66,17 @@ export default function DialogoTurnoMensual({ editor, datos, periodo, hoy, ocupa
       {!editable && <p className="planificador-ayuda">Este turno se muestra en modo de consulta. Solo puedes editar borradores con fecha vigente.</p>}
       <fieldset disabled={ocupado || !editable} className="formulario-planificador__campos">
         <Campo etiqueta="Profesional" campo="idProfesional" errores={errores}><select required value={formulario.idProfesional} onChange={(evento) => cambiar('idProfesional', evento.target.value)}>
-          <option value="">Selecciona un profesional</option>{datos.profesionales.filter((registro) => registro.estado === 'Activo' || registro.id === formulario.idProfesional)
+          <option value="">Selecciona un profesional</option>{datos.profesionales.filter((registro) => registro.id === formulario.idProfesional
+            || (registro.estado === 'Activo' && registro.especialidades.some((especialidad) => especialidad.id === areaSeleccionada?.idEspecialidad)))
             .map((registro) => <option key={registro.id} value={registro.id}>{registro.nombre}</option>)}
         </select></Campo>
         <div className="formulario-planificador__fila"><Campo etiqueta="Área o servicio" campo="idArea" errores={errores}><select required value={formulario.idArea}
-          onChange={(evento) => cambiar('idArea', evento.target.value)}>{datos.areas.filter((registro) => registro.estado === 'Activo' || registro.id === formulario.idArea).map((registro) => <option key={registro.id} value={registro.id}>{registro.nombre}</option>)}</select></Campo>
+          onChange={(evento) => cambiar('idArea', evento.target.value)}>{datos.areas.filter((registro) => registro.id === formulario.idArea
+            || (registro.estado === 'Activo' && registro.idEspecialidad)).map((registro) => <option key={registro.id} value={registro.id}>{registro.nombre}{registro.especialidad ? ` · ${registro.especialidad}` : ' · Sin especialidad'}</option>)}</select></Campo>
         <Campo etiqueta="Consultorio" campo="idConsultorio" errores={errores}><select required value={formulario.idConsultorio} onChange={(evento) => cambiar('idConsultorio', evento.target.value)}>
-          <option value="">Selecciona un consultorio</option>{datos.consultorios.filter((registro) => registro.idArea === formulario.idArea && (registro.estado === 'Activo' || registro.id === formulario.idConsultorio))
+          <option value="">Selecciona un consultorio</option>{datos.consultorios.filter((registro) => registro.id === formulario.idConsultorio
+            || (registro.idArea === formulario.idArea && registro.estado === 'Activo' && registro.idEspecialidadArea
+              && (!profesional || especialidadesCompatibles(profesional, registro).length)))
             .map((registro) => <option key={registro.id} value={registro.id}>{registro.nombre}</option>)}
         </select></Campo></div>
         <Campo etiqueta="Especialidad" campo="idEspecialidad" errores={errores}><select required value={formulario.idEspecialidad} onChange={(evento) => cambiar('idEspecialidad', evento.target.value)}>

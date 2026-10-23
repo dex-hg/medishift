@@ -34,16 +34,16 @@ test('arrastre acepta solo identificadores y tipos internos, descarta datos adic
 
 test('especialidad se autoselecciona solo cuando existe una compatible', () => {
   const profesional = { id: ID, especialidades: [{ id: ID, nombre: 'Dermatología' }, { id: OTRA, nombre: 'General' }] };
-  const consultorio = { id: OTRA, idArea: ID, usoGeneral: false, especialidades: [{ id: ID, nombre: 'Dermatología' }] };
+  const consultorio = { id: OTRA, idArea: ID, idEspecialidadArea: ID, usoGeneral: false, especialidades: [{ id: ID, nombre: 'Dermatología' }] };
   assert.equal(especialidadesCompatibles(profesional, consultorio).length, 1);
   assert.equal(turnoInicial({ profesional, consultorio, fecha: '2026-10-26' }).idEspecialidad, ID);
-  assert.equal(turnoInicial({ profesional, consultorio: { ...consultorio, usoGeneral: true }, fecha: '2026-10-26' }).idEspecialidad, '');
+  assert.equal(turnoInicial({ profesional, consultorio: { ...consultorio, idArea: null, usoGeneral: true }, fecha: '2026-10-26' }).idEspecialidad, '');
   assert.deepEqual(especialidadesCompatibles(profesional, null), []);
 });
 
 test('mover turno conserva las horas y la observación pero adapta fecha y consultorio', () => {
   const profesional = { id: ID, especialidades: [{ id: ID, nombre: 'Dermatología' }] };
-  const consultorio = { id: OTRA, idArea: ID, usoGeneral: true, especialidades: [] };
+  const consultorio = { id: OTRA, idArea: ID, idEspecialidadArea: ID, usoGeneral: true, especialidades: [] };
   const datos = turnoInicial({ profesional, consultorio, fecha: '2026-10-27', turno: {
     horaInicio: '13:00', horaFin: '17:00', observacion: 'Nota existente', idEspecialidad: ID,
   } });
@@ -51,4 +51,25 @@ test('mover turno conserva las horas y la observación pero adapta fecha y consu
   assert.equal(datos.idConsultorio, OTRA);
   assert.equal(datos.horaInicio, '13:00');
   assert.equal(datos.observacion, 'Nota existente');
+});
+
+test('un dermatólogo no puede asignarse a odontología aunque el consultorio sea general', () => {
+  const profesional = { id: ID, especialidades: [{ id: ID, nombre: 'Dermatología' }] };
+  const consultorio = { id: OTRA, idArea: OTRA, idEspecialidadArea: OTRA, usoGeneral: true, especialidades: [] };
+  assert.deepEqual(especialidadesCompatibles(profesional, consultorio), []);
+  assert.equal(turnoInicial({ profesional, consultorio, fecha: '2032-11-02' }).idEspecialidad, '');
+});
+
+test('un área sin configurar no admite asignaciones y una segunda restricción del consultorio se respeta', () => {
+  const profesional = { id: ID, especialidades: [{ id: ID, nombre: 'Dermatología' }] };
+  assert.deepEqual(especialidadesCompatibles(profesional, { idArea: ID, idEspecialidadArea: null, usoGeneral: true }), []);
+  assert.deepEqual(especialidadesCompatibles(profesional, { idArea: ID, idEspecialidadArea: ID, usoGeneral: false,
+    especialidades: [{ id: OTRA, nombre: 'Odontología' }] }), []);
+});
+
+test('para un profesional con varias especialidades solo se ofrece la que corresponde al área', () => {
+  const profesional = { id: ID, especialidades: [{ id: ID, nombre: 'Dermatología' }, { id: OTRA, nombre: 'Odontología' }] };
+  const consultorio = { id: OTRA, idArea: ID, idEspecialidadArea: OTRA, usoGeneral: true, especialidades: [] };
+  assert.deepEqual(especialidadesCompatibles(profesional, consultorio), [{ id: OTRA, nombre: 'Odontología' }]);
+  assert.equal(turnoInicial({ profesional, consultorio, fecha: '2032-11-02' }).idEspecialidad, OTRA);
 });

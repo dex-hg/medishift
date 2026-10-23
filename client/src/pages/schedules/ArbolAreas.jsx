@@ -1,4 +1,4 @@
-import { ChevronDown, DoorOpen, Folder, FolderOpen, Plus } from 'lucide-react';
+import { ChevronDown, DoorOpen, Folder, FolderOpen, Plus, Settings2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function ArbolAreas({ areas, consultorios, seleccionado, seleccionar, agregar, ocupado }) {
@@ -24,8 +24,11 @@ export default function ArbolAreas({ areas, consultorios, seleccionado, seleccio
           <div className="arbol-areas__carpeta"><button type="button" aria-expanded={abierta} onClick={() => alternar(area.id)}>
             <ChevronDown size={14} className={!abierta ? 'arbol-areas__cerrado' : ''} />
             {abierta ? <FolderOpen size={18} /> : <Folder size={18} />}<span>{area.nombre}</span><small>{hijos.length}</small>
-          </button><button className="boton-icono" type="button" disabled={ocupado} onClick={() => agregar({ tipo: 'consultorio', idArea: area.id })}
+          </button><button className="boton-icono" type="button" disabled={ocupado} onClick={() => agregar({ tipo: 'especialidad-area', idArea: area.id })}
+            aria-label={`Configurar especialidad de ${area.nombre}`}><Settings2 size={15} /></button>
+            <button className="boton-icono" type="button" disabled={ocupado || !area.idEspecialidad} onClick={() => agregar({ tipo: 'consultorio', idArea: area.id })}
             aria-label={`Añadir consultorio a ${area.nombre}`}><Plus size={15} /></button></div>
+          <p className="arbol-areas__especialidad">{area.especialidad || 'Especialidad por configurar'}</p>
           {abierta && <ul>{hijos.map((consultorio) => <li key={consultorio.id}>
             <button className={`arbol-areas__consultorio ${seleccionado === consultorio.id ? 'seleccionado' : ''}`}
               aria-pressed={seleccionado === consultorio.id} type="button" disabled={ocupado} onClick={() => seleccionar(consultorio.id)}>

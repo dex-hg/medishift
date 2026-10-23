@@ -92,6 +92,10 @@ export function validarTurno(datos, { recursos, turnos = [], idActual } = {}) {
     if (consultorio && !consultorio.usoGeneral && !consultorio.especialidades.some((registro) => registro.id === normalizados.idEspecialidad)) {
       errores.idConsultorio = 'El consultorio no admite la especialidad seleccionada.';
     }
+    if (consultorio?.idArea && consultorio.idEspecialidadArea !== normalizados.idEspecialidad) {
+      errores.idEspecialidad = consultorio.idEspecialidadArea ? 'La especialidad no corresponde al área del consultorio.'
+        : 'Configura la especialidad del área antes de asignar turnos.';
+    }
   }
   if (duracion > 0 && fechaValida(normalizados.fecha)) {
     const otros = turnos.filter((turno) => turno.id !== idActual && turno.estado !== 'Cancelado');

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cargarPlanificador, crearConsultorioEnArea, eliminarTurnoMensual, guardarTurnoMensual, vincularConsultorio } from './planificador.js';
+import { cargarPlanificador, configurarEspecialidadArea, crearAreaEspecializada, crearConsultorioEnArea, eliminarTurnoMensual, guardarTurnoMensual, vincularConsultorio } from './planificador.js';
 
 const ID = '10000000-0000-0000-0000-000000000001';
 const OTRO = '10000000-0000-0000-0000-000000000002';
@@ -9,8 +9,9 @@ const turno = () => ({ id: ID, idPlan: OTRO, idArea: ID, idProfesional: ID, prof
   idConsultorio: OTRO, consultorio: 'Consultorio 1', idEspecialidad: ID, especialidad: 'Dermatología',
   fecha: '2026-10-26', horaInicio: '08:00', horaFin: '12:00', estado: 'Borrador', observacion: '', revision: REVISION });
 const responder = (status, contenido) => ({ status, json: async () => contenido });
-const calendario = () => ({ zonaHoraria: 'America/Lima', areas: [{ id: ID, codigo: 'DER', nombre: 'Dermatología', estado: 'Activo' }],
-  consultorios: [{ id: OTRO, nombre: 'Consultorio 1', codigo: 'DER-01', idArea: ID, estado: 'Activo', usoGeneral: true, especialidades: [] }],
+const calendario = () => ({ zonaHoraria: 'America/Lima', areas: [{ id: ID, codigo: 'DER', nombre: 'Dermatología', estado: 'Activo', idEspecialidad: ID, especialidad: 'Dermatología' }],
+  especialidades: [{ id: ID, nombre: 'Dermatología' }],
+  consultorios: [{ id: OTRO, nombre: 'Consultorio 1', codigo: 'DER-01', idArea: ID, idEspecialidadArea: ID, estado: 'Activo', usoGeneral: false, especialidades: [{ id: ID, nombre: 'Dermatología' }] }],
   profesionales: [{ id: ID, nombre: 'Profesional de prueba', colegiatura: '001234', estado: 'Activo', especialidades: [{ id: ID, nombre: 'Dermatología' }] }],
   planes: [{ id: OTRO, idUnidad: ID, periodo: '2026-10', estado: 'Borrador', version: 1 }], turnos: [turno()] });
 
@@ -91,4 +92,33 @@ test('timeout y cancelación dejan un error recuperable', async () => {
   const controlador = new AbortController();
   controlador.abort();
   await assert.rejects(cargarPlanificador('2026-10', { senal: controlador.signal }), /cancelada/);
+});
+
+test('crear un área y configurar su especialidad usan las rutas atómicas y excluyen campos ajenos', async () => {
+  await crearAreaEspecializada({ codigo: ' DER ', nombre: ' Dermatología ', idEspecialidad: ID, idInstitucion: OTRO }, {
+    ejecutarSolicitud: async (ruta, opciones) => {
+      assert.equal(ruta, '/api/planificador/areas');
+      assert.deepEqual(JSON.parse(opciones.body), { codigo: 'DER', nombre: 'Dermatología', idEspecialidad: ID });
+      return responder(201, {});
+    },
+  });
+  await configurarEspecialidadArea(OTRO, ID, { ejecutarSolicitud: async (ruta, opciones) => {
+    assert.equal(ruta, `/api/planificador/areas/${OTRO}/especialidad`);
+    assert.equal(opciones.method, 'PUT');
+    assert.deepEqual(JSON.parse(opciones.body), { idEspecialidad: ID });
+    return responder(200, {});
+  } });
+  await assert.rejects(crearAreaEspecializada({ codigo: 'DER', nombre: 'Dermatología', idEspecialidad: '' }), /especialidad/);
+  await assert.rejects(configurarEspecialidadArea('ajena', ID), /válidas/);
+});
+
+test('conserva áreas sin configurar y valida sus identificadores antes de mostrarlas', async () => {
+  const datos = calendario();
+  datos.areas[0].idEspecialidad = null;
+  datos.areas[0].especialidad = '';
+  datos.consultorios[0].idEspecialidadArea = null;
+  const cargado = await cargarPlanificador('2026-10', { ejecutarSolicitud: async () => responder(200, datos) });
+  assert.equal(cargado.areas[0].idEspecialidad, null);
+  datos.areas[0].idEspecialidad = 'texto';
+  await assert.rejects(cargarPlanificador('2026-10', { ejecutarSolicitud: async () => responder(200, datos) }), /inválido/);
 });
