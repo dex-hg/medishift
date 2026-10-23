@@ -21,11 +21,11 @@ Copy-Item -LiteralPath .\.env.example -Destination .\.env
 Conserva los valores de un `.env` existente. El archivo está excluido de Git y no se debe compartir.
 
 | Variable                    | Configuración local                                           |
-| --------------------------- | --------------------------------------------------------------|
-| `MEDISHIFT_BD_URL`          | `jdbc:postgresql://localhost:5432/MediShift`                  |
-| `MEDISHIFT_BD_USUARIO`      | `postgres`                                                    |
-| `MEDISHIFT_BD_CLAVE`        | Contraseña de PostgreSQL, obligatoria                         |
-| `MEDISHIFT_COOKIE_SEGURA`   | `false` en localhost HTTP; `true` al servir mediante HTTPS    |
+| --------------------------- | -------------------------------------------------------------- |
+| `MEDISHIFT_BD_URL`        | `jdbc:postgresql://localhost:5432/MediShift`                 |
+| `MEDISHIFT_BD_USUARIO`    | `postgres`                                                   |
+| `MEDISHIFT_BD_CLAVE`      | Contraseña de PostgreSQL, obligatoria                         |
+| `MEDISHIFT_COOKIE_SEGURA` | `false` en localhost HTTP; `true` al servir mediante HTTPS |
 
 La URL debe coincidir con el nombre exacto de la base, incluidas las mayúsculas. El esquema se toma de la configuración del usuario de PostgreSQL; si necesitas especificarlo, añade `?currentSchema=NOMBRE_ESQUEMA` a la URL.
 
@@ -94,10 +94,10 @@ El éxito responde con HTTP 201:
 Los errores tienen la forma `{"mensaje":"Descripción","errores":{"campo":"Descripción"}}`. Los errores sin un campo específico usan `errores: {}`.
 
 | Estado | Situación                            |
-| ------ | -------------------------------------|
+| ------ | ------------------------------------- |
 | 400    | Campos inválidos o JSON incorrecto   |
-| 409    | Código de institución ya existente   |
-| 503    | No se puede acceder a PostgreSQL     |
+| 409    | Código de institución ya existente  |
+| 503    | No se puede acceder a PostgreSQL      |
 | 500    | Fallo interno con respuesta genérica |
 
 Las respuestas no incluyen contraseñas, hashes, SQL ni mensajes internos. Solo se incorpora `spring-security-crypto` para el hash, sin activar la seguridad web completa.
@@ -140,7 +140,13 @@ La sección `/horarios` reúne las vistas Meses y áreas y Turnos semanales. El 
 
 Para incluir las pruebas mensuales, añadir `-Dmedishift.prueba-migracion-mensual=true` y `-Dmedishift.prueba-planes-mensuales=true` a la verificación completa. La cuenta de prueba debe poder crear esquemas y `btree_gist` debe existir. Las pruebas de API confirman y revierten transacciones reales dentro de esquemas privados que se eliminan al terminar.
 
-El procedimiento, los contratos implementados, la validación y los pendientes se concentran en el [plan de Avance 3](<C:/Users/DEXTRE/OneDrive/Documentos/.Universidad/Ciclo VI/Curso Integrador I Sistemas - Software/Avance 3/plan/PLAN-CONTINUACION-MEDISHIFT.md>). V001 se administra mediante `scripts/administrar_migracion_mensual.py`; Spring no ejecuta migraciones al arrancar. Actividades, asignaciones y aprobación mensual siguen pendientes.
+V001 se administra mediante `scripts/administrar_migracion_mensual.py`; Spring no ejecuta migraciones al arrancar. El planificador por áreas utiliza V002 y ya persiste asignaciones mensuales. Actividades, políticas configurables y aprobación mensual siguen pendientes.
+
+## Datos para reportes mensuales
+
+Los recursos de profesionales incluyen `colegiatura`, tomada de `license_number_professional` como texto y limitada a la institución de la sesión. `/api/planificador` conserva los controles administrativos, el aislamiento institucional y `Cache-Control: no-store`. Las pruebas PostgreSQL verifican ese campo en la respuesta real.
+
+El cliente genera PDF y XLSX de los datos consultados, incluyendo estados por turno. No se reciben rutas del equipo del usuario ni se escriben reportes en el servidor. La elección de destino se realiza mediante el navegador; esta función no cambia el esquema ni implementa aprobación mensual.
 
 ## Archivos de Git
 
