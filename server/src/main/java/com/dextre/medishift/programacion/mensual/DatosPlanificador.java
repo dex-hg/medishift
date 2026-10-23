@@ -15,13 +15,16 @@ public final class DatosPlanificador {
 
 	private DatosPlanificador() { }
 
-	public record Area(UUID id, String codigo, String nombre, String estado) { }
+	public record Area(UUID id, String codigo, String nombre, String estado, UUID idEspecialidad, String especialidad) { }
 
-	public record ConsultorioArea(UUID id, String codigo, String nombre, UUID idArea, String estado,
+	public record ConsultorioArea(UUID id, String codigo, String nombre, UUID idArea, UUID idEspecialidadArea, String estado,
 			boolean usoGeneral, List<EspecialidadRecurso> especialidades) { }
 
+	public record SolicitudArea(String codigo, String nombre, UUID idEspecialidad) { }
+
 	public record CalendarioMensual(String zonaHoraria, List<Area> areas, List<ConsultorioArea> consultorios,
-			List<ProfesionalRecurso> profesionales, List<PlanMensual> planes, List<TurnoMensual> turnos) { }
+			List<ProfesionalRecurso> profesionales, List<PlanMensual> planes, List<TurnoMensual> turnos,
+			List<EspecialidadRecurso> especialidades) { }
 
 	public record TurnoMensual(UUID id, UUID idPlan, UUID idArea, UUID idProfesional, String profesional,
 			UUID idConsultorio, String consultorio, UUID idEspecialidad, String especialidad, LocalDate fecha,

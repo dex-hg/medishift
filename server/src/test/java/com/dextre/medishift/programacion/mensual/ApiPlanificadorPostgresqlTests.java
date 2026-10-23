@@ -31,10 +31,10 @@ class ApiPlanificadorPostgresqlTests extends SoporteApiPlanesMensuales {
 
 	@BeforeEach
 	void prepararCalendario() throws Exception {
-		ejecutarArchivo("V002__consultorios_por_area.sql");
 		inicializar(institucion, actor);
 		area = nuevaUnidad(institucion, "DER");
 		otraArea = nuevaUnidad(institucion, "ODO");
+		consultas.update("UPDATE planning_unit SET id_specialty=? WHERE id_institution=?", especialidad, institucion);
 		consultas.update("UPDATE room SET id_planning_unit = ? WHERE id_room = ?", area, consultorio);
 		otroConsultorio = UUID.randomUUID();
 		consultas.update("""
@@ -156,7 +156,8 @@ class ApiPlanificadorPostgresqlTests extends SoporteApiPlanesMensuales {
 		String formulario = "{\"idArea\":\"" + area + "\",\"codigo\":\"R03\",\"nombre\":\"Sala nueva\",\"ubicacion\":\"Piso 1\"}";
 		solicitar(post("/api/planificador/consultorios").session(sesion).contentType(MediaType.APPLICATION_JSON).content(formulario))
 				.andExpect(status().isCreated()).andExpect(jsonPath("$.idArea").value(area.toString()))
-				.andExpect(jsonPath("$.usoGeneral").value(true));
+				.andExpect(jsonPath("$.usoGeneral").value(false))
+				.andExpect(jsonPath("$.idEspecialidadArea").value(especialidad.toString()));
 		solicitar(post("/api/planificador/consultorios").session(sesion).contentType(MediaType.APPLICATION_JSON).content(formulario))
 				.andExpect(status().isConflict());
 		solicitar(put("/api/planificador/consultorios/" + consultorio + "/area").session(sesion)

@@ -27,6 +27,8 @@ import com.dextre.medishift.programacion.mensual.DatosPlanificador.ConsultorioAr
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.RegistroTurno;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.SolicitudAsignacion;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.SolicitudConsultorio;
+import com.dextre.medishift.programacion.mensual.DatosPlanificador.SolicitudArea;
+import com.dextre.medishift.programacion.mensual.DatosPlanesMensuales.SolicitudUnidad;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.TurnoMensual;
 import com.dextre.medishift.programacion.mensual.DatosPlanesMensuales.PlanMensual;
 
@@ -60,18 +62,41 @@ public class ServicioPlanificador {
 	public CalendarioMensual consultar(UUID institucion, UUID actor, PeriodoMensual periodo) {
 		preparar(institucion, actor, false);
 		ZoneId zona = horarios.zona(institucion);
-		List<Area> areas = planes.unidades(institucion).stream()
-				.map(unidad -> new Area(unidad.id(), unidad.codigo(), unidad.nombre(), unidad.estado())).toList();
+		List<Area> areas = calendario.areas(institucion);
 		List<PlanMensual> cabeceras = areas.stream().flatMap(area -> planes.planes(institucion, area.id(), periodo).stream()).toList();
 		return new CalendarioMensual(zona.getId(), areas, calendario.consultorios(institucion),
 				recursos.listar(institucion).profesionales(), cabeceras,
-				calendario.turnos(institucion, periodo).stream().map(registro -> vista(registro, zona)).toList());
+				calendario.turnos(institucion, periodo).stream().map(registro -> vista(registro, zona)).toList(),
+				exclusiones.listar(institucion).stream().map(especialidad -> new com.dextre.medishift.programacion.DatosProgramacion.EspecialidadRecurso(
+						especialidad.id(), especialidad.nombre())).toList());
+	}
+
+	@Transactional
+	public Area crearArea(UUID institucion, UUID actor, SolicitudArea solicitud) {
+		preparar(institucion, actor, true);
+		exclusiones.buscar(institucion, solicitud.idEspecialidad());
+		var unidad = planes.crearUnidad(institucion, new SolicitudUnidad(solicitud.codigo(), solicitud.nombre(), "Servicio"));
+		calendario.configurarArea(institucion, unidad.id(), solicitud.idEspecialidad());
+		planes.registrarCreacion(institucion, actor, unidad.id(), true);
+		return calendario.buscarArea(institucion, unidad.id());
+	}
+
+	@Transactional
+	public Area configurarArea(UUID institucion, UUID actor, UUID identificador, UUID especialidad) {
+		preparar(institucion, actor, true);
+		validarArea(institucion, identificador);
+		exclusiones.buscar(institucion, especialidad);
+		String antes = calendario.capturaArea(institucion, identificador);
+		calendario.configurarArea(institucion, identificador, especialidad);
+		calendario.auditarArea(institucion, actor, identificador, antes);
+		return calendario.buscarArea(institucion, identificador);
 	}
 
 	@Transactional
 	public ConsultorioArea crearConsultorio(UUID institucion, UUID actor, SolicitudConsultorio solicitud) {
 		preparar(institucion, actor, true);
 		validarArea(institucion, solicitud.idArea());
+		exigirEspecialidadArea(institucion, solicitud.idArea());
 		ConsultorioArea consultorio = calendario.crearConsultorio(institucion, solicitud);
 		calendario.auditar(institucion, actor, consultorio.id(), true, "create", null,
 				calendario.captura(institucion, consultorio.id(), true));
@@ -82,6 +107,7 @@ public class ServicioPlanificador {
 	public ConsultorioArea vincularConsultorio(UUID institucion, UUID actor, UUID identificador, UUID area) {
 		preparar(institucion, actor, true);
 		validarArea(institucion, area);
+		exigirEspecialidadArea(institucion, area);
 		calendario.buscarConsultorio(institucion, identificador);
 		String antes = calendario.captura(institucion, identificador, true);
 		calendario.vincularConsultorio(institucion, identificador, area);
@@ -178,6 +204,10 @@ public class ServicioPlanificador {
 	}
 
 	private void validar(UUID institucion, UUID area, Turno turno, ZoneId zona) {
+		Area seleccionada = exigirEspecialidadArea(institucion, area);
+		if (!seleccionada.idEspecialidad().equals(turno.especialidad())) {
+			throw CatalogoException.conflicto("idEspecialidad", "Esta área solo admite " + seleccionada.especialidad() + ". Selecciona un profesional de esa especialidad.");
+		}
 		recursos.validar(institucion, turno);
 		if (!area.equals(calendario.buscarConsultorio(institucion, turno.consultorio()).idArea())) {
 			throw CatalogoException.conflicto("idConsultorio", "El consultorio debe pertenecer al área seleccionada.");
@@ -207,6 +237,14 @@ public class ServicioPlanificador {
 			}
 		}
 		carga.validarHoras(List.of(turno), vecinos, lunes, zona);
+	}
+
+	private Area exigirEspecialidadArea(UUID institucion, UUID identificador) {
+		Area area = calendario.buscarArea(institucion, identificador);
+		if (area.idEspecialidad() == null) {
+			throw CatalogoException.conflicto("idArea", "Configura la especialidad del área antes de asignar turnos o consultorios.");
+		}
+		return area;
 	}
 
 	private TurnoMensual vista(RegistroTurno registro, ZoneId zona) {

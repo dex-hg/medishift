@@ -12,10 +12,26 @@ import com.dextre.medishift.catalogos.ValidadorCatalogos;
 import com.dextre.medishift.programacion.ValidadorProgramacion;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.SolicitudAsignacion;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.SolicitudConsultorio;
+import com.dextre.medishift.programacion.mensual.DatosPlanificador.SolicitudArea;
 
 public final class ValidadorPlanificador {
 
 	private ValidadorPlanificador() { }
+
+	public static SolicitudArea areaNueva(Map<String, Object> datos) {
+		comprobarCampos(datos, Set.of("codigo", "nombre", "idEspecialidad"));
+		UUID especialidad = ValidadorPlanesMensuales.identificador(datos.get("idEspecialidad"), "idEspecialidad");
+		Map<String, String> errores = new LinkedHashMap<>();
+		String codigo = texto(datos, "codigo", 32, true, errores);
+		String nombre = texto(datos, "nombre", 140, true, errores);
+		if (!errores.isEmpty()) { throw invalido(errores); }
+		return new SolicitudArea(codigo, nombre, especialidad);
+	}
+
+	public static UUID especialidadArea(Map<String, Object> datos) {
+		comprobarCampos(datos, Set.of("idEspecialidad"));
+		return ValidadorPlanesMensuales.identificador(datos.get("idEspecialidad"), "idEspecialidad");
+	}
 
 	public static SolicitudAsignacion turno(Map<String, Object> datos) {
 		if (datos == null) { throw invalido(Map.of()); }

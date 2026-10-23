@@ -25,6 +25,7 @@ import com.dextre.medishift.programacion.RevisionesProgramacion;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.CalendarioMensual;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.ConsultorioArea;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.TurnoMensual;
+import com.dextre.medishift.programacion.mensual.DatosPlanificador.Area;
 
 @RestController
 @RequestMapping(value = "/api/planificador", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -44,6 +45,19 @@ public class ControladorPlanificador {
 	public CalendarioMensual consultar(@RequestParam(required = false) String periodo, HttpServletRequest solicitud) {
 		Contexto contexto = autorizar(solicitud);
 		return servicio.consultar(contexto.institucion(), contexto.actor(), ValidadorPlanesMensuales.periodo(periodo));
+	}
+
+	@PostMapping(value = "/areas", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Area> crearArea(@RequestBody Map<String, Object> datos, HttpServletRequest solicitud) {
+		Contexto contexto = autorizar(solicitud);
+		return ResponseEntity.status(201).body(servicio.crearArea(contexto.institucion(), contexto.actor(), ValidadorPlanificador.areaNueva(datos)));
+	}
+
+	@PutMapping(value = "/areas/{id}/especialidad", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public Area configurarArea(@PathVariable String id, @RequestBody Map<String, Object> datos, HttpServletRequest solicitud) {
+		Contexto contexto = autorizar(solicitud);
+		return servicio.configurarArea(contexto.institucion(), contexto.actor(), ValidadorPlanesMensuales.identificador(id, "id"),
+				ValidadorPlanificador.especialidadArea(datos));
 	}
 
 	@PostMapping(value = "/consultorios", consumes = MediaType.APPLICATION_JSON_VALUE)
