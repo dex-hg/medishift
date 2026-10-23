@@ -27,10 +27,10 @@ public class RepositorioRecursosProgramacion {
 	public Recursos listar(UUID institucion) {
 		List<ProfesionalRecurso> profesionales = consultas.query("""
 				SELECT id_professional, first_name_professional || ' ' || last_name_professional AS nombre,
-				status_professional FROM professional WHERE id_institution = ?
+				license_number_professional, status_professional FROM professional WHERE id_institution = ?
 				ORDER BY lower(last_name_professional), lower(first_name_professional), id_professional
 				""", (fila, numero) -> new ProfesionalRecurso(fila.getObject("id_professional", UUID.class),
-				fila.getString("nombre"), estado(fila.getString("status_professional")),
+				fila.getString("nombre"), fila.getString("license_number_professional"), estado(fila.getString("status_professional")),
 				especialidadesProfesional(fila.getObject("id_professional", UUID.class))), institucion);
 		List<ConsultorioRecurso> consultorios = consultas.query("""
 				SELECT * FROM room WHERE id_institution = ? ORDER BY lower(code_room), id_room

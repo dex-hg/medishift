@@ -33,7 +33,7 @@ public final class DatosProgramacion {
 
 	public record EspecialidadRecurso(UUID id, String nombre) { }
 
-	public record ProfesionalRecurso(UUID id, String nombre, String estado,
+	public record ProfesionalRecurso(UUID id, String nombre, String colegiatura, String estado,
 			List<EspecialidadRecurso> especialidades) { }
 
 	public record ConsultorioRecurso(UUID id, String codigo, String nombre, String estado,

@@ -63,6 +63,7 @@ class ApiPlanificadorPostgresqlTests extends SoporteApiPlanesMensuales {
 				.andExpect(jsonPath("$.zonaHoraria").value("America/Lima"))
 				.andExpect(jsonPath("$.areas.length()").value(2))
 				.andExpect(jsonPath("$.profesionales.length()").value(2))
+				.andExpect(jsonPath("$.profesionales[?(@.id == '" + otroProfesional + "')].colegiatura").value(org.hamcrest.Matchers.contains("P02")))
 				.andExpect(jsonPath("$.planes.length()").value(1))
 				.andExpect(jsonPath("$.turnos[0].fecha").value("2032-11-02"))
 				.andExpect(jsonPath("$.turnos[0].idPlan").value(plan));

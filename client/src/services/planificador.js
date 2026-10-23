@@ -34,7 +34,8 @@ function recurso(valor, consultorio = false) {
       || (valor.idArea !== null && !esId(valor.idArea))) respuestaInvalida();
     return { ...resultado, codigo: valor.codigo, idArea: valor.idArea, usoGeneral: valor.usoGeneral };
   }
-  return resultado;
+  if (typeof valor.colegiatura !== 'string') respuestaInvalida();
+  return { ...resultado, colegiatura: valor.colegiatura };
 }
 
 function extraerTurno(valor) {

@@ -11,7 +11,7 @@ const turno = () => ({ id: ID, idPlan: OTRO, idArea: ID, idProfesional: ID, prof
 const responder = (status, contenido) => ({ status, json: async () => contenido });
 const calendario = () => ({ zonaHoraria: 'America/Lima', areas: [{ id: ID, codigo: 'DER', nombre: 'Dermatología', estado: 'Activo' }],
   consultorios: [{ id: OTRO, nombre: 'Consultorio 1', codigo: 'DER-01', idArea: ID, estado: 'Activo', usoGeneral: true, especialidades: [] }],
-  profesionales: [{ id: ID, nombre: 'Profesional de prueba', estado: 'Activo', especialidades: [{ id: ID, nombre: 'Dermatología' }] }],
+  profesionales: [{ id: ID, nombre: 'Profesional de prueba', colegiatura: '001234', estado: 'Activo', especialidades: [{ id: ID, nombre: 'Dermatología' }] }],
   planes: [{ id: OTRO, idUnidad: ID, periodo: '2026-10', estado: 'Borrador', version: 1 }], turnos: [turno()] });
 
 test('carga mensual conserva relaciones de carpetas y usa sesión sin caché', async () => {
@@ -24,10 +24,12 @@ test('carga mensual conserva relaciones de carpetas y usa sesión sin caché', a
   } });
   assert.equal(resultado.consultorios[0].idArea, resultado.areas[0].id);
   assert.equal(resultado.turnos[0].idPlan, OTRO);
+  assert.equal(resultado.profesionales[0].colegiatura, '001234');
 });
 
 test('rechaza respuestas con turnos fuera del mes o estructura inválida', async () => {
-  for (const contenido of [{ ...calendario(), turnos: [{ ...turno(), fecha: '2026-11-01' }] }, { ...calendario(), consultorios: [{}] }]) {
+  for (const contenido of [{ ...calendario(), turnos: [{ ...turno(), fecha: '2026-11-01' }] }, { ...calendario(), consultorios: [{}] },
+    { ...calendario(), profesionales: [{ ...calendario().profesionales[0], colegiatura: undefined }] }]) {
     await assert.rejects(cargarPlanificador('2026-10', { ejecutarSolicitud: async () => responder(200, contenido) }), /inválido/);
   }
 });
