@@ -128,7 +128,7 @@ export function useFormularioCatalogo({ modo, id, iniciales, obtener, crear, act
       if (!controlador.signal.aborted) setEspecialidades(registros);
     }).catch((fallo) => {
       if (!controlador.signal.aborted && !manejarSesion(fallo)) {
-        setErrorEspecialidades('No se pudieron cargar las sugerencias. Puedes escribir la especialidad o reintentar.');
+        setErrorEspecialidades('No se pudo cargar el catálogo de especialidades. Reintenta para poder seleccionarlas.');
       }
     });
     return () => controlador.abort();

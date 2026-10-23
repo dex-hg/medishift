@@ -1,7 +1,8 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { ArrowLeft, BriefcaseMedical, ContactRound } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
+import SelectorEspecialidad from '../../components/SelectorEspecialidad';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import FormularioBase from '../../components/FormularioBase';
 import { AvisoCatalogo } from '../../components/AvisoCatalogo';
@@ -17,6 +18,7 @@ const DATOS_INICIALES = Object.freeze({
 function FormularioProfesional({ modo }) {
   const { id } = useParams();
   const identificador = useId();
+  const [creandoEspecialidad, setCreandoEspecialidad] = useState(false);
   const formulario = useFormularioCatalogo({
     modo, id, iniciales: DATOS_INICIALES, obtener: obtenerProfesional,
     crear: crearProfesional, actualizar: actualizarProfesional,
@@ -43,7 +45,7 @@ function FormularioProfesional({ modo }) {
           </Link></div>
         </section>
       ) : (
-        <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando}
+        <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando || creandoEspecialidad}
           error={formulario.error} errores={formulario.errores}
           accionesSecundarias={<Link className="boton boton--fantasma" to="/profesionales"
             onClick={formulario.evitarSalida} aria-disabled={formulario.guardando || undefined}>
@@ -78,10 +80,10 @@ function FormularioProfesional({ modo }) {
                 error={formulario.errores.colegiatura}>
                 <input {...campo('colegiatura')} type="text" placeholder="Código de colegiatura" required />
               </CampoFormulario>
-              <CampoFormulario etiqueta="Especialidad" requerido ayuda="Selecciona una sugerencia o escribe una nueva especialidad."
-                error={formulario.errores.especialidad}>
-                <input {...campo('especialidad')} type="text" list={`${identificador}-especialidades`} required />
-              </CampoFormulario>
+              <SelectorEspecialidad value={formulario.datos.especialidad} onChange={formulario.actualizarCampo}
+                especialidades={formulario.especialidades} error={formulario.errores.especialidad}
+                disabled={formulario.guardando} alOcupar={setCreandoEspecialidad}
+                ayuda="Elige su especialidad. Si todavía no existe, créala aquí." />
               <CampoFormulario etiqueta="Categoría profesional" requerido error={formulario.errores.categoria}>
                 <input {...campo('categoria')} type="text" placeholder="Categoría del profesional" required />
               </CampoFormulario>
@@ -89,9 +91,6 @@ function FormularioProfesional({ modo }) {
                 <select {...campo('estado')} required><option>Activo</option><option>Inactivo</option></select>
               </CampoFormulario>
             </div>
-            <datalist id={`${identificador}-especialidades`}>
-              {formulario.especialidades.map((especialidad) => <option key={especialidad.id} value={especialidad.nombre} />)}
-            </datalist>
           </section>
           <AvisoCatalogo error={formulario.errorEspecialidades} reintentar={formulario.reintentarEspecialidades} />
         </FormularioBase>

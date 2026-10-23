@@ -79,3 +79,13 @@ export function validarProfesional(datos) {
 export function validarConsultorio(datos) {
   return validarDatos(normalizarConsultorio(datos), LIMITES_CONSULTORIO, ['especialidad'], datos);
 }
+
+export function normalizarEspecialidad(datos) {
+  return normalizarDatos(datos, ['nombre']);
+}
+
+export function validarEspecialidad(datos) {
+  const errores = validarDatos(normalizarEspecialidad(datos), { nombre: 100 }, [], datos);
+  delete errores.estado;
+  return errores;
+}

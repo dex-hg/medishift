@@ -1,0 +1,11 @@
+.especialidades-alta { padding: 22px; margin-bottom: 20px; }
+.especialidades-alta h2 { display: flex; align-items: center; gap: 9px; margin: 0 0 17px; font-size: 1rem; }
+.especialidades-alta h2 svg { color: var(--turquesa); }
+.especialidades-alta form { display: flex; align-items: end; gap: 14px; }
+.especialidades-alta .campo-planificador { flex: 1; }
+.selector-especialidad__crear { justify-self: start; padding: 4px 0 !important; font-size: .72rem !important; }
+.selector-especialidad__alta { display: grid; gap: 9px; padding: 12px; border: 1px solid var(--borde); border-radius: 9px; }
+.selector-especialidad__alta label { font-size: .74rem; color: var(--texto-secundario); }
+.selector-especialidad__alta > button { justify-self: start; }
+.arbol-areas__especialidad { margin: 0 0 8px 25px; color: var(--texto-secundario); font-size: .65rem; line-height: 1.5; }
+@media (max-width: 600px) { .especialidades-alta form { align-items: stretch; flex-direction: column; } }

@@ -1,7 +1,8 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { ArrowLeft, Building2, Settings2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
+import SelectorEspecialidad from '../../components/SelectorEspecialidad';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import FormularioBase from '../../components/FormularioBase';
 import { AvisoCatalogo } from '../../components/AvisoCatalogo';
@@ -16,6 +17,7 @@ const DATOS_INICIALES = Object.freeze({
 function FormularioConsultorio({ modo }) {
   const { id } = useParams();
   const identificador = useId();
+  const [creandoEspecialidad, setCreandoEspecialidad] = useState(false);
   const formulario = useFormularioCatalogo({
     modo, id, iniciales: DATOS_INICIALES, obtener: obtenerConsultorio,
     crear: crearConsultorio, actualizar: actualizarConsultorio,
@@ -42,7 +44,7 @@ function FormularioConsultorio({ modo }) {
           </Link></div>
         </section>
       ) : (
-        <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando}
+        <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando || creandoEspecialidad}
           error={formulario.error} errores={formulario.errores}
           accionesSecundarias={<Link className="boton boton--fantasma" to="/consultorios"
             onClick={formulario.evitarSalida} aria-disabled={formulario.guardando || undefined}>
@@ -63,14 +65,11 @@ function FormularioConsultorio({ modo }) {
               <CampoFormulario etiqueta="Piso o zona" requerido error={formulario.errores.ubicacion}>
                 <input {...campo('ubicacion')} type="text" placeholder="Ubicación del consultorio" required />
               </CampoFormulario>
-              <CampoFormulario etiqueta="Uso principal" ayuda="Deja el campo vacío para uso general, o escribe una especialidad."
-                error={formulario.errores.especialidad}>
-                <input {...campo('especialidad')} type="text" list={`${identificador}-especialidades`} placeholder="Uso general" />
-              </CampoFormulario>
+              <SelectorEspecialidad etiqueta="Uso principal" requerido={false} permitirGeneral value={formulario.datos.especialidad}
+                onChange={formulario.actualizarCampo} especialidades={formulario.especialidades} error={formulario.errores.especialidad}
+                disabled={formulario.guardando} alOcupar={setCreandoEspecialidad}
+                ayuda="El uso general admite las especialidades autorizadas por el área. Puedes restringirlo a una especialidad." />
             </div>
-            <datalist id={`${identificador}-especialidades`}>
-              {formulario.especialidades.map((especialidad) => <option key={especialidad.id} value={especialidad.nombre} />)}
-            </datalist>
           </section>
           <section className="seccion-formulario">
             <div className="seccion-formulario__titulo"><Settings2 size={19} aria-hidden="true" /><div>

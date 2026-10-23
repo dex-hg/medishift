@@ -1,5 +1,6 @@
 import {
   normalizarConsultorio, normalizarProfesional, validarConsultorio, validarProfesional,
+  normalizarEspecialidad, validarEspecialidad,
 } from '../utils/validacionesCatalogos.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -141,6 +142,11 @@ async function guardarRegistro(recurso, metodo, datos, opciones) {
 export const obtenerProfesionales = (opciones) => solicitarCatalogo('profesionales', 'GET', opciones);
 export const obtenerConsultorios = (opciones) => solicitarCatalogo('consultorios', 'GET', opciones);
 export const obtenerEspecialidades = (opciones) => solicitarCatalogo('especialidades', 'GET', opciones);
+export function crearEspecialidad(datos, opciones) {
+  const errores = validarEspecialidad(datos);
+  if (Object.keys(errores).length) return Promise.reject(new ErrorCatalogo('Revisa el nombre de la especialidad.', { errores, tipo: 'validacion' }));
+  return solicitarCatalogo('especialidades', 'POST', { ...opciones, datos: normalizarEspecialidad(datos) });
+}
 export const obtenerProfesional = (id, opciones) => solicitarCatalogo('profesionales', 'GET', { ...opciones, id: id ?? '' });
 export const obtenerConsultorio = (id, opciones) => solicitarCatalogo('consultorios', 'GET', { ...opciones, id: id ?? '' });
 export const crearProfesional = (datos, opciones) => guardarRegistro('profesionales', 'POST', datos, opciones);
