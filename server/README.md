@@ -140,7 +140,19 @@ La sección `/horarios` reúne las vistas Meses y áreas y Turnos semanales. El 
 
 Para incluir las pruebas mensuales, añadir `-Dmedishift.prueba-migracion-mensual=true` y `-Dmedishift.prueba-planes-mensuales=true` a la verificación completa. La cuenta de prueba debe poder crear esquemas y `btree_gist` debe existir. Las pruebas de API confirman y revierten transacciones reales dentro de esquemas privados que se eliminan al terminar.
 
-V001 se administra mediante `scripts/administrar_migracion_mensual.py`; Spring no ejecuta migraciones al arrancar. El planificador por áreas utiliza V002 y ya persiste asignaciones mensuales. Actividades, políticas configurables y aprobación mensual siguen pendientes.
+V001 se administra mediante `scripts/administrar_migracion_mensual.py`; Spring no ejecuta migraciones al arrancar. El planificador por áreas utiliza V002 y V003 y ya persiste asignaciones mensuales. Actividades, políticas configurables y aprobación mensual siguen pendientes.
+
+## Especialidades institucionales y compatibilidad por área
+
+`GET /api/especialidades` devuelve las especialidades propias de la institución y las especialidades compartidas anteriores a V003. `POST /api/especialidades` recibe únicamente `nombre`, de 1 a 100 puntos de código, y devuelve 201. La institución se toma de la sesión activa. Normaliza Unicode y espacios, rechaza campos desconocidos y devuelve 409 ante nombres repetidos sin distinguir mayúsculas. Un bloqueo por institución serializa las altas concurrentes. Las especialidades nuevas de una institución no se exponen a otra; las antiguas se conservan compartidas para no romper referencias existentes.
+
+`POST /api/planificador/areas` recibe `codigo`, `nombre` e `idEspecialidad`; crea y audita el área con su especialidad en una transacción. `PUT /api/planificador/areas/{id}/especialidad` configura un área anterior o cambia su especialidad. Ambas operaciones exigen Administrador vigente. La consulta mensual incluye el catálogo, la especialidad de cada área y `idEspecialidadArea` de cada consultorio.
+
+La compatibilidad efectiva de un consultorio es la intersección de sus especialidades físicas y la del área. Un consultorio físico general dentro de un área configurada admite solo la especialidad del área. Tanto la API mensual como la semanal validan esa restricción y la especialidad del profesional. Un área sin configurar no admite nuevas asignaciones mensuales ni nuevos vínculos de consultorios. Configurar un área o vincularle un consultorio rechaza turnos futuros incompatibles; el historial se conserva. Un fallo de auditoría revierte la escritura.
+
+Instalar V003 con `python scripts/administrar_especialidades_por_area.py aplicar`, después de V001 y V002. La herramienta respalda, restaura y ensaya antes de aplicar; verifica las huellas de las filas existentes y registra el checksum. No ejecutar el esquema inicial sobre una base usada. La migración no asigna especialidades por el nombre del área ni modifica turnos anteriores. Consultar el [procedimiento de migraciones](../db/migraciones/README.md).
+
+`EspecialidadesAreaPostgresqlTests` prueba compatibilidad, selección falsificada, flujo semanal, aislamiento institucional, sesión y rol, duplicados concurrentes, conservación de turnos y reversión por fallo de auditoría; se activa con `-Dmedishift.prueba-planes-mensuales=true`. `MigracionEspecialidadesPostgresqlTests` verifica V003 y la protección de U003, con `-Dmedishift.prueba-migracion-mensual=true`. Ambos usan esquemas privados.
 
 ## Datos para reportes mensuales
 

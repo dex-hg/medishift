@@ -41,6 +41,12 @@ Las librerías de PDF y Excel se cargan al exportar. Vite las preoptimiza para q
 
 ## Asignación directa y selección de recursos
 
+La sección **Especialidades** permite crear y buscar el catálogo de la institución. Los formularios de profesionales, consultorios y áreas usan un selector y permiten crear una especialidad sin perder los demás campos. Los nombres duplicados se rechazan después de normalizar espacios, Unicode y mayúsculas.
+
+Cada área mensual debe tener una especialidad autorizada. Sus consultorios solo admiten profesionales que tengan esa especialidad, incluso cuando el consultorio físico sea de uso general. El banco de profesionales desactiva las opciones incompatibles y el formulario limita las combinaciones disponibles; el servidor vuelve a comprobarlas al guardar.
+
+Las áreas anteriores quedan **sin especialidad configurada** para que el administrador la elija mediante el botón de configuración de cada carpeta. Mientras esté pendiente, conservan sus turnos y reportes, pero no permiten nuevas asignaciones ni nuevos consultorios. Si hay turnos futuros o consultorios de otra especialidad, se deben corregir antes de configurar o cambiar el área. No se deduce la especialidad a partir del nombre de la carpeta.
+
 El encargado asigna fecha y horas directamente, sin un formulario previo de disponibilidad. El módulo de disponibilidades y sus rutas se retiraron. El formulario de turnos solicita profesional, especialidad y consultorio compatible, en ese orden. Una especialidad única se selecciona automáticamente; con varias, se requiere elección explícita. Los mensajes indican si faltan recursos activos y permiten revisar sus catálogos. El consultorio continúa siendo una selección explícita y obligatoria.
 
 Los turnos mensuales actuales conservan las validaciones de especialidad, consultorio, cruces y carga aplicadas por el backend. Las políticas configurables, los turnos nocturnos y la aprobación mensual requieren incrementos posteriores.
