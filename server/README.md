@@ -160,6 +160,14 @@ Los recursos de profesionales incluyen `colegiatura`, tomada de `license_number_
 
 El cliente genera PDF y XLSX de los datos consultados, incluyendo estados por turno. No se reciben rutas del equipo del usuario ni se escriben reportes en el servidor. La elección de destino se realiza mediante el navegador; esta función no cambia el esquema ni implementa aprobación mensual.
 
+## Asistencia y faltas mensuales
+
+`GET /api/planificador?periodo=AAAA-MM` incluye `asistencia` (`Asistencia` o `Falta`) y `revisionAsistencia` por turno. `PUT /api/planificador/turnos/{id}/asistencia` recibe exclusivamente `{"falta":true}` o `{"falta":false}` y exige `If-Match` con la revisión de asistencia entre comillas. Devuelve el identificador del turno, el estado y la nueva revisión con su `ETag`. Una revisión obsoleta devuelve 409; omitirla devuelve 428. La institución y el actor se toman de la sesión, y se vuelve a comprobar Administrador antes de escribir. No se aceptan turnos ajenos, cancelados o sustituidos.
+
+Se reutiliza `attendance`, sin migraciones. La falta es una excepción a la asistencia por defecto y puede registrarse también en fechas futuras. Al corregirla se retira la excepción si no tiene entradas ni salidas reales; si existen, se conservan y el estado pasa a `present`. La escritura y la auditoría son transaccionales y utilizan el bloqueo institucional del planificador. Los límites y cruces de programación siguen considerando las reservas; la falta descuenta horas computables y conserva el turno. Los turnos con una falta registrada mantienen su protección frente a cambios de programación.
+
+`ApiFaltasPostgresqlTests` añade diez pruebas reales de persistencia, corrección, fechas, validación, autorización, aislamiento, concurrencia y reversión por fallo de auditoría. Se activa con `-Dmedishift.prueba-planes-mensuales=true`; utiliza esquemas privados que se eliminan al terminar. La verificación completa del incremento pasó con 433 pruebas del backend y 162 del cliente, además del flujo de navegador, PDF y Excel sobre datos ficticios aislados.
+
 ## Archivos de Git
 
 Versiona los fuentes, pruebas, `pom.xml`, README, `.env.example` y los wrappers `mvnw`, `mvnw.cmd` y `.mvn/wrapper/maven-wrapper.properties`. Las credenciales y `target` están excluidos de Git.

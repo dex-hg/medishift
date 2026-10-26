@@ -39,6 +39,14 @@ En navegadores de escritorio con `showSaveFilePicker` y contexto seguro (HTTPS o
 
 Las librerías de PDF y Excel se cargan al exportar. Vite las preoptimiza para que su primera utilización en desarrollo no recargue el calendario. `core-js` no requiere ejecutar su script informativo de instalación.
 
+## Asistencia y faltas
+
+El administrador abre `/faltas` desde el menú o desde la tarjeta del panel, que permite buscar directamente un especialista. Puede filtrar el calendario mensual por nombre o apellido, día, área, consultorio y estado de asistencia. Se admiten faltas pasadas, actuales y futuras. Cada turno cuenta como asistencia por defecto; una falta afecta únicamente al turno seleccionado, aunque el profesional tenga otros turnos el mismo día. «Restablecer asistencia» corrige la marca y devuelve sus horas al total.
+
+El calendario conserva los turnos con falta y los identifica con «Falta · 0 h». El banco de profesionales y los reportes descuentan esas horas. La matriz individual marca `F`; el detalle de PDF y Excel conserva la asistencia de cada turno. Excel utiliza una fórmula condicional para mantener las faltas en cero al recalcular. La vista previa muestra horas computables y faltas. Estos cálculos no eliminan ni reprograman los turnos reservados. Para mover o eliminar un turno futuro con falta, se debe restablecer primero su asistencia.
+
+La pantalla bloquea envíos simultáneos, conserva los filtros al recargar, informa fallos de carga y escritura y actualiza los datos ante conflictos de revisión. La consulta semanal anterior sigue siendo independiente.
+
 ## Asignación directa y selección de recursos
 
 La sección **Especialidades** permite crear y buscar el catálogo de la institución. Los formularios de profesionales, consultorios y áreas usan un selector y permiten crear una especialidad sin perder los demás campos. Los nombres duplicados se rechazan después de normalizar espacios, Unicode y mayúsculas.
