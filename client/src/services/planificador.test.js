@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cargarPlanificador, configurarEspecialidadArea, crearAreaEspecializada, crearConsultorioEnArea, eliminarTurnoMensual, guardarTurnoMensual, vincularConsultorio } from './planificador.js';
+import { cambiarAsistencia, cargarPlanificador, configurarEspecialidadArea, crearAreaEspecializada, crearConsultorioEnArea, eliminarTurnoMensual, guardarTurnoMensual, vincularConsultorio } from './planificador.js';
 
 const ID = '10000000-0000-0000-0000-000000000001';
 const OTRO = '10000000-0000-0000-0000-000000000002';
 const REVISION = 'b'.repeat(64);
 const turno = () => ({ id: ID, idPlan: OTRO, idArea: ID, idProfesional: ID, profesional: 'Profesional de prueba',
   idConsultorio: OTRO, consultorio: 'Consultorio 1', idEspecialidad: ID, especialidad: 'Dermatología',
-  fecha: '2026-10-26', horaInicio: '08:00', horaFin: '12:00', estado: 'Borrador', observacion: '', revision: REVISION });
+  fecha: '2026-10-26', horaInicio: '08:00', horaFin: '12:00', estado: 'Borrador', observacion: '', revision: REVISION,
+  asistencia: 'Asistencia', revisionAsistencia: REVISION });
 const responder = (status, contenido) => ({ status, json: async () => contenido });
 const calendario = () => ({ zonaHoraria: 'America/Lima', areas: [{ id: ID, codigo: 'DER', nombre: 'Dermatología', estado: 'Activo', idEspecialidad: ID, especialidad: 'Dermatología' }],
   especialidades: [{ id: ID, nombre: 'Dermatología' }],
@@ -26,6 +27,33 @@ test('carga mensual conserva relaciones de carpetas y usa sesión sin caché', a
   assert.equal(resultado.consultorios[0].idArea, resultado.areas[0].id);
   assert.equal(resultado.turnos[0].idPlan, OTRO);
   assert.equal(resultado.profesionales[0].colegiatura, '001234');
+  assert.equal(resultado.turnos[0].asistencia, 'Asistencia');
+  assert.equal(resultado.turnos[0].revisionAsistencia, REVISION);
+});
+
+test('registra y corrige faltas usando la revisión de asistencia y únicamente un booleano', async () => {
+  for (const falta of [true, false]) {
+    const resultado = await cambiarAsistencia(ID, falta, { revision: REVISION, ejecutarSolicitud: async (ruta, opciones) => {
+      assert.equal(ruta, `/api/planificador/turnos/${ID}/asistencia`);
+      assert.equal(opciones.method, 'PUT');
+      assert.equal(opciones.credentials, 'same-origin');
+      assert.equal(opciones.headers['If-Match'], `"${REVISION}"`);
+      assert.deepEqual(JSON.parse(opciones.body), { falta });
+      return responder(200, { idTurno: ID, asistencia: falta ? 'Falta' : 'Asistencia', revisionAsistencia: 'c'.repeat(64) });
+    } });
+    assert.equal(resultado.asistencia, falta ? 'Falta' : 'Asistencia');
+  }
+  await assert.rejects(cambiarAsistencia(ID, 'true', { revision: REVISION }), /Actualiza/);
+  await assert.rejects(cambiarAsistencia(ID, true), /Actualiza/);
+});
+
+test('no acepta estados de asistencia desconocidos ni respuestas de otro turno', async () => {
+  for (const cambio of [{ asistencia: 'Pendiente' }, { revisionAsistencia: '' }, { asistencia: undefined }]) {
+    await assert.rejects(cargarPlanificador('2026-10', { ejecutarSolicitud: async () => responder(200,
+      { ...calendario(), turnos: [{ ...turno(), ...cambio }] }) }), /inválido/);
+  }
+  await assert.rejects(cambiarAsistencia(ID, true, { revision: REVISION, ejecutarSolicitud: async () => responder(200,
+    { idTurno: OTRO, asistencia: 'Falta', revisionAsistencia: REVISION }) }), /inválido/);
 });
 
 test('rechaza respuestas con turnos fuera del mes o estructura inválida', async () => {

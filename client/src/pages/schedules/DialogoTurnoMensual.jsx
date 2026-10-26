@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import VentanaPlanificador from './VentanaPlanificador';
 import { diasDelMes, especialidadesCompatibles, nombreMes, turnoInicial } from '../../utils/calendarioMensual';
 import { duracionTurno, validarTurno } from '../../utils/validacionesProgramacion';
@@ -21,9 +22,10 @@ export default function DialogoTurnoMensual({ editor, datos, periodo, hoy, ocupa
   const especialidades = especialidadesCompatibles(profesional, consultorio);
   const plan = datos.planes.find((registro) => registro.id === editor.turno?.idPlan);
   const editable = (!editor.turno || editor.turno.fecha >= hoy) && (!editor.turno || editor.turno.estado === 'Borrador')
-    && (!plan || plan.estado === 'Borrador');
+    && (!plan || plan.estado === 'Borrador') && editor.turno?.asistencia !== 'Falta';
   const turnoActual = editor.turno && datos.turnos.find((registro) => registro.id === editor.turno.id);
-  const desactualizado = editor.turno && (!turnoActual || turnoActual.revision !== editor.turno.revision);
+  const desactualizado = editor.turno && (!turnoActual || turnoActual.revision !== editor.turno.revision
+    || turnoActual.revisionAsistencia !== editor.turno.revisionAsistencia);
   const cambiar = (campo, valor) => {
     setErroresLocales({});
     setFormulario((anterior) => {
@@ -64,6 +66,9 @@ export default function DialogoTurnoMensual({ editor, datos, periodo, hoy, ocupa
         {turnoActual ? <button type="button" className="boton boton--fantasma" onClick={() => actualizarRevision(turnoActual)}>Revisar con la versión actual</button>
           : <p>Cierra esta ventana y revisa el calendario actualizado.</p>}</div>}
       {!editable && <p className="planificador-ayuda">Este turno se muestra en modo de consulta. Solo puedes editar borradores con fecha vigente.</p>}
+      {editor.turno && <p className={`asistencia-estado ${editor.turno.asistencia === 'Falta' ? 'asistencia-estado--falta' : ''}`}>
+        {editor.turno.asistencia === 'Falta' ? 'Falta registrada: este turno suma 0 horas. Restablece la asistencia antes de modificarlo.' : 'Asistencia por defecto.'}
+        <Link className="planificador-enlace" to={`/faltas?periodo=${periodo}&buscar=${encodeURIComponent(editor.turno.profesional)}`}>Gestionar asistencia</Link></p>}
       <fieldset disabled={ocupado || !editable} className="formulario-planificador__campos">
         <Campo etiqueta="Profesional" campo="idProfesional" errores={errores}><select required value={formulario.idProfesional} onChange={(evento) => cambiar('idProfesional', evento.target.value)}>
           <option value="">Selecciona un profesional</option>{datos.profesionales.filter((registro) => registro.id === formulario.idProfesional

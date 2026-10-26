@@ -39,8 +39,8 @@ export default function CalendarioMensual({ periodo, consultorio, area, turnos, 
             }}
             onDragLeave={(evento) => { if (!evento.currentTarget.contains(evento.relatedTarget)) setDestino(''); }} onDrop={(evento) => recibir(evento, fecha)}>
             <div className="calendario-mensual__fecha"><time dateTime={fecha}>{Number(fecha.slice(-2))}</time>{fecha === hoy && <small>Hoy</small>}</div>
-            <div className="calendario-mensual__turnos">{delDia.map((turno) => <button key={turno.id} type="button" className="turno-mensual"
-              disabled={ocupado} draggable={habilitado && turno.estado === 'Borrador'} onClick={() => editar(turno)}
+            <div className="calendario-mensual__turnos">{delDia.map((turno) => <button key={turno.id} type="button" className={`turno-mensual ${turno.asistencia === 'Falta' ? 'turno-mensual--falta' : ''}`}
+              disabled={ocupado} draggable={habilitado && turno.estado === 'Borrador' && turno.asistencia !== 'Falta'} onClick={() => editar(turno)}
               onDragStart={(evento) => {
                 const contenido = JSON.stringify({ tipo: 'turno', id: turno.id });
                 evento.dataTransfer.setData(TIPO_ARRASTRE, contenido);
@@ -50,6 +50,7 @@ export default function CalendarioMensual({ periodo, consultorio, area, turnos, 
               aria-label={`Ver turno de ${turno.profesional}, ${mostrarFecha(fecha)}, ${turno.horaInicio} a ${turno.horaFin}`}>
               <span><strong>{turno.horaInicio}–{turno.horaFin}</strong>{habilitado && <GripVertical size={12} aria-hidden="true" />}</span>
               <span>{turno.profesional}</span><small>{turno.especialidad}</small>
+              {turno.asistencia === 'Falta' && <small className="turno-mensual__falta">Falta · 0 h</small>}
             </button>)}</div>
             {habilitado && <button type="button" className="calendario-mensual__asignar" onClick={() => asignar(fecha)}
               aria-label={`Asignar profesional el ${mostrarFecha(fecha)}`}><Plus size={13} /> Asignar</button>}

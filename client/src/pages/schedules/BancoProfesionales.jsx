@@ -2,7 +2,7 @@ import { GripVertical, Search, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { especialidadesCompatibles, TIPO_ARRASTRE } from '../../utils/calendarioMensual';
-import { duracionTurno } from '../../utils/validacionesProgramacion';
+import { minutosComputables } from '../../utils/asistencia';
 
 export default function BancoProfesionales({ profesionales, turnos, consultorio, seleccionado, seleccionar, ocupado }) {
   const [busqueda, setBusqueda] = useState('');
@@ -24,7 +24,7 @@ export default function BancoProfesionales({ profesionales, turnos, consultorio,
     <div className="banco-profesionales__lista">{visibles.map((profesional) => {
       const compatible = especialidadesCompatibles(profesional, consultorio).length > 0;
       const habilitado = compatible && !ocupado;
-      const horas = turnos.filter((turno) => turno.idProfesional === profesional.id).reduce((total, turno) => total + duracionTurno(turno), 0) / 60;
+      const horas = turnos.filter((turno) => turno.idProfesional === profesional.id).reduce((total, turno) => total + minutosComputables(turno), 0) / 60;
       return <button type="button" key={profesional.id} draggable={habilitado} onDragStart={(evento) => arrastrar(evento, profesional)}
         disabled={!habilitado} aria-pressed={seleccionado === profesional.id} onClick={() => seleccionar(seleccionado === profesional.id ? '' : profesional.id)}
         className={`profesional-arrastrable ${seleccionado === profesional.id ? 'seleccionado' : ''}`}>

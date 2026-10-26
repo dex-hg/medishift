@@ -11,6 +11,7 @@ import {
   Stethoscope,
   Tags,
   UsersRound,
+  UserRoundX,
   X,
 } from 'lucide-react';
 import { cerrarSesion, obtenerSesion } from '../services/sesion';
@@ -21,6 +22,7 @@ const gruposNavegacion = [
     enlaces: [
       { destino: '/panel', etiqueta: 'Inicio', icono: LayoutDashboard, fin: true },
       { destino: '/horarios', etiqueta: 'Horarios', icono: CalendarDays },
+      { destino: '/faltas', etiqueta: 'Faltas', icono: UserRoundX },
     ],
   },
   {

@@ -4,9 +4,9 @@ import { cargarPlanificador } from '../services/planificador';
 import { fechaActual } from '../utils/validacionesProgramacion';
 import { periodoValido } from '../services/planesMensuales';
 
-export default function usePlanificadorMensual() {
+export default function usePlanificadorMensual(destino = '/horarios', periodoInicial) {
   const navegar = useNavigate();
-  const [periodo, setPeriodo] = useState(() => fechaActual().slice(0, 7));
+  const [periodo, setPeriodo] = useState(() => periodoValido(periodoInicial) ? periodoInicial : fechaActual().slice(0, 7));
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -20,8 +20,8 @@ export default function usePlanificadorMensual() {
   const controladorOperacion = useRef(null);
   const secuencia = useRef(0);
   const manejarAcceso = useCallback((fallo) => {
-    if (fallo.estado === 401) navegar('/iniciar-sesion', { replace: true, state: { destino: '/horarios' } });
-  }, [navegar]);
+    if (fallo.estado === 401) navegar('/iniciar-sesion', { replace: true, state: { destino } });
+  }, [navegar, destino]);
 
   useEffect(() => {
     vigente.current = true;

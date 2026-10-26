@@ -6,7 +6,7 @@ const esObjeto = (valor) => valor !== null && typeof valor === 'object' && !Arra
 const esId = (valor) => typeof valor === 'string' && UUID.test(valor);
 const esTexto = (valor) => typeof valor === 'string' && Boolean(valor.trim());
 const camposError = ['idArea', 'idProfesional', 'idConsultorio', 'idEspecialidad', 'fecha', 'horaInicio',
-  'horaFin', 'observacion', 'revision', 'codigo', 'nombre', 'ubicacion', 'periodo'];
+  'horaFin', 'observacion', 'revision', 'codigo', 'nombre', 'ubicacion', 'periodo', 'falta', 'estado'];
 
 function respuestaInvalida() {
   throw new ErrorProgramacion('El servicio devolvió un horario mensual inválido. Recarga para volver a intentarlo.', { tipo: 'respuesta' });
@@ -41,12 +41,14 @@ function recurso(valor, consultorio = false) {
 
 function extraerTurno(valor) {
   const campos = ['id', 'idPlan', 'idArea', 'idProfesional', 'profesional', 'idConsultorio', 'consultorio',
-    'idEspecialidad', 'especialidad', 'fecha', 'horaInicio', 'horaFin', 'estado', 'observacion', 'revision'];
+    'idEspecialidad', 'especialidad', 'fecha', 'horaInicio', 'horaFin', 'estado', 'observacion', 'revision',
+    'asistencia', 'revisionAsistencia'];
   if (!esObjeto(valor) || !['id', 'idPlan', 'idArea', 'idProfesional', 'idConsultorio', 'idEspecialidad'].every((campo) => esId(valor[campo]))
     || !['profesional', 'consultorio', 'especialidad'].every((campo) => esTexto(valor[campo]))
     || !fechaValida(valor.fecha) || !horaValida(valor.horaInicio) || !horaValida(valor.horaFin)
     || valor.horaInicio >= valor.horaFin || typeof valor.observacion !== 'string' || !REVISION.test(valor.revision)
-    || !['Borrador', 'Aprobado', 'Pendiente', 'Cancelado', 'Sustituido'].includes(valor.estado)) respuestaInvalida();
+    || !['Borrador', 'Aprobado', 'Pendiente', 'Cancelado', 'Sustituido'].includes(valor.estado)
+    || !['Asistencia', 'Falta'].includes(valor.asistencia) || !REVISION.test(valor.revisionAsistencia)) respuestaInvalida();
   return Object.fromEntries(campos.map((campo) => [campo, valor[campo]]));
 }
 
@@ -101,7 +103,7 @@ async function solicitar(ruta, metodo, { datos, revision, senal, ejecutarSolicit
         const errores = esObjeto(contenido?.errores) ? Object.fromEntries(camposError.filter((campo) => esTexto(contenido.errores[campo]))
           .map((campo) => [campo, contenido.errores[campo]])) : {};
         throw new ErrorProgramacion(respuesta.status === 401 ? 'Tu sesión terminó. Inicia sesión nuevamente.'
-          : respuesta.status === 403 ? 'Solo un administrador puede organizar los horarios mensuales.'
+          : respuesta.status === 403 ? 'Esta operación requiere el permiso de administrador.'
             : esTexto(contenido?.mensaje) ? contenido.mensaje : 'No se pudo guardar el horario.', { estado: respuesta.status, errores });
       }
       return contenido;
@@ -130,6 +132,17 @@ export async function guardarTurnoMensual(datos, { id, revision, ...opciones } =
 export function eliminarTurnoMensual(id, { revision, ...opciones } = {}) {
   if (!esId(id) || !REVISION.test(revision)) throw new ErrorProgramacion('Recarga el turno antes de eliminarlo.', { estado: 409 });
   return solicitar(`/api/planificador/turnos/${id}`, 'DELETE', { ...opciones, revision });
+}
+
+export async function cambiarAsistencia(id, falta, { revision, ...opciones } = {}) {
+  if (!esId(id) || !REVISION.test(revision) || typeof falta !== 'boolean') {
+    throw new ErrorProgramacion('Actualiza el turno antes de cambiar su asistencia.', { tipo: 'validacion' });
+  }
+  const resultado = await solicitar(`/api/planificador/turnos/${id}/asistencia`, 'PUT', {
+    ...opciones, revision, datos: { falta } });
+  if (!esObjeto(resultado) || resultado.idTurno !== id || resultado.asistencia !== (falta ? 'Falta' : 'Asistencia')
+    || !REVISION.test(resultado.revisionAsistencia)) respuestaInvalida();
+  return { idTurno: resultado.idTurno, asistencia: resultado.asistencia, revisionAsistencia: resultado.revisionAsistencia };
 }
 
 export function crearConsultorioEnArea(datos, opciones) {

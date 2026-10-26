@@ -1,11 +1,15 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight, Building2, CalendarClock, Plus, UsersRound } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
+import { ArrowRight, Building2, CalendarClock, Plus, Search, UserRoundX, UsersRound } from 'lucide-react';
 import EncabezadoPagina from '../components/EncabezadoPagina';
 import { useResumenInicio } from '../hooks/useResumenInicio';
 import { mostrarFecha } from '../utils/validacionesProgramacion';
 
 function Inicio() {
   const { resumen, reintentar } = useResumenInicio();
+  const { sesion } = useOutletContext();
+  const navegar = useNavigate();
+  const [busquedaFaltas, cambiarBusquedaFaltas] = useState('');
 
   const { profesionales, consultorios, semana } = resumen;
   const accesos = [
@@ -81,6 +85,19 @@ function Inicio() {
           </div>
         </>
       )}
+
+      {sesion.esAdministrador && <section className="panel acceso-faltas" aria-label="Acceso rápido a faltas">
+        <span className="tarjeta-metrica__icono tarjeta-metrica__icono--turquesa"><UserRoundX size={24} /></span>
+        <div><p className="sobrelinea">Asistencia del personal</p><h2>Asistencia y faltas</h2>
+          <p>Busca un especialista y registra faltas por día y consultorio. Sus horas se actualizan en los totales y reportes.</p>
+          <Link className="planificador-enlace" to="/faltas">Abrir módulo de faltas <ArrowRight size={14} /></Link></div>
+        <form onSubmit={(evento) => { evento.preventDefault(); navegar(`/faltas?buscar=${encodeURIComponent(busquedaFaltas.trim())}`); }}>
+          <label className="buscador"><Search size={17} aria-hidden="true" /><span className="solo-lectores">Buscar especialista para registrar faltas</span>
+            <input type="search" placeholder="Nombre o apellido del especialista" maxLength={200} value={busquedaFaltas}
+              onChange={(evento) => cambiarBusquedaFaltas(evento.target.value)} /></label>
+          <button className="boton boton--primario" type="submit">Buscar especialista</button>
+        </form>
+      </section>}
 
       <section className="panel panel--acciones">
         <div><p className="sobrelinea">Acciones rápidas</p><h2>Crear un registro</h2></div>
