@@ -41,6 +41,15 @@ public final class ValidadorPlanificador {
 		return valor;
 	}
 
+	public static PeriodoMensual periodoFeriados(Map<String, Object> datos) {
+		comprobarCampos(datos, Set.of("periodo", "forzar"));
+		if (!(datos.get("periodo") instanceof String periodo)
+				|| (datos.containsKey("forzar") && !(datos.get("forzar") instanceof Boolean))) {
+			throw invalido(Map.of("periodo", "Envía un mes válido y un indicador de actualización booleano."));
+		}
+		return ValidadorPlanesMensuales.periodo(periodo);
+	}
+
 	public static SolicitudAsignacion turno(Map<String, Object> datos) {
 		if (datos == null) { throw invalido(Map.of()); }
 		UUID area = ValidadorPlanesMensuales.identificador(datos.get("idArea"), "idArea");

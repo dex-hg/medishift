@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dextre.medishift.acceso.ServicioAccesoMensual;
+import com.dextre.medishift.feriados.DatosFeriados.CalendarioFeriados;
+import com.dextre.medishift.feriados.ServicioFeriados;
 import com.dextre.medishift.catalogos.AccesoCatalogos;
 import com.dextre.medishift.programacion.RevisionesProgramacion;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.CalendarioMensual;
@@ -36,19 +38,28 @@ public class ControladorPlanificador {
 	private final ServicioAccesoMensual acceso;
 	private final ServicioPlanificador servicio;
 	private final ServicioFaltas faltas;
+	private final ServicioFeriados feriados;
 
 	public ControladorPlanificador(AccesoCatalogos sesiones, ServicioAccesoMensual acceso,
-			ServicioPlanificador servicio, ServicioFaltas faltas) {
+			ServicioPlanificador servicio, ServicioFaltas faltas, ServicioFeriados feriados) {
 		this.sesiones = sesiones;
 		this.acceso = acceso;
 		this.servicio = servicio;
 		this.faltas = faltas;
+		this.feriados = feriados;
 	}
 
 	@GetMapping
 	public CalendarioMensual consultar(@RequestParam(required = false) String periodo, HttpServletRequest solicitud) {
 		Contexto contexto = autorizar(solicitud);
 		return servicio.consultar(contexto.institucion(), contexto.actor(), ValidadorPlanesMensuales.periodo(periodo));
+	}
+
+	@PostMapping(value = "/feriados/sincronizar", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public CalendarioFeriados actualizarFeriados(@RequestBody Map<String, Object> datos, HttpServletRequest solicitud) {
+		Contexto contexto = autorizar(solicitud);
+		PeriodoMensual periodo = ValidadorPlanificador.periodoFeriados(datos);
+		return feriados.actualizar(contexto.institucion(), contexto.actor(), periodo, Boolean.TRUE.equals(datos.get("forzar")));
 	}
 
 	@PostMapping(value = "/areas", consumes = MediaType.APPLICATION_JSON_VALUE)

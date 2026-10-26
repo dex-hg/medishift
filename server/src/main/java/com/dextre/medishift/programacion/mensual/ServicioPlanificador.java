@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dextre.medishift.acceso.ServicioAccesoMensual;
+import com.dextre.medishift.feriados.ServicioFeriados;
 import com.dextre.medishift.catalogos.CatalogoException;
 import com.dextre.medishift.catalogos.RepositorioEspecialidades;
 import com.dextre.medishift.programacion.DatosProgramacion.Turno;
@@ -44,10 +45,12 @@ public class ServicioPlanificador {
 	private final RepositorioRestriccionesProgramacion restricciones;
 	private final RepositorioEspecialidades exclusiones;
 	private final ReglasCargaProgramacion carga;
+	private final ServicioFeriados feriados;
 
 	public ServicioPlanificador(ServicioAccesoMensual acceso, RepositorioPlanesMensuales planes,
 			RepositorioPlanificador calendario, RepositorioProgramacion horarios, RepositorioRecursosProgramacion recursos,
-			RepositorioRestriccionesProgramacion restricciones, RepositorioEspecialidades exclusiones, ReglasCargaProgramacion carga) {
+			RepositorioRestriccionesProgramacion restricciones, RepositorioEspecialidades exclusiones,
+			ReglasCargaProgramacion carga, ServicioFeriados feriados) {
 		this.acceso = acceso;
 		this.planes = planes;
 		this.calendario = calendario;
@@ -56,6 +59,7 @@ public class ServicioPlanificador {
 		this.restricciones = restricciones;
 		this.exclusiones = exclusiones;
 		this.carga = carga;
+		this.feriados = feriados;
 	}
 
 	@Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -68,7 +72,7 @@ public class ServicioPlanificador {
 				recursos.listar(institucion).profesionales(), cabeceras,
 				calendario.turnos(institucion, periodo).stream().map(registro -> vista(registro, zona)).toList(),
 				exclusiones.listar(institucion).stream().map(especialidad -> new com.dextre.medishift.programacion.DatosProgramacion.EspecialidadRecurso(
-						especialidad.id(), especialidad.nombre())).toList());
+						especialidad.id(), especialidad.nombre())).toList(), feriados.consultar(zona.getId(), periodo));
 	}
 
 	@Transactional

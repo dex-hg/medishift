@@ -9,6 +9,7 @@ import com.dextre.medishift.programacion.DatosProgramacion.ProfesionalRecurso;
 import com.dextre.medishift.programacion.DatosProgramacion.SolicitudTurno;
 import com.dextre.medishift.programacion.DatosProgramacion.Turno;
 import com.dextre.medishift.programacion.RevisionesProgramacion;
+import com.dextre.medishift.feriados.DatosFeriados.CalendarioFeriados;
 import com.dextre.medishift.programacion.mensual.DatosPlanesMensuales.PlanMensual;
 
 /** Un único calendario mensual; las áreas agrupan sus consultorios. */
@@ -25,7 +26,7 @@ public final class DatosPlanificador {
 
 	public record CalendarioMensual(String zonaHoraria, List<Area> areas, List<ConsultorioArea> consultorios,
 			List<ProfesionalRecurso> profesionales, List<PlanMensual> planes, List<TurnoMensual> turnos,
-			List<EspecialidadRecurso> especialidades) { }
+			List<EspecialidadRecurso> especialidades, CalendarioFeriados feriados) { }
 
 	public record TurnoMensual(UUID id, UUID idPlan, UUID idArea, UUID idProfesional, String profesional,
 			UUID idConsultorio, String consultorio, UUID idEspecialidad, String especialidad, LocalDate fecha,

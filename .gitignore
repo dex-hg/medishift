@@ -6,6 +6,7 @@ docs/
 !.env.example
 *.local
 *.log
+.medishift-cache/
 .DS_Store
 .idea/
 .vscode/
