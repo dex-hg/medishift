@@ -1,8 +1,9 @@
 import { duracionTurno } from './validacionesProgramacion.js';
 
 /** Las faltas conservan su turno, pero no aportan horas a los totales. */
-export function minutosComputables(turno) {
-  if (!turno || turno.asistencia === 'Falta' || ['Cancelado', 'Sustituido'].includes(turno.estado)) return 0;
+export function minutosComputables(turno, feriados) {
+  if (!turno || turno.asistencia === 'Falta' || ['Cancelado', 'Sustituido'].includes(turno.estado)
+    || (feriados?.estado === 'Disponible' && feriados.dias.some((dia) => dia.fecha === turno.fecha))) return 0;
   const minutos = duracionTurno(turno);
   return Number.isFinite(minutos) && minutos > 0 ? minutos : 0;
 }
@@ -18,7 +19,7 @@ export function filtrarTurnosAsistencia(turnos, { busqueda = '', fecha = '', idA
     && palabras.every((palabra) => normalizarBusqueda(turno.profesional).includes(palabra)));
 }
 
-export function resumirAsistencia(turnos) {
+export function resumirAsistencia(turnos, feriados) {
   return { cantidad: turnos.length, faltas: turnos.filter((turno) => turno.asistencia === 'Falta').length,
-    minutos: turnos.reduce((total, turno) => total + minutosComputables(turno), 0) };
+    minutos: turnos.reduce((total, turno) => total + minutosComputables(turno, feriados), 0) };
 }

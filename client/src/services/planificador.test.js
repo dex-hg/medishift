@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cambiarAsistencia, cargarPlanificador, configurarEspecialidadArea, crearAreaEspecializada, crearConsultorioEnArea, eliminarTurnoMensual, guardarTurnoMensual, vincularConsultorio } from './planificador.js';
+import { cambiarAsistencia, cargarPlanificador, configurarEspecialidadArea, crearAreaEspecializada, crearConsultorioEnArea, eliminarTurnoMensual, guardarTurnoMensual, sincronizarFeriados, vincularConsultorio } from './planificador.js';
 
 const ID = '10000000-0000-0000-0000-000000000001';
 const OTRO = '10000000-0000-0000-0000-000000000002';
@@ -11,6 +11,8 @@ const turno = () => ({ id: ID, idPlan: OTRO, idArea: ID, idProfesional: ID, prof
   asistencia: 'Asistencia', revisionAsistencia: REVISION });
 const responder = (status, contenido) => ({ status, json: async () => contenido });
 const calendario = () => ({ zonaHoraria: 'America/Lima', areas: [{ id: ID, codigo: 'DER', nombre: 'Dermatología', estado: 'Activo', idEspecialidad: ID, especialidad: 'Dermatología' }],
+  feriados: { codigoPais: 'PE', pais: 'Perú', estado: 'Disponible', fuente: 'Calendario de ensayo',
+    actualizado: '2026-10-26T15:00:00Z', minutosPorFeriado: 360, requiereActualizacion: false, dias: [], mensaje: '' },
   especialidades: [{ id: ID, nombre: 'Dermatología' }],
   consultorios: [{ id: OTRO, nombre: 'Consultorio 1', codigo: 'DER-01', idArea: ID, idEspecialidadArea: ID, estado: 'Activo', usoGeneral: false, especialidades: [{ id: ID, nombre: 'Dermatología' }] }],
   profesionales: [{ id: ID, nombre: 'Profesional de prueba', colegiatura: '001234', estado: 'Activo', especialidades: [{ id: ID, nombre: 'Dermatología' }] }],
@@ -29,6 +31,18 @@ test('carga mensual conserva relaciones de carpetas y usa sesión sin caché', a
   assert.equal(resultado.profesionales[0].colegiatura, '001234');
   assert.equal(resultado.turnos[0].asistencia, 'Asistencia');
   assert.equal(resultado.turnos[0].revisionAsistencia, REVISION);
+});
+
+test('sincroniza feriados por mes con sesión, sin enviar país, institución ni horas', async () => {
+  const resultado = await sincronizarFeriados('2026-10', { forzar: true, ejecutarSolicitud: async (ruta, opciones) => {
+    assert.equal(ruta, '/api/planificador/feriados/sincronizar');
+    assert.equal(opciones.method, 'POST');
+    assert.deepEqual(JSON.parse(opciones.body), { periodo: '2026-10', forzar: true });
+    return responder(200, calendario().feriados);
+  } });
+  assert.equal(resultado.codigoPais, 'PE');
+  await assert.rejects(cargarPlanificador('2026-10', { ejecutarSolicitud: async () => responder(200,
+    { ...calendario(), feriados: { ...calendario().feriados, dias: [{ fecha: '2026-11-01', nombre: 'Otro mes' }] } }) }), /inválido/);
 });
 
 test('registra y corrige faltas usando la revisión de asistencia y únicamente un booleano', async () => {

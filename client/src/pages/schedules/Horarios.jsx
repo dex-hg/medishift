@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, FileDown, FolderPlus, RefreshCw } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
+import ResumenFeriados from '../../components/ResumenFeriados';
 import usePlanificadorMensual from '../../hooks/usePlanificadorMensual';
 import { configurarEspecialidadArea, crearAreaEspecializada, crearConsultorioEnArea, eliminarTurnoMensual, guardarTurnoMensual, vincularConsultorio } from '../../services/planificador';
 import { desplazarMes, especialidadesCompatibles, nombreMes } from '../../utils/calendarioMensual';
@@ -76,7 +77,7 @@ export default function Horarios() {
     <EncabezadoPagina ruta={[{ etiqueta: 'Horarios' }]} titulo="Horarios mensuales"
       descripcion="Organiza a tus profesionales por área, consultorio y día. Todo el mes en un solo calendario."
       acciones={sesion.esAdministrador && <>
-        <button className="boton boton--secundario" type="button" disabled={ocupado || !datos || Boolean(consulta.errorCarga)}
+        <button className="boton boton--secundario" type="button" disabled={ocupado || !datos || Boolean(consulta.errorCarga) || datos?.feriados.estado !== 'Disponible'}
           onClick={() => setReporteAbierto(true)}><FileDown size={17} /> Exportar horario</button>
         <button className="boton boton--secundario" type="button" disabled={ocupado || !datos}
           onClick={() => { consulta.limpiarError(); setAccion({ tipo: 'area' }); }}><FolderPlus size={17} /> Nueva área</button></>} />
@@ -89,15 +90,17 @@ export default function Horarios() {
     </div><button className="boton boton--fantasma" type="button" disabled={ocupado} onClick={consulta.recargar}><RefreshCw size={15} /> Actualizar</button></div>
     {cargando && <p className="planificador-aviso" role="status">Cargando el mes y sus consultorios…</p>}
     {consulta.errorCarga && <div className="planificador-error" role="alert"><p>{consulta.errorCarga}</p><button className="boton boton--secundario" type="button" onClick={consulta.recargar}>Volver a intentar</button></div>}
-    {consulta.mensaje && <p className="planificador-exito" role="status">{consulta.mensaje} Los cambios se conservan como borrador mensual.</p>}
+    {consulta.mensaje && <p className="planificador-exito" role="status">{consulta.mensaje}</p>}
+    {datos && !consulta.errorCarga && <ResumenFeriados feriados={datos.feriados} error={consulta.errorFeriados || consulta.error}
+      ocupado={ocupado} actualizar={consulta.actualizarFeriados} />}
     {datos && !consulta.errorCarga && sesion.esAdministrador && <div className="planificador" aria-busy={ocupado}>
       <aside className="planificador__lateral"><ArbolAreas areas={datos.areas} consultorios={datos.consultorios}
         seleccionado={idConsultorio} seleccionar={(valor) => { setIdConsultorio(valor); setIdProfesional(''); }} ocupado={ocupado}
         agregar={(valor) => { consulta.limpiarError(); setAccion(valor); }} />
-        <BancoProfesionales profesionales={datos.profesionales} turnos={datos.turnos} consultorio={consultorio}
+        <BancoProfesionales profesionales={datos.profesionales} turnos={datos.turnos} feriados={datos.feriados} consultorio={consultorio}
           seleccionado={idProfesional} seleccionar={setIdProfesional} ocupado={ocupado || !editable} /></aside>
       <div className="planificador__principal"><CalendarioMensual periodo={periodo} consultorio={consultorio} area={area} hoy={hoy}
-        turnos={datos.turnos.filter((turno) => turno.idConsultorio === idConsultorio)} seleccionado={idProfesional}
+        turnos={datos.turnos.filter((turno) => turno.idConsultorio === idConsultorio)} feriados={datos.feriados} seleccionado={idProfesional}
         asignar={(fecha) => abrir(fecha)} editar={(turno) => abrir(turno.fecha, turno)} soltar={soltar} ocupado={ocupado} editable={editable} />
         {area && !area.idEspecialidad && <div className="planificador-error" role="status"><p>Selecciona la especialidad de {area.nombre} para asignar nuevos turnos.</p>
           <button className="boton boton--secundario" type="button" disabled={ocupado} onClick={() => { consulta.limpiarError(); setAccion({ tipo: 'especialidad-area', idArea: area.id }); }}>Configurar especialidad del área</button></div>}

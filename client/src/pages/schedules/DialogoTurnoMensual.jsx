@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import VentanaPlanificador from './VentanaPlanificador';
 import { diasDelMes, especialidadesCompatibles, nombreMes, turnoInicial } from '../../utils/calendarioMensual';
 import { duracionTurno, validarTurno } from '../../utils/validacionesProgramacion';
+import { buscarFeriado } from '../../utils/feriados';
 
 function Campo({ etiqueta, campo, errores, children }) {
   return <label className="campo-planificador"><span>{etiqueta}</span>{children}
@@ -97,6 +98,7 @@ export default function DialogoTurnoMensual({ editor, datos, periodo, hoy, ocupa
           onChange={(evento) => cambiar('observacion', evento.target.value)} placeholder="Una indicación breve para este turno" /></Campo>
       </fieldset>
       <p className="planificador-ayuda">{duracion > 0 ? `${(duracion / 60).toLocaleString('es-PE')} horas. ` : ''}El sistema comprueba cruces y los límites actuales de 6 h al día y 36 h por semana.</p>
+      {buscarFeriado(datos.feriados, formulario.fecha) && <p className="planificador-ayuda">Feriado no laborable: se acreditan {datos.feriados.minutosPorFeriado / 60} h institucionales al profesional, reemplazando las horas de sus turnos de ese día.</p>}
       {confirmaEliminar && <div className="planificador-error"><p>¿Eliminar este turno del borrador mensual?</p>
         <button className="boton boton--peligro" type="button" disabled={ocupado || desactualizado} onClick={eliminar}>Confirmar eliminación</button>
         <button className="boton boton--fantasma" type="button" disabled={ocupado} onClick={() => setConfirmaEliminar(false)}>Conservar turno</button></div>}

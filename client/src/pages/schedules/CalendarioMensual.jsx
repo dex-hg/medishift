@@ -2,8 +2,9 @@ import { CalendarDays, GripVertical, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { celdasDelMes, leerArrastre, TIPO_ARRASTRE } from '../../utils/calendarioMensual';
 import { DIAS_SEMANA, mostrarFecha } from '../../utils/validacionesProgramacion';
+import { buscarFeriado } from '../../utils/feriados';
 
-export default function CalendarioMensual({ periodo, consultorio, area, turnos, hoy, seleccionado, asignar, editar, soltar, ocupado, editable }) {
+export default function CalendarioMensual({ periodo, consultorio, area, turnos, feriados, hoy, seleccionado, asignar, editar, soltar, ocupado, editable }) {
   const [destino, setDestino] = useState('');
   const recibir = (evento, fecha) => {
     evento.preventDefault();
@@ -27,8 +28,9 @@ export default function CalendarioMensual({ periodo, consultorio, area, turnos, 
         {celdasDelMes(periodo).map((fecha, indice) => {
           if (!fecha) return <div key={`vacio-${indice}`} className="calendario-mensual__fuera" aria-hidden="true" />;
           const habilitado = editable && !ocupado && fecha >= hoy;
+          const feriado = buscarFeriado(feriados, fecha);
           const delDia = turnos.filter((turno) => turno.fecha === fecha).sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
-          return <div key={fecha} className={`calendario-mensual__dia ${fecha === hoy ? 'hoy' : ''} ${fecha < hoy ? 'pasado' : ''} ${destino === fecha ? 'destino' : ''}`}
+          return <div key={fecha} className={`calendario-mensual__dia ${feriado ? 'calendario-mensual__dia--feriado' : ''} ${fecha === hoy ? 'hoy' : ''} ${fecha < hoy ? 'pasado' : ''} ${destino === fecha ? 'destino' : ''}`}
             onDragOver={(evento) => {
               const tipos = Array.from(evento.dataTransfer.types);
               if (habilitado && (tipos.includes(TIPO_ARRASTRE) || tipos.includes('text/plain'))) {
@@ -39,6 +41,8 @@ export default function CalendarioMensual({ periodo, consultorio, area, turnos, 
             }}
             onDragLeave={(evento) => { if (!evento.currentTarget.contains(evento.relatedTarget)) setDestino(''); }} onDrop={(evento) => recibir(evento, fecha)}>
             <div className="calendario-mensual__fecha"><time dateTime={fecha}>{Number(fecha.slice(-2))}</time>{fecha === hoy && <small>Hoy</small>}</div>
+            {feriado && <div className="calendario-mensual__feriado" title={feriado.nombre}><strong>Feriado no laborable</strong>
+              <span>{feriado.nombre}</span><small>{feriados.minutosPorFeriado / 60} h institucionales</small></div>}
             <div className="calendario-mensual__turnos">{delDia.map((turno) => <button key={turno.id} type="button" className={`turno-mensual ${turno.asistencia === 'Falta' ? 'turno-mensual--falta' : ''}`}
               disabled={ocupado} draggable={habilitado && turno.estado === 'Borrador' && turno.asistencia !== 'Falta'} onClick={() => editar(turno)}
               onDragStart={(evento) => {

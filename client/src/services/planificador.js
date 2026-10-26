@@ -1,6 +1,7 @@
 import { ErrorProgramacion } from './programacion.js';
 import { periodoValido } from './planesMensuales.js';
 import { fechaValida, horaValida, normalizarTurno, REVISION, UUID, validarTurno } from '../utils/validacionesProgramacion.js';
+import { validarFeriados } from '../utils/feriados.js';
 
 const esObjeto = (valor) => valor !== null && typeof valor === 'object' && !Array.isArray(valor);
 const esId = (valor) => typeof valor === 'string' && UUID.test(valor);
@@ -53,7 +54,7 @@ function extraerTurno(valor) {
 }
 
 function extraerCalendario(valor, periodo) {
-  if (!esObjeto(valor) || !esTexto(valor.zonaHoraria)) respuestaInvalida();
+  if (!esObjeto(valor) || !esTexto(valor.zonaHoraria) || !validarFeriados(valor.feriados, periodo)) respuestaInvalida();
   try { new Intl.DateTimeFormat('es-PE', { timeZone: valor.zonaHoraria }); } catch { respuestaInvalida(); }
   const areas = lista(valor.areas, (area) => {
     if (!esObjeto(area) || !esId(area.id) || !esTexto(area.nombre) || !esTexto(area.codigo)
@@ -69,12 +70,12 @@ function extraerCalendario(valor, periodo) {
   });
   const turnos = lista(valor.turnos, extraerTurno);
   if (turnos.some((turno) => !turno.fecha.startsWith(`${periodo}-`))) respuestaInvalida();
-  return { zonaHoraria: valor.zonaHoraria, areas, planes, turnos, especialidades: lista(valor.especialidades, especialidad),
+  return { zonaHoraria: valor.zonaHoraria, feriados: valor.feriados, areas, planes, turnos, especialidades: lista(valor.especialidades, especialidad),
     consultorios: lista(valor.consultorios, (valor) => recurso(valor, true)),
     profesionales: lista(valor.profesionales, (valor) => recurso(valor)) };
 }
 
-async function solicitar(ruta, metodo, { datos, revision, senal, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000 } = {}) {
+async function solicitar(ruta, metodo, { datos, revision, senal, estadoEsperado, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000 } = {}) {
   if (typeof ejecutarSolicitud !== 'function' || !Number.isFinite(tiempoEspera) || tiempoEspera <= 0
     || (senal !== undefined && !(senal instanceof AbortSignal))) throw new ErrorProgramacion('No se pudo iniciar la solicitud.');
   const controlador = new AbortController();
@@ -98,7 +99,7 @@ async function solicitar(ruta, metodo, { datos, revision, senal, ejecutarSolicit
           ...(revision ? { 'If-Match': `"${revision}"` } : {}) }, ...(datos ? { body: JSON.stringify(datos) } : {}) });
       let contenido = null;
       if (respuesta.status !== 204) { try { contenido = await respuesta.json(); } catch { /* Se valida abajo. */ } }
-      const esperado = metodo === 'DELETE' ? 204 : metodo === 'POST' ? 201 : 200;
+      const esperado = estadoEsperado ?? (metodo === 'DELETE' ? 204 : metodo === 'POST' ? 201 : 200);
       if (respuesta.status !== esperado) {
         const errores = esObjeto(contenido?.errores) ? Object.fromEntries(camposError.filter((campo) => esTexto(contenido.errores[campo]))
           .map((campo) => [campo, contenido.errores[campo]])) : {};
@@ -118,6 +119,14 @@ async function solicitar(ruta, metodo, { datos, revision, senal, ejecutarSolicit
 export async function cargarPlanificador(periodo, opciones) {
   if (!periodoValido(periodo)) throw new ErrorProgramacion('Selecciona un mes válido.', { tipo: 'validacion' });
   return extraerCalendario(await solicitar(`/api/planificador?periodo=${encodeURIComponent(periodo)}`, 'GET', opciones), periodo);
+}
+
+export async function sincronizarFeriados(periodo, { forzar = false, ...opciones } = {}) {
+  if (!periodoValido(periodo) || typeof forzar !== 'boolean') throw new ErrorProgramacion('Selecciona un mes válido.');
+  const resultado = await solicitar('/api/planificador/feriados/sincronizar', 'POST', {
+    ...opciones, estadoEsperado: 200, datos: { periodo, forzar } });
+  if (!validarFeriados(resultado, periodo) || resultado.estado !== 'Disponible') respuestaInvalida();
+  return resultado;
 }
 
 export async function guardarTurnoMensual(datos, { id, revision, ...opciones } = {}) {

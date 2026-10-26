@@ -21,6 +21,8 @@ export function calendarioPrueba(periodo = '2026-10') {
   profesionales: [{ id: primerProfesional, nombre: 'María Núñez de la Peña', colegiatura: '001234', estado: 'Activo' },
     { id: otroProfesional, nombre: 'José Díaz', colegiatura: '006789', estado: 'Activo' },
     { id: identificadorPrueba(3), nombre: 'Profesional sin turnos', colegiatura: '', estado: 'Inactivo' }],
+  feriados: { codigoPais: 'PE', pais: 'Perú', estado: 'Disponible', fuente: 'Calendario ficticio de ensayo',
+    actualizado: '2026-10-26T15:00:00Z', minutosPorFeriado: 360, requiereActualizacion: false, dias: [], mensaje: '' },
   planes: [], turnos: [turno(101, primerProfesional, primeraSala, '01', '06:00', '12:00'),
     turno(102, primerProfesional, otraSala, '03', '06:00', '09:30'),
     turno(103, primerProfesional, primeraSala, '03', '12:00', '14:00', 'Pendiente'),

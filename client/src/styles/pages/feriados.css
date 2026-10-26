@@ -1,0 +1,14 @@
+.resumen-feriados { margin: 18px 0; padding: 18px 22px; border-color: rgb(251 191 36 / 28%); }
+.resumen-feriados__titulo { display: flex; align-items: center; gap: 12px; color: #fcd34d; }
+.resumen-feriados__titulo > div { flex: 1; }
+.resumen-feriados__titulo p { margin-top: 5px; color: var(--texto); font-size: .77rem; line-height: 1.6; }
+.resumen-feriados__dias { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 12px 0; }
+.resumen-feriados__dias li { padding: 7px 10px; border-radius: 7px; background: rgb(251 191 36 / 8%); font-size: .75rem; }
+.resumen-feriados__nota, .resumen-feriados__aviso { margin: 10px 0; font-size: .75rem; line-height: 1.6; color: var(--texto-tenue); }
+.resumen-feriados__aviso { color: #fcd34d; }
+.resumen-feriados > small { color: var(--texto-tenue); font-size: .68rem; }
+.calendario-mensual__dia--feriado { background: rgb(251 191 36 / 5%); box-shadow: inset 0 3px #d5a238; }
+.calendario-mensual__feriado { display: grid; gap: 4px; margin: 6px 0; padding: 7px; border: 1px solid rgb(251 191 36 / 25%); border-radius: 6px; color: #fcd34d; font-size: .65rem; }
+.calendario-mensual__feriado span { overflow-wrap: anywhere; line-height: 1.4; color: #ead7a1; }
+.calendario-mensual__feriado small { color: var(--texto-tenue); font-size: .6rem; }
+@media (max-width: 700px) { .resumen-feriados__titulo { flex-wrap: wrap; } .resumen-feriados__titulo > div { min-width: 75%; } }
