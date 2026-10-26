@@ -8,6 +8,7 @@ import com.dextre.medishift.programacion.DatosProgramacion.EspecialidadRecurso;
 import com.dextre.medishift.programacion.DatosProgramacion.ProfesionalRecurso;
 import com.dextre.medishift.programacion.DatosProgramacion.SolicitudTurno;
 import com.dextre.medishift.programacion.DatosProgramacion.Turno;
+import com.dextre.medishift.programacion.RevisionesProgramacion;
 import com.dextre.medishift.programacion.mensual.DatosPlanesMensuales.PlanMensual;
 
 /** Un único calendario mensual; las áreas agrupan sus consultorios. */
@@ -28,11 +29,23 @@ public final class DatosPlanificador {
 
 	public record TurnoMensual(UUID id, UUID idPlan, UUID idArea, UUID idProfesional, String profesional,
 			UUID idConsultorio, String consultorio, UUID idEspecialidad, String especialidad, LocalDate fecha,
-			String horaInicio, String horaFin, String estado, String observacion, String revision) { }
+			String horaInicio, String horaFin, String estado, String observacion, String revision,
+			String asistencia, String revisionAsistencia) { }
+
+	public record AsistenciaTurno(UUID idTurno, String asistencia, String revisionAsistencia) { }
 
 	public record SolicitudAsignacion(UUID idArea, SolicitudTurno turno) { }
 
 	public record SolicitudConsultorio(UUID idArea, String codigo, String nombre, String ubicacion) { }
 
-	public record RegistroTurno(Turno turno, UUID idArea, String estadoPlan) { }
+	public record RegistroTurno(Turno turno, UUID idArea, String estadoPlan, UUID idAsistencia,
+			String estadoAsistencia, String asistenciaRegistrada) {
+		public String asistencia() {
+			return "absent".equals(estadoAsistencia) ? "Falta" : "Asistencia";
+		}
+
+		public String revisionAsistencia() {
+			return RevisionesProgramacion.resumir(RevisionesProgramacion.deTurno(turno), idArea, estadoPlan, asistenciaRegistrada);
+		}
+	}
 }

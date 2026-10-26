@@ -259,7 +259,8 @@ public class ServicioPlanificador {
 		return new TurnoMensual(turno.id(), turno.horario(), registro.idArea(), turno.profesional(), turno.nombreProfesional(),
 				turno.consultorio(), turno.nombreConsultorio(), turno.especialidad(), turno.nombreEspecialidad(),
 				turno.inicio().atZone(zona).toLocalDate(), turno.inicio().atZone(zona).format(FORMATO_HORA),
-				turno.fin().atZone(zona).format(FORMATO_HORA), estado, turno.observacion(), revision(registro));
+				turno.fin().atZone(zona).format(FORMATO_HORA), estado, turno.observacion(), revision(registro),
+				registro.asistencia(), registro.revisionAsistencia());
 	}
 
 	private String revision(RegistroTurno registro) {

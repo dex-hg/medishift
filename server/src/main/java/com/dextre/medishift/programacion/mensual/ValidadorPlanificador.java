@@ -33,6 +33,14 @@ public final class ValidadorPlanificador {
 		return ValidadorPlanesMensuales.identificador(datos.get("idEspecialidad"), "idEspecialidad");
 	}
 
+	public static boolean falta(Map<String, Object> datos) {
+		comprobarCampos(datos, Set.of("falta"));
+		if (!(datos.get("falta") instanceof Boolean valor)) {
+			throw invalido(Map.of("falta", "Indica si el turno tiene una falta usando verdadero o falso."));
+		}
+		return valor;
+	}
+
 	public static SolicitudAsignacion turno(Map<String, Object> datos) {
 		if (datos == null) { throw invalido(Map.of()); }
 		UUID area = ValidadorPlanesMensuales.identificador(datos.get("idArea"), "idArea");

@@ -24,12 +24,14 @@ import com.dextre.medishift.programacion.mensual.DatosPlanificador.SolicitudCons
 public class RepositorioPlanificador {
 
 	private static final String CONSULTA_TURNOS = """
-			SELECT t.*, h.id_planning_unit, h.status_schedule,
+			SELECT t.*, h.id_planning_unit, h.status_schedule, a.id_attendance, a.status_attendance,
+			to_jsonb(a)::text AS asistencia_registrada,
 			p.first_name_professional || ' ' || p.last_name_professional AS profesional,
 			r.code_room || ' · ' || r.name_room AS consultorio, e.name_specialty AS especialidad
 			FROM shift t JOIN schedule h ON h.id_schedule = t.id_schedule AND h.id_institution = t.id_institution
 			JOIN professional p ON p.id_professional = t.id_professional
 			JOIN room r ON r.id_room = t.id_room JOIN specialty e ON e.id_specialty = t.id_specialty
+			LEFT JOIN attendance a ON a.id_institution = t.id_institution AND a.id_shift = t.id_shift
 			WHERE t.id_institution = ?
 			""";
 	private final JdbcTemplate consultas;
@@ -229,7 +231,8 @@ public class RepositorioPlanificador {
 				fila.getObject("id_specialty", UUID.class), fila.getTimestamp("start_at_shift").toInstant(),
 				fila.getTimestamp("end_at_shift").toInstant(), fila.getString("status_shift"), observacion == null ? "" : observacion,
 				fila.getString("profesional"), fila.getString("consultorio"), fila.getString("especialidad"));
-		return new RegistroTurno(turno, fila.getObject("id_planning_unit", UUID.class), fila.getString("status_schedule"));
+		return new RegistroTurno(turno, fila.getObject("id_planning_unit", UUID.class), fila.getString("status_schedule"),
+				fila.getObject("id_attendance", UUID.class), fila.getString("status_attendance"), fila.getString("asistencia_registrada"));
 	}
 
 	private record Vinculo(UUID consultorio, UUID area, UUID especialidad) { }

@@ -26,6 +26,7 @@ import com.dextre.medishift.programacion.mensual.DatosPlanificador.CalendarioMen
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.ConsultorioArea;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.TurnoMensual;
 import com.dextre.medishift.programacion.mensual.DatosPlanificador.Area;
+import com.dextre.medishift.programacion.mensual.DatosPlanificador.AsistenciaTurno;
 
 @RestController
 @RequestMapping(value = "/api/planificador", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -34,11 +35,14 @@ public class ControladorPlanificador {
 	private final AccesoCatalogos sesiones;
 	private final ServicioAccesoMensual acceso;
 	private final ServicioPlanificador servicio;
+	private final ServicioFaltas faltas;
 
-	public ControladorPlanificador(AccesoCatalogos sesiones, ServicioAccesoMensual acceso, ServicioPlanificador servicio) {
+	public ControladorPlanificador(AccesoCatalogos sesiones, ServicioAccesoMensual acceso,
+			ServicioPlanificador servicio, ServicioFaltas faltas) {
 		this.sesiones = sesiones;
 		this.acceso = acceso;
 		this.servicio = servicio;
+		this.faltas = faltas;
 	}
 
 	@GetMapping
@@ -90,6 +94,16 @@ public class ControladorPlanificador {
 				ValidadorPlanesMensuales.identificador(id, "id"), RevisionesProgramacion.leerCondicion(revision),
 				ValidadorPlanificador.turno(datos));
 		return ResponseEntity.ok().eTag(turno.revision()).body(turno);
+	}
+
+	@PutMapping(value = "/turnos/{id}/asistencia", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<AsistenciaTurno> cambiarAsistencia(@PathVariable String id, @RequestBody Map<String, Object> datos,
+			@RequestHeader(value = "If-Match", required = false) String revision, HttpServletRequest solicitud) {
+		Contexto contexto = autorizar(solicitud);
+		AsistenciaTurno resultado = faltas.cambiar(contexto.institucion(), contexto.actor(),
+				ValidadorPlanesMensuales.identificador(id, "id"), RevisionesProgramacion.leerCondicion(revision),
+				ValidadorPlanificador.falta(datos));
+		return ResponseEntity.ok().eTag(resultado.revisionAsistencia()).body(resultado);
 	}
 
 	@DeleteMapping("/turnos/{id}")
