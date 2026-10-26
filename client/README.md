@@ -47,6 +47,18 @@ El calendario conserva los turnos con falta y los identifica con «Falta · 0 h�
 
 La pantalla bloquea envíos simultáneos, conserva los filtros al recargar, informa fallos de carga y escritura y actualiza los datos ante conflictos de revisión. La consulta semanal anterior sigue siendo independiente.
 
+## Feriados nacionales
+
+El calendario identifica los feriados nacionales con color, etiqueta y nombre, según el país asociado a la zona horaria de la institución. Perú, Colombia, Chile, Bolivia, México y Argentina tienen calendarios independientes. Las fechas se conservan como días civiles; no se desplazan por UTC ni se deduce el país por el desfase horario.
+
+Cada feriado acredita 6 horas a los especialistas que tengan al menos un turno vigente en ese mes, incluso en fines de semana y aunque no tengan turno el día feriado. El abono se cuenta una sola vez por persona y fecha, reemplaza las horas de sus turnos de ese día y se conserva cuando alguno tiene una falta. Los turnos y sus faltas siguen visibles. Los especialistas sin turnos mensuales no reciben el abono.
+
+El banco de profesionales y los reportes individual y general incluyen el abono institucional. El reporte por consultorio lo muestra aparte como informativo y no lo suma al consultorio. PDF identifica los turnos en feriado con `H` y añade el detalle de abonos; Excel incluye la hoja «Abonos por feriado», fórmulas condicionales y el total institucional por separado.
+
+Los feriados se consultan en el backend y se conserva una copia local por país y año. La primera carga intenta actualizarlos; el botón «Actualizar feriados» permite reintentar. Si no hay datos verificados, los totales individuales quedan pendientes y no se exportan como definitivos. Una copia válida anterior se conserva si falla el proveedor. Los nombres se muestran como los entrega la API gratuita, actualmente en inglés.
+
+Para cargar datos ficticios en otra computadora, consulta `db/README-demostracion.md` y ejecuta `db/datos_demostracion.sql` sobre una base con V001-V003 instaladas.
+
 ## Asignación directa y selección de recursos
 
 La sección **Especialidades** permite crear y buscar el catálogo de la institución. Los formularios de profesionales, consultorios y áreas usan un selector y permiten crear una especialidad sin perder los demás campos. Los nombres duplicados se rechazan después de normalizar espacios, Unicode y mayúsculas.

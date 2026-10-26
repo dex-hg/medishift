@@ -168,6 +168,18 @@ Se reutiliza `attendance`, sin migraciones. La falta es una excepción a la asis
 
 `ApiFaltasPostgresqlTests` añade diez pruebas reales de persistencia, corrección, fechas, validación, autorización, aislamiento, concurrencia y reversión por fallo de auditoría. Se activa con `-Dmedishift.prueba-planes-mensuales=true`; utiliza esquemas privados que se eliminan al terminar. La verificación completa del incremento pasó con 433 pruebas del backend y 162 del cliente, además del flujo de navegador, PDF y Excel sobre datos ficticios aislados.
 
+## Feriados nacionales y copia local
+
+El planificador incluye `feriados` con país, estado, fuente, fecha de consulta, minutos por feriado y fechas civiles del mes. Las seis zonas registrables se asocian explícitamente a `PE`, `CO`, `CL`, `BO`, `MX` y `AR`; una zona desconocida queda pendiente y no hereda el calendario peruano. El abono inicial se define una sola vez en `ServicioFeriados.MINUTOS_POR_FERIADO` (360 minutos), y el cliente utiliza el valor recibido.
+
+`POST /api/planificador/feriados/sincronizar` recibe `periodo` y el booleano opcional `forzar`. Exige sesión y Administrador; país e institución se obtienen del servidor. La descarga ocurre fuera de las transacciones de horarios. La API de Nager.Holidays Community v4 se consulta por país y año, con timeout y validación de respuesta. Se importan únicamente feriados nacionales del tipo `Public`; las fechas repetidas se combinan para evitar abonos duplicados. Para Perú se excluye `Easter Sunday`, que el proveedor incluye pero no corresponde a los feriados nacionales de Semana Santa según la [fuente oficial consultada](https://elperuano.pe/noticia/291141-semana-santa-2026-en-peru-cuando-sera-el-proximo-fin-de-semana-largo).
+
+Las copias se guardan de forma atómica en `server/.medishift-cache/feriados/` al arrancar desde `server`, excluidas de Git y separadas por país/año. Puede cambiarse el directorio mediante `medishift.feriados.directorio`. No se modifican tablas ni se necesitan migraciones. Una copia inválida queda pendiente; un fallo externo conserva la anterior. La actualización automática utiliza una vigencia de 24 horas.
+
+La [versión Community v4](https://nagerholidays.com/api) ofrece los campos básicos y consulta el año actual y hasta cinco futuros; los años guardados previamente siguen disponibles localmente. La [v3 se retira el 31 de enero de 2027](https://github.com/nager/Nager.Date#release-and-support-lifecycle), por lo que este incremento utiliza v4. Los [términos del proveedor](https://nagerholidays.com/legal/termsofservice) permiten uso privado o sin fines de lucro y requieren patrocinio para uso comercial. No se contrató un servicio ni se creó una cuenta del proveedor.
+
+Las pruebas reales del proveedor se activan con `-Dmedishift.prueba-feriados=true` y solo transmiten país y año. Las pruebas PostgreSQL de sincronización y del SQL demostrativo se incluyen con `-Dmedishift.prueba-planes-mensuales=true`; usan esquemas y directorios privados. El SQL portable está en `db/datos_demostracion.sql`, con instrucciones y credenciales ficticias en `db/README-demostracion.md`.
+
 ## Archivos de Git
 
 Versiona los fuentes, pruebas, `pom.xml`, README, `.env.example` y los wrappers `mvnw`, `mvnw.cmd` y `.mvn/wrapper/maven-wrapper.properties`. Las credenciales y `target` están excluidos de Git.
