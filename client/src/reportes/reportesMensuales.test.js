@@ -36,7 +36,7 @@ test('Excel individual abre con matriz mensual, identidad, impresión, horas num
   assert.ok(detalle.getCell('A9').value instanceof Date);
   assert.equal(detalle.getCell('E9').value.getUTCHours(), 6);
   assert.equal(detalle.getCell('F9').value.getUTCHours(), 12);
-  assert.equal(detalle.getCell('G9').formula, 'IF(M9="Falta",0,(F9-E9)*24)');
+  assert.equal(detalle.getCell('G9').formula, 'IF(N9<>"",0,IF(M9="Falta",0,(F9-E9)*24))');
   assert.equal(detalle.getCell('G12').result, 11.5);
   assert.equal(detalle.getCell('G12').formula, 'SUM(G9:G11)');
   assert.ok(detalle.autoFilter);
@@ -64,12 +64,44 @@ test('Excel conserva las faltas con cero horas, fórmulas que no vuelven a sumar
   assert.equal(detalle.getCell('M8').value, 'Asistencia');
   assert.equal(detalle.getCell('M10').value, 'Falta');
   assert.equal(detalle.getCell('G10').result, 0);
-  assert.equal(detalle.getCell('G10').formula, 'IF(M10="Falta",0,(F10-E10)*24)');
+  assert.equal(detalle.getCell('G10').formula, 'IF(N10<>"",0,IF(M10="Falta",0,(F10-E10)*24))');
   assert.equal(detalle.getCell('G12').result, 8);
   const matriz = libro.getWorksheet('Horario individual');
   assert.equal(matriz.getCell('D9').value, 'F');
   assert.match(matriz.getCell('D9').note, /no se suman/);
   assert.equal(matriz.getCell('AG12').result, 8);
+});
+
+test('Excel acredita el feriado una vez, reemplaza turnos de ese día y conserva fórmulas y abonos identificables', async () => {
+  const datos = calendarioPrueba();
+  datos.feriados.dias = [{ fecha: '2026-10-01', nombre: 'Feriado de ensayo' }];
+  datos.turnos[0].asistencia = 'Falta';
+  const reporte = construirReporteMensual(datos, opcionesPrueba());
+  const libro = await leerExcel(reporte);
+  assert.deepEqual(libro.worksheets.map((hoja) => hoja.name), ['Horario individual', 'Detalle de turnos', 'Abonos por feriado']);
+  const detalle = libro.getWorksheet('Detalle de turnos');
+  assert.equal(detalle.getCell('N9').value, 'Feriado de ensayo');
+  assert.equal(detalle.getCell('G9').result, 0);
+  assert.equal(detalle.getCell('G13').formula, "'Abonos por feriado'!D10");
+  assert.equal(detalle.getCell('G13').result, 6);
+  assert.equal(detalle.getCell('G14').result, 11.5);
+  const matriz = libro.getWorksheet('Horario individual');
+  assert.equal(matriz.getCell('B10').value, 'H');
+  assert.equal(matriz.getCell('A12').value, 'Feriado no laborable');
+  assert.equal(matriz.getCell('B12').value, 6);
+  assert.equal(matriz.getCell('AG13').result, 11.5);
+  assert.equal(libro.getWorksheet('Abonos por feriado').getCell('D10').result, 6);
+});
+
+test('Excel de consultorio presenta abonos informativos fuera de su total', async () => {
+  const datos = calendarioPrueba();
+  datos.feriados.dias = [{ fecha: '2026-10-01', nombre: 'Feriado de ensayo' }];
+  const libro = await leerExcel(construirReporteMensual(datos, opcionesPrueba('consultorio')));
+  const detalle = libro.getWorksheet('Detalle de turnos');
+  assert.equal(detalle.getCell('G12').result, 2);
+  const abonos = libro.getWorksheet('Abonos por feriado');
+  assert.equal(abonos.getCell('D11').result, 12);
+  assert.match(abonos.getCell('A13').value, /no se suman al consultorio/);
 });
 
 test('Excel conserva cadenas que empiezan con signos como texto y no ejecuta contenido como fórmula', async () => {

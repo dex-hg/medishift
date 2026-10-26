@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cargarPlanificador } from '../services/planificador';
+import { cargarPlanificador, sincronizarFeriados } from '../services/planificador';
 import { fechaActual } from '../utils/validacionesProgramacion';
 import { periodoValido } from '../services/planesMensuales';
 
@@ -14,6 +14,8 @@ export default function usePlanificadorMensual(destino = '/horarios', periodoIni
   const [error, setError] = useState('');
   const [errores, setErrores] = useState({});
   const [mensaje, setMensaje] = useState('');
+  const [errorFeriados, cambiarErrorFeriados] = useState('');
+  const intentosFeriados = useRef(new Set());
   const [intento, setIntento] = useState(0);
   const bloqueo = useRef(false);
   const vigente = useRef(true);
@@ -33,7 +35,22 @@ export default function usePlanificadorMensual(destino = '/horarios', periodoIni
     const solicitud = ++secuencia.current;
     setCargando(true);
     setErrorCarga('');
-    cargarPlanificador(periodo, { senal: controlador.signal }).then((resultado) => {
+    cambiarErrorFeriados('');
+    cargarPlanificador(periodo, { senal: controlador.signal }).then(async (resultado) => {
+      const clave = `${resultado.feriados.codigoPais}-${periodo.slice(0, 4)}`;
+      if (resultado.feriados.codigoPais && resultado.feriados.requiereActualizacion && !intentosFeriados.current.has(clave)) {
+        try {
+          const feriados = await sincronizarFeriados(periodo, { senal: controlador.signal });
+          resultado = { ...resultado, feriados };
+          if (!controlador.signal.aborted && secuencia.current === solicitud) intentosFeriados.current.add(clave);
+        } catch (fallo) {
+          if (fallo.estado === 401) throw fallo;
+          if (!controlador.signal.aborted && secuencia.current === solicitud) {
+            intentosFeriados.current.add(clave);
+            cambiarErrorFeriados(fallo.message);
+          }
+        }
+      }
       if (!controlador.signal.aborted && secuencia.current === solicitud) setDatos(resultado);
     }).catch((fallo) => {
       if (!controlador.signal.aborted && secuencia.current === solicitud) {
@@ -80,6 +97,7 @@ export default function usePlanificadorMensual(destino = '/horarios', periodoIni
       if (vigente.current) setGuardando(false);
     }
   };
-  return { periodo, datos, cargando, guardando, errorCarga, error, errores, mensaje,
+  const actualizarFeriados = () => ejecutar((opciones) => sincronizarFeriados(periodo, { ...opciones, forzar: true }), 'Feriados actualizados.');
+  return { periodo, datos, cargando, guardando, errorCarga, error, errores, mensaje, errorFeriados, actualizarFeriados,
     cambiarPeriodo, recargar, ejecutar, limpiarError };
 }

@@ -2,6 +2,44 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { construirReporteMensual, duracionReporte, nombreArchivoReporte } from './reportesMensuales.js';
 import { calendarioPrueba, identificadorPrueba, opcionesPrueba } from '../reportes/datosReportePrueba.js';
+import { crearAbonosFeriados, horasProfesional } from './feriados.js';
+
+function calendarioConFeriados() {
+  const datos = calendarioPrueba('2026-11');
+  datos.feriados.dias = [{ fecha: '2026-11-01', nombre: 'Feriado nacional de ensayo' },
+    { fecha: '2026-11-08', nombre: 'Otro feriado de ensayo' }];
+  return datos;
+}
+
+test('el total individual reemplaza horas de feriado y el general suma una vez por cada médico programado', () => {
+  const datos = calendarioConFeriados();
+  const individual = construirReporteMensual(datos, opcionesPrueba('profesional', '2026-11'));
+  assert.equal(individual.minutosTurnos, 330);
+  assert.equal(individual.minutosFeriados, 720);
+  assert.equal(individual.minutos, 1050);
+  assert.equal(individual.turnos.find((turno) => turno.fecha === '2026-11-01').minutos, 0);
+  assert.equal(individual.matriz.find((fila) => fila.franja === 'Feriado no laborable').minutos[0], 360);
+  assert.equal(individual.totalesDiarios[7], 360);
+  const general = construirReporteMensual(datos, opcionesPrueba('mes', '2026-11'));
+  assert.equal(general.abonos.length, 4);
+  assert.equal(general.minutos, 1770);
+});
+
+test('los reportes de consultorios muestran abonos institucionales informativos sin sumarlos', () => {
+  const sala = construirReporteMensual(calendarioConFeriados(), opcionesPrueba('consultorio', '2026-11'));
+  assert.equal(sala.abonosInformativos, true);
+  assert.equal(sala.minutosFeriados, 0);
+  assert.equal(sala.minutos, 120);
+  assert.equal(sala.abonos.length, 4);
+});
+
+test('sin calendario verificado no exporta totales y no convierte un fallo en cero feriados', () => {
+  const datos = calendarioConFeriados();
+  datos.feriados = { ...datos.feriados, estado: 'Pendiente', dias: [], actualizado: null };
+  assert.throws(() => construirReporteMensual(datos, opcionesPrueba('mes', '2026-11')), /Actualiza los feriados/);
+  assert.equal(horasProfesional(identificadorPrueba(1), datos.turnos, datos.feriados).completo, false);
+  assert.deepEqual(crearAbonosFeriados(datos.turnos, datos.feriados), []);
+});
 
 test('ficha individual incluye todos sus consultorios y conserva nombre, colegiatura y minutos exactos', () => {
   const datos = calendarioPrueba();

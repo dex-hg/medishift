@@ -17,7 +17,9 @@ export function crearPdfMensual(reporte) {
   const subtitulo = `${reporte.profesional ? 'Profesional: ' : ''}${reporte.subtitulo}`;
   documento.setFontSize(10);
   const lineasSubtitulo = documento.splitTextToSize(subtitulo, ANCHO);
-  const inicio = 43 + lineasSubtitulo.length * 4 + (reporte.profesional ? 5 : 0);
+  documento.setFontSize(8);
+  const lineasResumen = documento.splitTextToSize(resumenReporte(reporte), ANCHO);
+  const inicio = 43 + lineasSubtitulo.length * 4 + (reporte.profesional ? 5 : 0) + (lineasResumen.length - 1) * 4;
 
   const encabezado = () => {
     const pagina = documento.getCurrentPageInfo().pageNumber;
@@ -41,12 +43,12 @@ export function crearPdfMensual(reporte) {
       posicion += 5;
     }
     documento.setFontSize(8);
-    documento.text(resumenReporte(reporte), MARGEN, posicion);
-    documento.text(`Estados: ${reporte.estados.join(', ') || 'Sin turnos'}. Zona horaria: ${reporte.zonaHoraria}.`, MARGEN, posicion + 4);
+    documento.text(lineasResumen, MARGEN, posicion);
+    documento.text(`Estados: ${reporte.estados.join(', ') || 'Sin turnos'}. Zona horaria: ${reporte.zonaHoraria}.`, MARGEN, posicion + lineasResumen.length * 4);
   };
   const nuevaPagina = () => { documento.addPage(); encabezado(); };
   const tabla = (opciones) => {
-    dibujarTabla(documento, { theme: 'grid', margin: { top: inicio, left: MARGEN, right: MARGEN, bottom: 18 },
+    dibujarTabla(documento, { theme: 'grid', margin: { top: inicio, left: MARGEN, right: MARGEN, bottom: 22 },
       styles: { font: 'helvetica', fontSize: 8, textColor: 25, lineColor: 195, lineWidth: 0.15,
         cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
       headStyles: { fillColor: GRIS, textColor: 25, fontStyle: 'bold' },
@@ -58,7 +60,7 @@ export function crearPdfMensual(reporte) {
   if (reporte.profesional) {
     const anchoDia = (ANCHO - 29 - 15) / reporte.dias.length;
     const cuerpo = reporte.matriz.map((fila) => [fila.franja,
-      ...fila.minutos.map((minutos, dia) => minutos ? horasReporte(minutos) : fila.faltas[dia] ? 'F' : ''), horasReporte(fila.total)]);
+      ...fila.minutos.map((minutos, dia) => minutos ? horasReporte(minutos) : fila.feriados?.[dia] ? 'H' : fila.faltas[dia] ? 'F' : ''), horasReporte(fila.total)]);
     if (!cuerpo.length) cuerpo.push(['Sin turnos', ...reporte.dias.map(() => ''), '0']);
     cuerpo.push(['Total (h)', ...reporte.totalesDiarios.map((minutos) => minutos ? horasReporte(minutos) : ''), horasReporte(reporte.minutos)]);
     const fin = tabla({ startY: inicio, head: [['Franja horaria', ...reporte.dias.map((dia) => `${nombreDia(dia, true).slice(0, 2)}\n${Number(dia.slice(-2))}`), 'Total\n(h)']],
@@ -74,7 +76,7 @@ export function crearPdfMensual(reporte) {
       } });
     if (fin > 171) nuevaPagina();
     documento.setFontSize(8);
-    documento.text('F: falta, 0 horas. Celdas en blanco: sin turno. Horas decimales; 1.5 h equivale a 1 h 30 min.', MARGEN, fin > 171 ? inicio : fin + 6);
+    documento.text('H: turno en feriado, reemplazado por abono institucional. F: falta. Blanco: sin turno. Horas decimales; 1.5 h = 1 h 30 min.', MARGEN, fin > 171 ? inicio : fin + 6);
   } else {
     const celdas = celdasDelMes(reporte.periodo);
     const semanas = Array.from({ length: celdas.length / 7 }, (_, indice) => celdas.slice(indice * 7, indice * 7 + 7));
@@ -83,7 +85,8 @@ export function crearPdfMensual(reporte) {
       const turnos = reporte.turnos.filter((turno) => turno.fecha === dia);
       // El calendario orienta; el detalle posterior siempre incluye todos los turnos.
       const visibles = turnos.slice(0, 2).map((turno) => `${turno.horaInicio}-${turno.horaFin}\n${turno.profesional}${turno.asistencia === 'Falta' ? '\nFALTA (0 h)' : ''}`);
-      return `${Number(dia.slice(-2))}\n${visibles.join('\n')}${turnos.length > 2 ? `\n+${turnos.length - 2} turnos (ver detalle)` : ''}`;
+      const feriado = reporte.feriados.dias.find((registro) => registro.fecha === dia);
+      return `${Number(dia.slice(-2))}${feriado ? '\nFERIADO NO LABORABLE' : ''}\n${visibles.join('\n')}${turnos.length > 2 ? `\n+${turnos.length - 2} turnos (ver detalle)` : ''}`;
     }));
     tabla({ startY: inicio, head: [DIAS_SEMANA], body: cuerpo,
       columnStyles: Object.fromEntries(DIAS_SEMANA.map((dia, indice) => [indice, { cellWidth: ANCHO / 7 }])),
@@ -101,7 +104,7 @@ export function crearPdfMensual(reporte) {
       : ['Fecha y día', 'Profesional / colegiatura', 'Inicio', 'Fin', 'Duración', 'Área / consultorio', 'Especialidad', 'Estado', 'Observación'];
     const cuerpo = reporte.turnos.map((turno) => {
       const fecha = `${turno.fecha}\n${nombreDia(turno.fecha)}`;
-      const estado = `${turno.estado}\n${turno.asistencia}`;
+      const estado = `${turno.estado}\n${turno.asistencia}${turno.esFeriado ? '\nFeriado' : ''}`;
       return reporte.profesional
         ? [fecha, turno.horaInicio, turno.horaFin, duracionReporte(turno.minutos), turno.area, turno.consultorio, turno.especialidad, estado, turno.observacion]
         : [fecha, `${turno.profesional}\n${turno.colegiatura || 'Sin registrar'}`, turno.horaInicio, turno.horaFin,
@@ -116,6 +119,17 @@ export function crearPdfMensual(reporte) {
     documento.setFontSize(10);
     documento.text('No hay turnos para la selección en este mes.', MARGEN, documento.lastAutoTable.finalY + 12);
   }
+  if (reporte.abonos.length) {
+    let comienzo = (documento.lastAutoTable?.finalY || inicio) + 12;
+    if (comienzo > 155) { nuevaPagina(); comienzo = inicio; }
+    documento.setFont('helvetica', 'bold');
+    documento.setFontSize(10);
+    documento.text(reporte.abonosInformativos ? 'Abonos institucionales por feriado (informativos, fuera del total del consultorio)'
+      : 'Abonos institucionales por feriado (incluidos una sola vez en el total)', MARGEN, comienzo);
+    tabla({ startY: comienzo + 4, head: [['Fecha', 'Profesional', 'Feriado nacional', 'Horas']],
+      body: reporte.abonos.map((abono) => [abono.fecha, abono.profesional, abono.nombre, duracionReporte(abono.minutos)]),
+      columnStyles: { 0: { cellWidth: 29 }, 1: { cellWidth: 65 }, 2: { cellWidth: 150 }, 3: { cellWidth: 29 } } });
+  }
   const paginas = documento.getNumberOfPages();
   const fechaEmision = new Intl.DateTimeFormat('es-PE', { dateStyle: 'short', timeStyle: 'short', timeZone: reporte.zonaHoraria }).format(reporte.emitido);
   for (let pagina = 1; pagina <= paginas; pagina += 1) {
@@ -123,6 +137,7 @@ export function crearPdfMensual(reporte) {
     documento.setTextColor(75);
     documento.setFont('helvetica', 'normal');
     documento.setFontSize(7.5);
+    documento.text(`Feriados: ${reporte.feriados.pais}. Fuente: ${reporte.feriados.fuente}.`, MARGEN, 193);
     documento.text('Fuente: calendario mensual consultado. Los turnos en borrador no están aprobados.', MARGEN, 197);
     documento.text(`Exportado: ${fechaEmision}`, MARGEN, 202);
     documento.text(`Página ${pagina} de ${paginas}`, 285, 202, { align: 'right' });

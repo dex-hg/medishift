@@ -1,6 +1,7 @@
 import { diasDelMes, nombreMes } from './calendarioMensual.js';
 import { duracionTurno, fechaValida, horaValida, UUID } from './validacionesProgramacion.js';
 import { minutosComputables } from './asistencia.js';
+import { buscarFeriado, crearAbonosFeriados, validarFeriados } from './feriados.js';
 
 const ESTADOS_OPERATIVOS = ['Borrador', 'Pendiente', 'Aprobado'];
 const ORDEN_TEXTO = new Intl.Collator('es-PE', { numeric: true });
@@ -25,7 +26,8 @@ export function duracionReporte(minutos) {
 export function resumenReporte(reporte) {
   return `${reporte.turnos.length} ${reporte.turnos.length === 1 ? 'turno' : 'turnos'}. `
     + `${reporte.diasTrabajados} ${reporte.diasTrabajados === 1 ? 'día' : 'días'} con horas computables. ${duracionReporte(reporte.minutos)} en total.`
-    + (reporte.faltas ? ` ${reporte.faltas} ${reporte.faltas === 1 ? 'falta' : 'faltas'} sin horas.` : '');
+    + (reporte.minutosFeriados ? ` Incluye ${duracionReporte(reporte.minutosFeriados)} por feriados.` : '')
+    + (reporte.faltas ? ` ${reporte.faltas} ${reporte.faltas === 1 ? 'falta' : 'faltas'} sin horas de turno.` : '');
 }
 
 function exigirLista(registros) {
@@ -50,15 +52,23 @@ function validarTurnos(datos, periodo) {
   }
 }
 
-function matrizIndividual(dias, turnos) {
+function matrizIndividual(dias, turnos, abonos) {
   const franjas = [...new Set(turnos.map((turno) => `${turno.horaInicio} - ${turno.horaFin}`))].sort();
-  return franjas.map((franja) => {
+  const filas = franjas.map((franja) => {
     const minutos = dias.map((dia) => turnos.filter((turno) => turno.fecha === dia
       && `${turno.horaInicio} - ${turno.horaFin}` === franja).reduce((total, turno) => total + turno.minutos, 0));
     const faltas = dias.map((dia) => turnos.filter((turno) => turno.fecha === dia && turno.asistencia === 'Falta'
       && `${turno.horaInicio} - ${turno.horaFin}` === franja).length);
-    return { franja, minutos, faltas, total: minutos.reduce((total, cantidad) => total + cantidad, 0) };
+    const feriados = dias.map((dia) => turnos.some((turno) => turno.fecha === dia && turno.esFeriado
+      && `${turno.horaInicio} - ${turno.horaFin}` === franja));
+    return { franja, minutos, faltas, feriados, total: minutos.reduce((total, cantidad) => total + cantidad, 0) };
   });
+  if (abonos.length) {
+    const minutos = dias.map((dia) => abonos.filter((abono) => abono.fecha === dia).reduce((total, abono) => total + abono.minutos, 0));
+    filas.push({ franja: 'Feriado no laborable', minutos, faltas: dias.map(() => 0), feriados: dias.map(() => false),
+      total: minutos.reduce((total, cantidad) => total + cantidad, 0) });
+  }
+  return filas;
 }
 
 /** Una captura de los datos consultados; la ficha individual siempre abarca todos los consultorios. */
@@ -70,6 +80,9 @@ export function construirReporteMensual(datos, { periodo, alcance, idConsultorio
     throw new Error('Selecciona un mes y un tipo de reporte válidos.');
   }
   for (const campo of ['turnos', 'profesionales', 'consultorios', 'areas']) exigirLista(datos?.[campo]);
+  if (!validarFeriados(datos.feriados, periodo) || datos.feriados.estado !== 'Disponible') {
+    throw new Error('Actualiza los feriados del año antes de exportar horas computables.');
+  }
   try {
     if (typeof datos.zonaHoraria !== 'string' || !datos.zonaHoraria.trim()) throw new Error();
     new Intl.DateTimeFormat('es-PE', { timeZone: datos.zonaHoraria });
@@ -91,22 +104,35 @@ export function construirReporteMensual(datos, { periodo, alcance, idConsultorio
       const sala = salas.get(turno.idConsultorio);
       return { ...turno, profesional: textoReporte(persona.nombre), colegiatura: textoReporte(persona.colegiatura),
         area: textoReporte(areas.get(turno.idArea)), consultorio: textoReporte(`${sala.codigo} · ${sala.nombre}`),
-        especialidad: textoReporte(turno.especialidad), observacion: textoReporte(turno.observacion), minutos: minutosComputables(turno) };
+        especialidad: textoReporte(turno.especialidad), observacion: textoReporte(turno.observacion),
+        esFeriado: Boolean(buscarFeriado(datos.feriados, turno.fecha)),
+        nombreFeriado: textoReporte(buscarFeriado(datos.feriados, turno.fecha)?.nombre), minutos: minutosComputables(turno, datos.feriados) };
     }).sort((primero, segundo) => ORDEN_TEXTO.compare(primero.fecha, segundo.fecha)
       || ORDEN_TEXTO.compare(primero.horaInicio, segundo.horaInicio) || ORDEN_TEXTO.compare(primero.consultorio, segundo.consultorio)
       || ORDEN_TEXTO.compare(primero.profesional, segundo.profesional) || primero.id.localeCompare(segundo.id));
-  const minutos = turnos.reduce((total, turno) => total + turno.minutos, 0);
+  const personasSeleccionadas = new Set(turnos.map((turno) => turno.idProfesional));
+  const abonos = crearAbonosFeriados(datos.turnos, datos.feriados)
+    .filter((abono) => (!profesional || abono.idProfesional === profesional.id)
+      && (!consultorio || personasSeleccionadas.has(abono.idProfesional)))
+    .map((abono) => ({ ...abono, profesional: textoReporte(personas.get(abono.idProfesional).nombre), nombre: textoReporte(abono.nombre) }))
+    .sort((primero, segundo) => primero.fecha.localeCompare(segundo.fecha) || ORDEN_TEXTO.compare(primero.profesional, segundo.profesional));
+  const abonosIncluidos = consultorio ? [] : abonos;
+  const minutosTurnos = turnos.reduce((total, turno) => total + turno.minutos, 0);
+  const minutosFeriados = abonosIncluidos.reduce((total, abono) => total + abono.minutos, 0);
+  const minutos = minutosTurnos + minutosFeriados;
   const titulo = profesional ? 'Horario individual' : consultorio ? 'Horario del consultorio' : 'Horario mensual general';
   const subtitulo = profesional ? textoReporte(profesional.nombre) : consultorio
     ? textoReporte(`${consultorio.codigo} · ${consultorio.nombre}`) : 'Todas las áreas y consultorios';
   return { periodo, alcance, dias, titulo, subtitulo, mes: nombreMes(periodo), institucion: textoReporte(institucion),
     zonaHoraria: datos.zonaHoraria, emitido: new Date(emitido), profesional: profesional
       ? { id: profesional.id, nombre: textoReporte(profesional.nombre), colegiatura: textoReporte(profesional.colegiatura) } : null,
-    turnos, matriz: profesional ? matrizIndividual(dias, turnos) : [], minutos,
+    turnos, matriz: profesional ? matrizIndividual(dias, turnos, abonosIncluidos) : [], minutos,
+    abonos, minutosTurnos, minutosFeriados, feriados: datos.feriados, abonosInformativos: Boolean(consultorio),
     faltas: turnos.filter((turno) => turno.asistencia === 'Falta').length,
-    diasTrabajados: new Set(turnos.filter((turno) => turno.minutos > 0).map((turno) => turno.fecha)).size,
+    diasTrabajados: new Set([...turnos.filter((turno) => turno.minutos > 0).map((turno) => turno.fecha), ...abonosIncluidos.map((abono) => abono.fecha)]).size,
     estados: [...new Set(turnos.map((turno) => turno.estado))].sort(),
-    totalesDiarios: dias.map((dia) => turnos.filter((turno) => turno.fecha === dia).reduce((total, turno) => total + turno.minutos, 0)) };
+    totalesDiarios: dias.map((dia) => turnos.filter((turno) => turno.fecha === dia).reduce((total, turno) => total + turno.minutos, 0)
+      + abonosIncluidos.filter((abono) => abono.fecha === dia).reduce((total, abono) => total + abono.minutos, 0)) };
 }
 
 export function nombreArchivoReporte(reporte, formato) {

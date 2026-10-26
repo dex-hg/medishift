@@ -58,7 +58,8 @@ function crearMatriz(libro, reporte) {
     const franja = franjas[indice];
     const numero = indice + 9;
     const fila = hoja.getRow(numero);
-    fila.values = [franja.franja, ...franja.minutos.map((minutos, dia) => minutos ? minutos / 60 : franja.faltas?.[dia] ? 'F' : null)];
+    fila.values = [franja.franja, ...franja.minutos.map((minutos, dia) => minutos ? minutos / 60
+      : franja.feriados?.[dia] ? 'H' : franja.faltas?.[dia] ? 'F' : null)];
     for (let dia = 0; dia < reporte.dias.length; dia += 1) {
       if (franja.faltas?.[dia]) fila.getCell(dia + 2).note = `${franja.faltas[dia]} falta(s). Sus horas no se suman. Consulta el detalle de turnos.`;
     }
@@ -80,13 +81,13 @@ function crearMatriz(libro, reporte) {
     }
   }
   hoja.getRow(filaTotal).eachCell((celda) => { celda.font = { ...celda.font, bold: true }; celda.fill = FONDO; });
-  combinar(hoja, filaTotal + 2, 'F: falta, 0 horas. Celdas en blanco: sin turno. Valores en horas decimales; 1.5 h equivale a 1 h 30 min. Consulta el detalle.', cantidadColumnas);
+  combinar(hoja, filaTotal + 2, 'H: turno en feriado, sus horas se reemplazan por el abono institucional. F: falta. Blanco: sin turno. Horas decimales; 1.5 h = 1 h 30 min.', cantidadColumnas);
   hoja.pageSetup.printArea = `A1:${ultimaLetra}${filaTotal + 2}`;
 }
 
 function crearDetalle(libro, reporte) {
-  const hoja = prepararHoja(libro, 'Detalle de turnos', reporte, [13, 13, 30, 17, 11, 11, 13, 23, 30, 25, 16, 38, 16]);
-  hoja.getRow(8).values = ['Fecha', 'Día', 'Profesional', 'Colegiatura', 'Inicio', 'Fin', 'Horas', 'Área', 'Consultorio', 'Especialidad', 'Estado', 'Observación', 'Asistencia'];
+  const hoja = prepararHoja(libro, 'Detalle de turnos', reporte, [13, 13, 30, 17, 11, 11, 13, 23, 30, 25, 16, 38, 16, 32]);
+  hoja.getRow(8).values = ['Fecha', 'Día', 'Profesional', 'Colegiatura', 'Inicio', 'Fin', 'Horas', 'Área', 'Consultorio', 'Especialidad', 'Estado', 'Observación', 'Asistencia', 'Feriado no laborable'];
   hoja.getRow(8).height = 30;
   for (let indice = 0; indice < reporte.turnos.length; indice += 1) {
     const turno = reporte.turnos[indice];
@@ -96,8 +97,8 @@ function crearDetalle(libro, reporte) {
     // Los nombres, observaciones y colegiaturas se escriben como texto, nunca como fórmulas.
     fila.values = [new Date(`${turno.fecha}T00:00:00Z`), nombreDia(turno.fecha), turno.profesional,
       turno.colegiatura || 'Sin registrar', hora(turno.horaInicio), hora(turno.horaFin),
-      { formula: `IF(M${numero}="Falta",0,(F${numero}-E${numero})*24)`, result: turno.minutos / 60 }, turno.area, turno.consultorio,
-      turno.especialidad, turno.estado, turno.observacion || null, turno.asistencia];
+      { formula: `IF(N${numero}<>"",0,IF(M${numero}="Falta",0,(F${numero}-E${numero})*24))`, result: turno.minutos / 60 }, turno.area, turno.consultorio,
+      turno.especialidad, turno.estado, turno.observacion || null, turno.asistencia, turno.nombreFeriado || null];
     fila.getCell(1).numFmt = 'dd/mm/yyyy';
     fila.getCell(4).numFmt = '@';
     fila.getCell(5).numFmt = 'hh:mm';
@@ -113,13 +114,49 @@ function crearDetalle(libro, reporte) {
     hoja.getCell(9, 7).value = 0;
   } else {
     hoja.getCell(filaTotal, 1).value = 'Total (h)';
-    hoja.getCell(filaTotal, 7).value = { formula: `SUM(G9:G${filaTotal - 1})`, result: reporte.minutos / 60 };
+    hoja.getCell(filaTotal, 7).value = { formula: `SUM(G9:G${filaTotal - 1})`, result: reporte.minutosTurnos / 60 };
   }
-  darFormatoTabla(hoja, 8, filaTotal, 13);
-  hoja.getCell(filaTotal, 7).numFmt = '0.00';
-  hoja.getRow(filaTotal).eachCell((celda) => { celda.font = { ...celda.font, bold: true }; celda.fill = FONDO; });
-  if (reporte.turnos.length) hoja.autoFilter = `A8:M${filaTotal - 1}`;
-  hoja.pageSetup.printArea = `A1:M${filaTotal}`;
+  let ultimaFila = filaTotal;
+  if (reporte.minutosFeriados > 0) {
+    hoja.getCell(filaTotal, 1).value = 'Subtotal turnos (h)';
+    hoja.getCell(filaTotal + 1, 1).value = 'Abono institucional (h)';
+    hoja.getCell(filaTotal + 1, 7).value = { formula: `'Abonos por feriado'!D${9 + reporte.abonos.length}`, result: reporte.minutosFeriados / 60 };
+    hoja.getCell(filaTotal + 2, 1).value = 'Total computable (h)';
+    hoja.getCell(filaTotal + 2, 7).value = { formula: `G${filaTotal}+G${filaTotal + 1}`, result: reporte.minutos / 60 };
+    ultimaFila += 2;
+  }
+  darFormatoTabla(hoja, 8, ultimaFila, 14);
+  for (let numero = filaTotal; numero <= ultimaFila; numero += 1) {
+    hoja.mergeCells(numero, 1, numero, 6);
+    hoja.getCell(numero, 7).numFmt = '0.00';
+    hoja.getRow(numero).height = 26;
+    hoja.getRow(numero).eachCell((celda) => { celda.font = { ...celda.font, bold: true }; celda.fill = FONDO; });
+  }
+  if (reporte.turnos.length) hoja.autoFilter = `A8:N${filaTotal - 1}`;
+  hoja.pageSetup.printArea = `A1:N${ultimaFila}`;
+}
+
+function crearAbonos(libro, reporte) {
+  const hoja = prepararHoja(libro, 'Abonos por feriado', reporte, [16, 36, 65, 24]);
+  hoja.getRow(8).values = ['Fecha', 'Profesional', 'Feriado nacional', 'Horas institucionales'];
+  reporte.abonos.forEach((abono, indice) => {
+    const fila = hoja.getRow(indice + 9);
+    fila.values = [new Date(`${abono.fecha}T00:00:00Z`), abono.profesional, abono.nombre, abono.minutos / 60];
+    fila.getCell(1).numFmt = 'dd/mm/yyyy';
+    fila.getCell(4).numFmt = '0.00';
+    fila.height = Math.max(28, Math.ceil(abono.nombre.length / 60) * 15);
+  });
+  const filaTotal = 9 + reporte.abonos.length;
+  hoja.getCell(filaTotal, 1).value = 'Total abonos (h)';
+  hoja.getCell(filaTotal, 4).value = { formula: `SUM(D9:D${filaTotal - 1})`,
+    result: reporte.abonos.reduce((total, abono) => total + abono.minutos, 0) / 60 };
+  darFormatoTabla(hoja, 8, filaTotal, 4);
+  hoja.mergeCells(filaTotal, 1, filaTotal, 3);
+  hoja.autoFilter = `A8:D${filaTotal - 1}`;
+  combinar(hoja, filaTotal + 2, reporte.abonosInformativos
+    ? 'Abonos informativos: pertenecen al profesional, no se suman al consultorio.'
+    : 'Se acredita un único abono por profesional y fecha, aunque tenga turnos en varios consultorios.', 4);
+  hoja.pageSetup.printArea = `A1:D${filaTotal + 2}`;
 }
 
 export async function crearExcelMensual(reporte) {
@@ -130,6 +167,7 @@ export async function crearExcelMensual(reporte) {
   libro.calcProperties.fullCalcOnLoad = true;
   if (reporte.profesional) crearMatriz(libro, reporte);
   crearDetalle(libro, reporte);
+  if (reporte.abonos.length) crearAbonos(libro, reporte);
   const contenido = await libro.xlsx.writeBuffer();
   return new Blob([contenido], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
