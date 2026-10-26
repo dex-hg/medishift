@@ -1,5 +1,6 @@
 import { diasDelMes, nombreMes } from './calendarioMensual.js';
 import { duracionTurno, fechaValida, horaValida, UUID } from './validacionesProgramacion.js';
+import { minutosComputables } from './asistencia.js';
 
 const ESTADOS_OPERATIVOS = ['Borrador', 'Pendiente', 'Aprobado'];
 const ORDEN_TEXTO = new Intl.Collator('es-PE', { numeric: true });
@@ -23,7 +24,8 @@ export function duracionReporte(minutos) {
 
 export function resumenReporte(reporte) {
   return `${reporte.turnos.length} ${reporte.turnos.length === 1 ? 'turno' : 'turnos'}. `
-    + `${reporte.diasTrabajados} ${reporte.diasTrabajados === 1 ? 'día' : 'días'} con turnos. ${duracionReporte(reporte.minutos)} en total.`;
+    + `${reporte.diasTrabajados} ${reporte.diasTrabajados === 1 ? 'día' : 'días'} con horas computables. ${duracionReporte(reporte.minutos)} en total.`
+    + (reporte.faltas ? ` ${reporte.faltas} ${reporte.faltas === 1 ? 'falta' : 'faltas'} sin horas.` : '');
 }
 
 function exigirLista(registros) {
@@ -41,7 +43,8 @@ function validarTurnos(datos, periodo) {
     if (!fechaValida(turno.fecha) || !turno.fecha.startsWith(`${periodo}-`)
       || !horaValida(turno.horaInicio) || !horaValida(turno.horaFin) || duracionTurno(turno) <= 0
       || !profesionales.has(turno.idProfesional) || !consultorios.has(turno.idConsultorio)
-      || !areas.has(turno.idArea) || !['Borrador', 'Pendiente', 'Aprobado', 'Cancelado', 'Sustituido'].includes(turno.estado)) {
+      || !areas.has(turno.idArea) || !['Borrador', 'Pendiente', 'Aprobado', 'Cancelado', 'Sustituido'].includes(turno.estado)
+      || !['Asistencia', 'Falta'].includes(turno.asistencia)) {
       throw new Error('Hay turnos inconsistentes. Actualiza el calendario antes de exportar.');
     }
   }
@@ -52,7 +55,9 @@ function matrizIndividual(dias, turnos) {
   return franjas.map((franja) => {
     const minutos = dias.map((dia) => turnos.filter((turno) => turno.fecha === dia
       && `${turno.horaInicio} - ${turno.horaFin}` === franja).reduce((total, turno) => total + turno.minutos, 0));
-    return { franja, minutos, total: minutos.reduce((total, cantidad) => total + cantidad, 0) };
+    const faltas = dias.map((dia) => turnos.filter((turno) => turno.fecha === dia && turno.asistencia === 'Falta'
+      && `${turno.horaInicio} - ${turno.horaFin}` === franja).length);
+    return { franja, minutos, faltas, total: minutos.reduce((total, cantidad) => total + cantidad, 0) };
   });
 }
 
@@ -86,7 +91,7 @@ export function construirReporteMensual(datos, { periodo, alcance, idConsultorio
       const sala = salas.get(turno.idConsultorio);
       return { ...turno, profesional: textoReporte(persona.nombre), colegiatura: textoReporte(persona.colegiatura),
         area: textoReporte(areas.get(turno.idArea)), consultorio: textoReporte(`${sala.codigo} · ${sala.nombre}`),
-        especialidad: textoReporte(turno.especialidad), observacion: textoReporte(turno.observacion), minutos: duracionTurno(turno) };
+        especialidad: textoReporte(turno.especialidad), observacion: textoReporte(turno.observacion), minutos: minutosComputables(turno) };
     }).sort((primero, segundo) => ORDEN_TEXTO.compare(primero.fecha, segundo.fecha)
       || ORDEN_TEXTO.compare(primero.horaInicio, segundo.horaInicio) || ORDEN_TEXTO.compare(primero.consultorio, segundo.consultorio)
       || ORDEN_TEXTO.compare(primero.profesional, segundo.profesional) || primero.id.localeCompare(segundo.id));
@@ -98,7 +103,8 @@ export function construirReporteMensual(datos, { periodo, alcance, idConsultorio
     zonaHoraria: datos.zonaHoraria, emitido: new Date(emitido), profesional: profesional
       ? { id: profesional.id, nombre: textoReporte(profesional.nombre), colegiatura: textoReporte(profesional.colegiatura) } : null,
     turnos, matriz: profesional ? matrizIndividual(dias, turnos) : [], minutos,
-    diasTrabajados: new Set(turnos.map((turno) => turno.fecha)).size,
+    faltas: turnos.filter((turno) => turno.asistencia === 'Falta').length,
+    diasTrabajados: new Set(turnos.filter((turno) => turno.minutos > 0).map((turno) => turno.fecha)).size,
     estados: [...new Set(turnos.map((turno) => turno.estado))].sort(),
     totalesDiarios: dias.map((dia) => turnos.filter((turno) => turno.fecha === dia).reduce((total, turno) => total + turno.minutos, 0)) };
 }

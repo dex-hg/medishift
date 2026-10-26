@@ -12,7 +12,7 @@ export function calendarioPrueba(periodo = '2026-10') {
     id: identificadorPrueba(numero), idPlan: identificadorPrueba(31), idArea: sala === primeraSala ? area : otraArea,
     idProfesional: persona, profesional: 'Nombre del turno', idConsultorio: sala, consultorio: 'Consultorio del turno',
     idEspecialidad: identificadorPrueba(41), especialidad: 'Medicina general', fecha: `${periodo}-${dia}`,
-    horaInicio: inicio, horaFin: fin, estado, observacion: '', revision: 'b'.repeat(64),
+    horaInicio: inicio, horaFin: fin, estado, observacion: '', revision: 'b'.repeat(64), asistencia: 'Asistencia', revisionAsistencia: 'c'.repeat(64),
   });
   return { zonaHoraria: 'America/Lima', areas: [{ id: area, nombre: 'Medicina general', codigo: 'MG', estado: 'Activo' },
     { id: otraArea, nombre: 'Atención externa', codigo: 'AE', estado: 'Activo' }],

@@ -58,7 +58,10 @@ function crearMatriz(libro, reporte) {
     const franja = franjas[indice];
     const numero = indice + 9;
     const fila = hoja.getRow(numero);
-    fila.values = [franja.franja, ...franja.minutos.map((minutos) => minutos ? minutos / 60 : null)];
+    fila.values = [franja.franja, ...franja.minutos.map((minutos, dia) => minutos ? minutos / 60 : franja.faltas?.[dia] ? 'F' : null)];
+    for (let dia = 0; dia < reporte.dias.length; dia += 1) {
+      if (franja.faltas?.[dia]) fila.getCell(dia + 2).note = `${franja.faltas[dia]} falta(s). Sus horas no se suman. Consulta el detalle de turnos.`;
+    }
     fila.getCell(cantidadColumnas).value = { formula: `SUM(B${numero}:${ultimaLetraDia}${numero})`, result: franja.total / 60 };
     fila.height = 25;
   }
@@ -77,13 +80,13 @@ function crearMatriz(libro, reporte) {
     }
   }
   hoja.getRow(filaTotal).eachCell((celda) => { celda.font = { ...celda.font, bold: true }; celda.fill = FONDO; });
-  combinar(hoja, filaTotal + 2, 'Celdas en blanco: sin turno. Valores en horas decimales; 1.5 h equivale a 1 h 30 min. Consulta la hoja Detalle de turnos.', cantidadColumnas);
+  combinar(hoja, filaTotal + 2, 'F: falta, 0 horas. Celdas en blanco: sin turno. Valores en horas decimales; 1.5 h equivale a 1 h 30 min. Consulta el detalle.', cantidadColumnas);
   hoja.pageSetup.printArea = `A1:${ultimaLetra}${filaTotal + 2}`;
 }
 
 function crearDetalle(libro, reporte) {
-  const hoja = prepararHoja(libro, 'Detalle de turnos', reporte, [13, 13, 30, 17, 11, 11, 13, 23, 30, 25, 16, 38]);
-  hoja.getRow(8).values = ['Fecha', 'Día', 'Profesional', 'Colegiatura', 'Inicio', 'Fin', 'Horas', 'Área', 'Consultorio', 'Especialidad', 'Estado', 'Observación'];
+  const hoja = prepararHoja(libro, 'Detalle de turnos', reporte, [13, 13, 30, 17, 11, 11, 13, 23, 30, 25, 16, 38, 16]);
+  hoja.getRow(8).values = ['Fecha', 'Día', 'Profesional', 'Colegiatura', 'Inicio', 'Fin', 'Horas', 'Área', 'Consultorio', 'Especialidad', 'Estado', 'Observación', 'Asistencia'];
   hoja.getRow(8).height = 30;
   for (let indice = 0; indice < reporte.turnos.length; indice += 1) {
     const turno = reporte.turnos[indice];
@@ -93,8 +96,8 @@ function crearDetalle(libro, reporte) {
     // Los nombres, observaciones y colegiaturas se escriben como texto, nunca como fórmulas.
     fila.values = [new Date(`${turno.fecha}T00:00:00Z`), nombreDia(turno.fecha), turno.profesional,
       turno.colegiatura || 'Sin registrar', hora(turno.horaInicio), hora(turno.horaFin),
-      { formula: `(F${numero}-E${numero})*24`, result: turno.minutos / 60 }, turno.area, turno.consultorio,
-      turno.especialidad, turno.estado, turno.observacion || null];
+      { formula: `IF(M${numero}="Falta",0,(F${numero}-E${numero})*24)`, result: turno.minutos / 60 }, turno.area, turno.consultorio,
+      turno.especialidad, turno.estado, turno.observacion || null, turno.asistencia];
     fila.getCell(1).numFmt = 'dd/mm/yyyy';
     fila.getCell(4).numFmt = '@';
     fila.getCell(5).numFmt = 'hh:mm';
@@ -112,11 +115,11 @@ function crearDetalle(libro, reporte) {
     hoja.getCell(filaTotal, 1).value = 'Total (h)';
     hoja.getCell(filaTotal, 7).value = { formula: `SUM(G9:G${filaTotal - 1})`, result: reporte.minutos / 60 };
   }
-  darFormatoTabla(hoja, 8, filaTotal, 12);
+  darFormatoTabla(hoja, 8, filaTotal, 13);
   hoja.getCell(filaTotal, 7).numFmt = '0.00';
   hoja.getRow(filaTotal).eachCell((celda) => { celda.font = { ...celda.font, bold: true }; celda.fill = FONDO; });
-  if (reporte.turnos.length) hoja.autoFilter = `A8:L${filaTotal - 1}`;
-  hoja.pageSetup.printArea = `A1:L${filaTotal}`;
+  if (reporte.turnos.length) hoja.autoFilter = `A8:M${filaTotal - 1}`;
+  hoja.pageSetup.printArea = `A1:M${filaTotal}`;
 }
 
 export async function crearExcelMensual(reporte) {

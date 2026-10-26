@@ -36,7 +36,7 @@ test('Excel individual abre con matriz mensual, identidad, impresión, horas num
   assert.ok(detalle.getCell('A9').value instanceof Date);
   assert.equal(detalle.getCell('E9').value.getUTCHours(), 6);
   assert.equal(detalle.getCell('F9').value.getUTCHours(), 12);
-  assert.equal(detalle.getCell('G9').formula, '(F9-E9)*24');
+  assert.equal(detalle.getCell('G9').formula, 'IF(M9="Falta",0,(F9-E9)*24)');
   assert.equal(detalle.getCell('G12').result, 11.5);
   assert.equal(detalle.getCell('G12').formula, 'SUM(G9:G11)');
   assert.ok(detalle.autoFilter);
@@ -54,6 +54,22 @@ test('Excel general exporta únicamente los turnos operativos de todas las área
   assert.equal(estados.includes('Sustituido'), false);
   assert.deepEqual(new Set([9, 10, 11, 12].map((fila) => hoja.getCell(fila, 8).value)),
     new Set(['Medicina general', 'Atención externa']));
+});
+
+test('Excel conserva las faltas con cero horas, fórmulas que no vuelven a sumarlas y marca F en la matriz', async () => {
+  const datos = calendarioPrueba();
+  datos.turnos[1].asistencia = 'Falta';
+  const libro = await leerExcel(construirReporteMensual(datos, opcionesPrueba()));
+  const detalle = libro.getWorksheet('Detalle de turnos');
+  assert.equal(detalle.getCell('M8').value, 'Asistencia');
+  assert.equal(detalle.getCell('M10').value, 'Falta');
+  assert.equal(detalle.getCell('G10').result, 0);
+  assert.equal(detalle.getCell('G10').formula, 'IF(M10="Falta",0,(F10-E10)*24)');
+  assert.equal(detalle.getCell('G12').result, 8);
+  const matriz = libro.getWorksheet('Horario individual');
+  assert.equal(matriz.getCell('D9').value, 'F');
+  assert.match(matriz.getCell('D9').note, /no se suman/);
+  assert.equal(matriz.getCell('AG12').result, 8);
 });
 
 test('Excel conserva cadenas que empiezan con signos como texto y no ejecuta contenido como fórmula', async () => {

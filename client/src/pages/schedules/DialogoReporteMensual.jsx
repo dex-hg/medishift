@@ -70,8 +70,9 @@ export default function DialogoReporteMensual({ datos, periodo, idConsultorio, i
         <strong>{reporte.mes}</strong><p>{reporte.subtitulo}</p>
         {reporte.profesional && <p>Colegiatura: <strong>{reporte.profesional.colegiatura || 'Sin registrar'}</strong></p>}
         <dl><div><dt>Turnos</dt><dd>{reporte.turnos.length}</dd></div>
-          <div><dt>Días con turnos</dt><dd>{reporte.diasTrabajados}</dd></div>
-          <div><dt>Horas asignadas</dt><dd>{duracionReporte(reporte.minutos)}</dd></div></dl>
+          <div><dt>Días con horas computables</dt><dd>{reporte.diasTrabajados}</dd></div>
+          <div><dt>Horas computables</dt><dd>{duracionReporte(reporte.minutos)}</dd></div></dl>
+        {reporte.faltas > 0 && <p>{reporte.faltas} {reporte.faltas === 1 ? 'falta sin horas' : 'faltas sin horas'}. Los turnos se conservan en el detalle.</p>}
         <p>Estados: {reporte.estados.join(', ') || 'Sin turnos'}.</p>
         {!reporte.turnos.length && <p>El archivo indicará que no hay turnos en esta selección.</p>}
         <small>{reporte.profesional ? 'Matriz de días y franjas horarias, con detalle de turnos.'

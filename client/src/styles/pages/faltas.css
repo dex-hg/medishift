@@ -1,0 +1,37 @@
+.filtros-faltas { padding: 22px; margin-bottom: 20px; }
+.filtros-faltas__periodo { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; margin-bottom: 22px; }
+.filtros-faltas__periodo > div { margin-right: auto; }
+.filtros-faltas h2 { text-transform: capitalize; }
+.filtros-faltas label { display: flex; flex-direction: column; gap: 8px; color: var(--texto-tenue); font-size: .76rem; }
+.filtros-faltas input:not([type='search']), .filtros-faltas select {
+  min-width: 0; width: 100%; height: 40px; padding: 0 10px; border: 1px solid var(--borde);
+  border-radius: 9px; color: var(--texto); background: #091622; font: inherit; color-scheme: dark;
+}
+.filtros-faltas__campos { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.filtros-faltas__busqueda .buscador { width: 100%; }
+.faltas-tabla__resumen { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 20px; }
+.faltas-tabla__resumen h2 { font-size: 1rem; }
+.faltas-tabla__resumen h2 span { color: var(--turquesa); margin-left: 6px; }
+.faltas-tabla__resumen p { color: var(--texto-tenue); font-size: .8rem; }
+.faltas-tabla td strong, .faltas-tabla td small { display: block; }
+.faltas-tabla td small { margin-top: 6px; color: var(--texto-tenue); }
+.faltas-tabla .boton { white-space: nowrap; }
+.faltas-tabla__falta { background: rgb(248 113 113 / 4%); }
+.asistencia-estado { display: inline-flex; align-items: center; gap: 6px; color: var(--turquesa); font-size: .76rem; font-weight: 650; }
+.asistencia-estado--falta { color: #fda4af; }
+.faltas-vacio { display: grid; justify-items: center; gap: 12px; padding: 44px 20px; text-align: center; color: var(--texto-tenue); }
+.acceso-faltas { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; padding: 24px; margin: 22px 0; }
+.acceso-faltas > div { flex: 1; min-width: 220px; }
+.acceso-faltas h2 { margin: 7px 0; }
+.acceso-faltas p { color: var(--texto-tenue); font-size: .8rem; line-height: 1.6; }
+.acceso-faltas form { display: flex; flex-wrap: wrap; gap: 10px; }
+.turno-mensual--falta { border-color: rgb(251 113 133 / 40%); background: rgb(251 113 133 / 8%); }
+.turno-mensual__falta { color: #fda4af; font-weight: 700; }
+@media (max-width: 1150px) { .filtros-faltas__campos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+  .filtros-faltas { padding: 16px; }
+  .filtros-faltas__campos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filtros-faltas__busqueda { grid-column: 1 / -1; }
+  .acceso-faltas form, .acceso-faltas .buscador { width: 100%; }
+}
+@media (max-width: 420px) { .filtros-faltas__campos { grid-template-columns: minmax(0, 1fr); } }

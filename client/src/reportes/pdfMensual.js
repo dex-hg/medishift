@@ -58,7 +58,7 @@ export function crearPdfMensual(reporte) {
   if (reporte.profesional) {
     const anchoDia = (ANCHO - 29 - 15) / reporte.dias.length;
     const cuerpo = reporte.matriz.map((fila) => [fila.franja,
-      ...fila.minutos.map((minutos) => minutos ? horasReporte(minutos) : ''), horasReporte(fila.total)]);
+      ...fila.minutos.map((minutos, dia) => minutos ? horasReporte(minutos) : fila.faltas[dia] ? 'F' : ''), horasReporte(fila.total)]);
     if (!cuerpo.length) cuerpo.push(['Sin turnos', ...reporte.dias.map(() => ''), '0']);
     cuerpo.push(['Total (h)', ...reporte.totalesDiarios.map((minutos) => minutos ? horasReporte(minutos) : ''), horasReporte(reporte.minutos)]);
     const fin = tabla({ startY: inicio, head: [['Franja horaria', ...reporte.dias.map((dia) => `${nombreDia(dia, true).slice(0, 2)}\n${Number(dia.slice(-2))}`), 'Total\n(h)']],
@@ -74,7 +74,7 @@ export function crearPdfMensual(reporte) {
       } });
     if (fin > 171) nuevaPagina();
     documento.setFontSize(8);
-    documento.text('Celdas en blanco: sin turno. Valores en horas decimales; 1.5 h equivale a 1 h 30 min.', MARGEN, fin > 171 ? inicio : fin + 6);
+    documento.text('F: falta, 0 horas. Celdas en blanco: sin turno. Horas decimales; 1.5 h equivale a 1 h 30 min.', MARGEN, fin > 171 ? inicio : fin + 6);
   } else {
     const celdas = celdasDelMes(reporte.periodo);
     const semanas = Array.from({ length: celdas.length / 7 }, (_, indice) => celdas.slice(indice * 7, indice * 7 + 7));
@@ -82,7 +82,7 @@ export function crearPdfMensual(reporte) {
       if (!dia) return '';
       const turnos = reporte.turnos.filter((turno) => turno.fecha === dia);
       // El calendario orienta; el detalle posterior siempre incluye todos los turnos.
-      const visibles = turnos.slice(0, 2).map((turno) => `${turno.horaInicio}-${turno.horaFin}\n${turno.profesional}`);
+      const visibles = turnos.slice(0, 2).map((turno) => `${turno.horaInicio}-${turno.horaFin}\n${turno.profesional}${turno.asistencia === 'Falta' ? '\nFALTA (0 h)' : ''}`);
       return `${Number(dia.slice(-2))}\n${visibles.join('\n')}${turnos.length > 2 ? `\n+${turnos.length - 2} turnos (ver detalle)` : ''}`;
     }));
     tabla({ startY: inicio, head: [DIAS_SEMANA], body: cuerpo,
@@ -101,10 +101,11 @@ export function crearPdfMensual(reporte) {
       : ['Fecha y día', 'Profesional / colegiatura', 'Inicio', 'Fin', 'Duración', 'Área / consultorio', 'Especialidad', 'Estado', 'Observación'];
     const cuerpo = reporte.turnos.map((turno) => {
       const fecha = `${turno.fecha}\n${nombreDia(turno.fecha)}`;
+      const estado = `${turno.estado}\n${turno.asistencia}`;
       return reporte.profesional
-        ? [fecha, turno.horaInicio, turno.horaFin, duracionReporte(turno.minutos), turno.area, turno.consultorio, turno.especialidad, turno.estado, turno.observacion]
+        ? [fecha, turno.horaInicio, turno.horaFin, duracionReporte(turno.minutos), turno.area, turno.consultorio, turno.especialidad, estado, turno.observacion]
         : [fecha, `${turno.profesional}\n${turno.colegiatura || 'Sin registrar'}`, turno.horaInicio, turno.horaFin,
-          duracionReporte(turno.minutos), `${turno.area}\n${turno.consultorio}`, turno.especialidad, turno.estado, turno.observacion];
+          duracionReporte(turno.minutos), `${turno.area}\n${turno.consultorio}`, turno.especialidad, estado, turno.observacion];
     });
     tabla({ startY: inicio + 4, head: [columnas], body: cuerpo, columnStyles: reporte.profesional
       ? { 0: { cellWidth: 30 }, 1: { cellWidth: 14 }, 2: { cellWidth: 14 }, 3: { cellWidth: 24 },

@@ -33,6 +33,23 @@ test('consultorio visible y todo el mes aplican alcances distintos sin contar tu
   assert.deepEqual(general.estados, ['Aprobado', 'Borrador', 'Pendiente']);
 });
 
+test('una falta queda visible, descuenta solo su turno y se refleja en matriz y totales diarios', () => {
+  const datos = calendarioPrueba();
+  datos.turnos[1].asistencia = 'Falta';
+  const reporte = construirReporteMensual(datos, opcionesPrueba());
+  assert.equal(reporte.turnos.length, 3);
+  assert.equal(reporte.minutos, 480);
+  assert.equal(reporte.totalesDiarios[2], 120);
+  assert.equal(reporte.faltas, 1);
+  assert.equal(reporte.diasTrabajados, 2);
+  assert.equal(reporte.matriz.find((fila) => fila.franja === '06:00 - 09:30').faltas[2], 1);
+  assert.equal(reporte.turnos.find((turno) => turno.id === datos.turnos[1].id).minutos, 0);
+  datos.turnos[0].asistencia = 'Falta';
+  assert.equal(construirReporteMensual(datos, opcionesPrueba()).diasTrabajados, 1);
+  datos.turnos[1].asistencia = 'Asistencia';
+  assert.equal(construirReporteMensual(datos, opcionesPrueba()).minutos, 330);
+});
+
 test('la matriz usa la cantidad real de días y reconoce febrero bisiesto', () => {
   for (const [periodo, cantidad] of [['2026-02', 28], ['2028-02', 29], ['2026-04', 30], ['2026-10', 31]]) {
     const reporte = construirReporteMensual(calendarioPrueba(periodo), opcionesPrueba('profesional', periodo));
