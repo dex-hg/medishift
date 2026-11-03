@@ -50,7 +50,7 @@ public class ReglasProgramacion {
 		List<Turno> aprobados = new ArrayList<>(horarios.aprobadosEn(institucion, inicio, fin, reemplazo));
 		aprobados.addAll(horarios.mensualesSinAprobarEn(institucion, inicio, fin));
 		validarSolapamientos(turnos, aprobados);
-		carga.validarHoras(turnos, aprobados, horario.inicio(), zona);
+		carga.validarHoras(institucion, turnos, aprobados, horario.inicio(), zona);
 		if (aprobar) {
 			if (turnos.isEmpty()) { throw CatalogoException.conflicto("turnos", "Añade al menos un turno antes de aprobar."); }
 			carga.validarCobertura(turnos, horarios.requisitos(horario.id()));

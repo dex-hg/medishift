@@ -26,7 +26,8 @@ public final class DatosPlanificador {
 
 	public record CalendarioMensual(String zonaHoraria, List<Area> areas, List<ConsultorioArea> consultorios,
 			List<ProfesionalRecurso> profesionales, List<PlanMensual> planes, List<TurnoMensual> turnos,
-			List<EspecialidadRecurso> especialidades, CalendarioFeriados feriados) { }
+			List<EspecialidadRecurso> especialidades, CalendarioFeriados feriados,
+			com.dextre.medishift.cuenta.DatosConfiguracion.Politica politica) { }
 
 	public record TurnoMensual(UUID id, UUID idPlan, UUID idArea, UUID idProfesional, String profesional,
 			UUID idConsultorio, String consultorio, UUID idEspecialidad, String especialidad, LocalDate fecha,

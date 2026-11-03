@@ -15,6 +15,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 import com.dextre.medishift.acceso.ServicioAccesoMensual;
 import com.dextre.medishift.catalogos.CatalogoException;
+import com.dextre.medishift.cuenta.DatosConfiguracion.Institucion;
+import com.dextre.medishift.cuenta.RepositorioConfiguracion;
 import com.dextre.medishift.feriados.DatosFeriados.CalendarioAnual;
 import com.dextre.medishift.feriados.DatosFeriados.Feriado;
 import com.dextre.medishift.feriados.DatosFeriados.Pais;
@@ -35,7 +37,7 @@ class ServicioFeriadosTests {
 
 	@Test
 	void unaConsultaSinCopiaQuedaPendienteSinLlamarAlServicioExterno() {
-		var resultado = servicio().consultar("America/Lima", new PeriodoMensual(2026, 11));
+		var resultado = servicio().consultar(institucion, "America/Lima", new PeriodoMensual(2026, 11));
 		assertEquals("PE", resultado.codigoPais());
 		assertEquals("Pendiente", resultado.estado());
 		assertTrue(resultado.requiereActualizacion());
@@ -47,11 +49,11 @@ class ServicioFeriadosTests {
 	void consultaUnaCopiaHistoricaSinConexionYConservaLaFechaLocalDelFeriado() {
 		repositorio().guardar(new CalendarioAnual("PE", 2020, Instant.parse("2020-11-01T12:00:00Z"),
 				List.of(new Feriado(LocalDate.of(2020, 11, 1), "Histórico de ensayo"))), Pais.PERU);
-		var resultado = servicio().consultar("America/Lima", new PeriodoMensual(2020, 11));
+		var resultado = servicio().consultar(institucion, "America/Lima", new PeriodoMensual(2020, 11));
 		assertEquals("Disponible", resultado.estado());
 		assertEquals("2020-11-01", resultado.dias().getFirst().fecha().toString());
 		assertTrue(resultado.requiereActualizacion());
-		assertEquals("Pendiente", servicio().consultar("UTC", new PeriodoMensual(2020, 11)).estado());
+		assertEquals("Pendiente", servicio().consultar(institucion, "UTC", new PeriodoMensual(2020, 11)).estado());
 		verifyNoInteractions(proveedor);
 	}
 
@@ -77,9 +79,9 @@ class ServicioFeriadosTests {
 		when(horarios.zona(institucion)).thenReturn(ZoneId.of("America/Lima"));
 		when(proveedor.consultar(Pais.PERU, 2026)).thenThrow(CatalogoException.noDisponible("Proveedor inaccesible"));
 		assertThrows(CatalogoException.class, () -> servicio().actualizar(institucion, actor, new PeriodoMensual(2026, 11), true));
-		assertEquals("Copia anterior", servicio().consultar("America/Lima", new PeriodoMensual(2026, 11)).dias().getFirst().nombre());
+		assertEquals("Copia anterior", servicio().consultar(institucion, "America/Lima", new PeriodoMensual(2026, 11)).dias().getFirst().nombre());
 	}
 
 	private RepositorioFeriados repositorio() { return new RepositorioFeriados(JsonMapper.builder().build(), directorio.toString()); }
-	private ServicioFeriados servicio() { return new ServicioFeriados(repositorio(), proveedor, acceso, horarios); }
+	private ServicioFeriados servicio() { var configuracion = mock(RepositorioConfiguracion.class); when(configuracion.institucion(institucion)).thenReturn(new Institucion("Ensayo", "America/Lima", 360, 2160, 360, "")); return new ServicioFeriados(repositorio(), proveedor, acceso, horarios, configuracion); }
 }

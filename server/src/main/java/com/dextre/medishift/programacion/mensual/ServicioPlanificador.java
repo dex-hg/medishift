@@ -72,7 +72,8 @@ public class ServicioPlanificador {
 				recursos.listar(institucion).profesionales(), cabeceras,
 				calendario.turnos(institucion, periodo).stream().map(registro -> vista(registro, zona)).toList(),
 				exclusiones.listar(institucion).stream().map(especialidad -> new com.dextre.medishift.programacion.DatosProgramacion.EspecialidadRecurso(
-						especialidad.id(), especialidad.nombre())).toList(), feriados.consultar(zona.getId(), periodo));
+						especialidad.id(), especialidad.nombre())).toList(), feriados.consultar(institucion, zona.getId(), periodo),
+				carga.politica(institucion));
 	}
 
 	@Transactional
@@ -240,7 +241,7 @@ public class ServicioPlanificador {
 				}
 			}
 		}
-		carga.validarHoras(List.of(turno), vecinos, lunes, zona);
+		carga.validarHoras(institucion, List.of(turno), vecinos, lunes, zona);
 	}
 
 	private Area exigirEspecialidadArea(UUID institucion, UUID identificador) {
