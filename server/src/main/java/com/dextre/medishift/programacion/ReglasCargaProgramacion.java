@@ -11,30 +11,50 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.dextre.medishift.catalogos.CatalogoException;
+import com.dextre.medishift.cuenta.DatosConfiguracion.Politica;
+import com.dextre.medishift.cuenta.RepositorioConfiguracion;
 import com.dextre.medishift.programacion.DatosProgramacion.Requisito;
 import com.dextre.medishift.programacion.DatosProgramacion.Turno;
 
 @Component
 public class ReglasCargaProgramacion {
 
-	// Límites temporales confirmados por el usuario; aún no existe administración de políticas.
 	private final int horasDiarias;
 	private final int horasSemanales;
+	private final RepositorioConfiguracion configuracion;
 
-	public ReglasCargaProgramacion(@Value("${medishift.programacion.horas-diarias:6}") int horasDiarias,
-			@Value("${medishift.programacion.horas-semanales:36}") int horasSemanales) {
+	@Autowired
+	public ReglasCargaProgramacion(RepositorioConfiguracion configuracion) {
+		this.horasDiarias = 6;
+		this.horasSemanales = 36;
+		this.configuracion = configuracion;
+	}
+
+	/** Constructor de reglas aisladas; las operaciones web consultan siempre la institución. */
+	public ReglasCargaProgramacion(int horasDiarias, int horasSemanales) {
 		if (horasDiarias < 1 || horasSemanales < 1) {
 			throw new IllegalArgumentException("Los límites de programación deben ser positivos.");
 		}
 		this.horasDiarias = horasDiarias;
 		this.horasSemanales = horasSemanales;
+		this.configuracion = null;
+	}
+
+	public Politica politica(UUID institucion) { return configuracion.institucion(institucion).politica(); }
+
+	public void validarHoras(UUID institucion, List<Turno> propuestos, List<Turno> aprobados, LocalDate lunes, ZoneId zona) {
+		validarHoras(propuestos, aprobados, lunes, zona, politica(institucion));
 	}
 
 	public void validarHoras(List<Turno> propuestos, List<Turno> aprobados, LocalDate lunes, ZoneId zona) {
+		validarHoras(propuestos, aprobados, lunes, zona, new Politica(horasDiarias * 60, horasSemanales * 60, 360));
+	}
+
+	public void validarHoras(List<Turno> propuestos, List<Turno> aprobados, LocalDate lunes, ZoneId zona, Politica politica) {
 		Set<UUID> profesionales = new HashSet<>();
 		propuestos.forEach(turno -> profesionales.add(turno.profesional()));
 		List<Turno> todos = new ArrayList<>(propuestos);
@@ -51,15 +71,15 @@ public class ReglasCargaProgramacion {
 						diaria = diaria.plus(TiempoProgramacion.duracionDentro(turno.inicio(), turno.fin(), inicioDia, finDia));
 					}
 				}
-				if (diaria.compareTo(Duration.ofHours(horasDiarias)) > 0) {
-					throw CatalogoException.conflicto("horaFin", "El profesional supera el límite temporal de "
-							+ horasDiarias + " horas diarias el " + fecha + ".");
+				if (diaria.compareTo(Duration.ofMinutes(politica.minutosDiarios())) > 0) {
+					throw CatalogoException.conflicto("horaFin", "El profesional supera el máximo institucional de "
+							+ politica.minutosDiarios() + " minutos diarios el " + fecha + ".");
 				}
 				semanal = semanal.plus(diaria);
 			}
-			if (semanal.compareTo(Duration.ofHours(horasSemanales)) > 0) {
-				throw CatalogoException.conflicto("horaFin", "El profesional supera el límite temporal de "
-						+ horasSemanales + " horas semanales.");
+			if (semanal.compareTo(Duration.ofMinutes(politica.minutosSemanales())) > 0) {
+				throw CatalogoException.conflicto("horaFin", "El profesional supera el máximo institucional de "
+						+ politica.minutosSemanales() + " minutos semanales.");
 			}
 		}
 	}

@@ -21,6 +21,7 @@ import com.dextre.medishift.sesion.AccesoNoAutorizadoException;
 
 @RestControllerAdvice(assignableTypes = { ControladorCatalogos.class,
 		com.dextre.medishift.programacion.mensual.ControladorPlanesMensuales.class,
+		com.dextre.medishift.cuenta.ControladorConfiguracion.class,
 		com.dextre.medishift.programacion.mensual.ControladorPlanificador.class })
 public class ManejadorErroresCatalogos {
 
