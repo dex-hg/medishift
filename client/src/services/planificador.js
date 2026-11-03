@@ -2,6 +2,7 @@ import { ErrorProgramacion } from './programacion.js';
 import { periodoValido } from './planesMensuales.js';
 import { fechaValida, horaValida, normalizarTurno, REVISION, UUID, validarTurno } from '../utils/validacionesProgramacion.js';
 import { validarFeriados } from '../utils/feriados.js';
+import { esPolitica } from './configuracion.js';
 
 const esObjeto = (valor) => valor !== null && typeof valor === 'object' && !Array.isArray(valor);
 const esId = (valor) => typeof valor === 'string' && UUID.test(valor);
@@ -54,7 +55,8 @@ function extraerTurno(valor) {
 }
 
 function extraerCalendario(valor, periodo) {
-  if (!esObjeto(valor) || !esTexto(valor.zonaHoraria) || !validarFeriados(valor.feriados, periodo)) respuestaInvalida();
+  if (!esObjeto(valor) || !esTexto(valor.zonaHoraria) || !validarFeriados(valor.feriados, periodo)
+    || !esPolitica(valor.politica)) respuestaInvalida();
   try { new Intl.DateTimeFormat('es-PE', { timeZone: valor.zonaHoraria }); } catch { respuestaInvalida(); }
   const areas = lista(valor.areas, (area) => {
     if (!esObjeto(area) || !esId(area.id) || !esTexto(area.nombre) || !esTexto(area.codigo)
@@ -70,7 +72,7 @@ function extraerCalendario(valor, periodo) {
   });
   const turnos = lista(valor.turnos, extraerTurno);
   if (turnos.some((turno) => !turno.fecha.startsWith(`${periodo}-`))) respuestaInvalida();
-  return { zonaHoraria: valor.zonaHoraria, feriados: valor.feriados, areas, planes, turnos, especialidades: lista(valor.especialidades, especialidad),
+  return { zonaHoraria: valor.zonaHoraria, politica: valor.politica, feriados: valor.feriados, areas, planes, turnos, especialidades: lista(valor.especialidades, especialidad),
     consultorios: lista(valor.consultorios, (valor) => recurso(valor, true)),
     profesionales: lista(valor.profesionales, (valor) => recurso(valor)) };
 }
@@ -130,7 +132,7 @@ export async function sincronizarFeriados(periodo, { forzar = false, ...opciones
 }
 
 export async function guardarTurnoMensual(datos, { id, revision, ...opciones } = {}) {
-  const errores = validarTurno(datos);
+  const errores = validarTurno(datos, { aplicarLimites: false });
   if (!esId(datos?.idArea)) errores.idArea = 'Selecciona un área válida.';
   if (Object.keys(errores).length) throw new ErrorProgramacion('Revisa los campos del turno.', { errores, tipo: 'validacion' });
   if (id && (!esId(id) || !REVISION.test(revision))) throw new ErrorProgramacion('Recarga el turno antes de modificarlo.', { estado: 409 });

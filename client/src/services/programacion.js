@@ -145,7 +145,7 @@ function rutaTurno(id) {
 }
 
 async function guardarTurno(metodo, datos, opciones = {}) {
-  const errores = validarTurno(datos);
+  const errores = validarTurno(datos, { aplicarLimites: false });
   if (Object.keys(errores).length) throw new ErrorProgramacion('Revisa los campos del formulario.', { errores, tipo: 'validacion' });
   if (metodo === 'PUT' && !esRevision(opciones.revision)) {
     throw new ErrorProgramacion('Recarga el registro antes de modificarlo.', { estado: 409, tipo: 'validacion' });

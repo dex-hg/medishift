@@ -48,11 +48,11 @@ export function especialidadesCompatibles(profesional, consultorio) {
     && (consultorio.usoGeneral || consultorio.especialidades.some((registro) => registro.id === especialidad.id)));
 }
 
-export function turnoInicial({ profesional, consultorio, fecha, turno }) {
+export function turnoInicial({ profesional, consultorio, fecha, turno }, preferencias) {
   const especialidades = especialidadesCompatibles(profesional, consultorio);
   return { idProfesional: profesional?.id || '', idConsultorio: consultorio?.id || '',
     idArea: consultorio?.idArea || '', fecha: fechaValida(fecha) ? fecha : '',
-    horaInicio: turno?.horaInicio || '08:00', horaFin: turno?.horaFin || '12:00',
+    horaInicio: turno?.horaInicio || preferencias?.horaInicio || '08:00', horaFin: turno?.horaFin || preferencias?.horaFin || '12:00',
     idEspecialidad: especialidades.some((registro) => registro.id === turno?.idEspecialidad) ? turno.idEspecialidad
       : especialidades.length === 1 ? especialidades[0].id : '', observacion: turno?.observacion || '' };
 }

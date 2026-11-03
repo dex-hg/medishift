@@ -76,11 +76,13 @@ function validarCamposTurno(datos) {
   return errores;
 }
 
-export function validarTurno(datos, { recursos, turnos = [], idActual } = {}) {
+export function validarTurno(datos, { recursos, turnos = [], idActual, aplicarLimites = true } = {}) {
   const normalizados = normalizarTurno(datos);
   const errores = validarCamposTurno(normalizados);
   const duracion = duracionTurno(normalizados);
-  if (duracion > LIMITES_JORNADA.diarios) errores.horaFin = 'El turno admite hasta 6 horas diarias por profesional.';
+  const limites = recursos?.politica ? { diarios: recursos.politica.minutosDiarios, semanales: recursos.politica.minutosSemanales } : LIMITES_JORNADA;
+  const horas = (minutos) => (minutos / 60).toLocaleString('es-PE', { maximumFractionDigits: 2 });
+  if (aplicarLimites && duracion > limites.diarios) errores.horaFin = `El turno admite hasta ${horas(limites.diarios)} horas diarias por profesional.`;
   if (recursos) {
     const profesional = recursos.profesionales.find((registro) => registro.id === normalizados.idProfesional && registro.estado === 'Activo');
     const consultorio = recursos.consultorios.find((registro) => registro.id === normalizados.idConsultorio && registro.estado === 'Activo');
@@ -101,13 +103,13 @@ export function validarTurno(datos, { recursos, turnos = [], idActual } = {}) {
     const otros = turnos.filter((turno) => turno.id !== idActual && turno.estado !== 'Cancelado');
     const profesional = otros.filter((turno) => turno.idProfesional === normalizados.idProfesional);
     const delDia = profesional.filter((turno) => turno.fecha === normalizados.fecha);
-    if (delDia.reduce((total, turno) => total + duracionTurno(turno), duracion) > LIMITES_JORNADA.diarios) {
-      errores.horaFin = 'El profesional superaría 6 horas asignadas en este día.';
+    if (aplicarLimites && delDia.reduce((total, turno) => total + duracionTurno(turno), duracion) > limites.diarios) {
+      errores.horaFin = `El profesional superaría ${horas(limites.diarios)} horas asignadas en este día.`;
     }
     const lunes = lunesDeSemana(normalizados.fecha);
     const semana = profesional.filter((turno) => lunesDeSemana(turno.fecha) === lunes);
-    if (semana.reduce((total, turno) => total + duracionTurno(turno), duracion) > LIMITES_JORNADA.semanales) {
-      errores.fecha = 'El profesional superaría 36 horas asignadas esta semana.';
+    if (aplicarLimites && semana.reduce((total, turno) => total + duracionTurno(turno), duracion) > limites.semanales) {
+      errores.fecha = `El profesional superaría ${horas(limites.semanales)} horas asignadas esta semana.`;
     }
     for (const turno of otros.filter((item) => item.fecha === normalizados.fecha)) {
       if (turno.horaInicio < normalizados.horaFin && normalizados.horaInicio < turno.horaFin) {

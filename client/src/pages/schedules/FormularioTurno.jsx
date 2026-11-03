@@ -1,6 +1,6 @@
-import { useId, useMemo } from 'react';
+import { useCallback, useId, useMemo } from 'react';
 import { ArrowLeft, CalendarClock } from 'lucide-react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useOutletContext, useParams, useSearchParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import FormularioBase from '../../components/FormularioBase';
@@ -24,13 +24,15 @@ const validarAntes = async (datos, { recursos, registro, senal }) => {
 };
 
 function FormularioTurno({ modo }) {
+  const { cuenta, configuracion } = useOutletContext();
+  const cargarRecursos = useCallback(async (opciones) => ({ ...await listarRecursosHorario(opciones), politica: configuracion }), [configuracion]);
   const { id } = useParams();
   const [parametros] = useSearchParams();
   const identificador = useId();
   const fechaInicial = fechaValida(parametros.get('fecha')) ? parametros.get('fecha') : '';
   const iniciales = useMemo(() => ({ idProfesional: '', idConsultorio: '', idEspecialidad: '', fecha: fechaInicial,
-    horaInicio: '', horaFin: '', observacion: '' }), [fechaInicial]);
-  const formulario = useFormularioProgramacion({ modo, id, iniciales, obtener: obtenerTurno, recursos: listarRecursosHorario,
+    horaInicio: cuenta.preferencias.horaInicio, horaFin: cuenta.preferencias.horaFin, observacion: '' }), [fechaInicial, cuenta.preferencias]);
+  const formulario = useFormularioProgramacion({ modo, id, iniciales, obtener: obtenerTurno, recursos: cargarRecursos,
     crear: crearTurno, actualizar: actualizarTurno, validarAntes, ajustarIniciales, destino: destinoTurno, etiqueta: 'Turno' });
   const lunesSeleccionado = lunesDeSemana(formulario.datos.fecha);
   const semanaDestino = lunesSeleccionado ? `/horarios/semanales?fechaInicio=${lunesSeleccionado}` : '/horarios/semanales';
@@ -64,7 +66,7 @@ function FormularioTurno({ modo }) {
   return <>
     <EncabezadoPagina ruta={[{ etiqueta: 'Horarios', destino: semanaDestino }, { etiqueta: modo === 'editar' ? 'Editar' : 'Nuevo' }]}
       titulo={modo === 'editar' ? 'Editar turno' : 'Nuevo turno'}
-      descripcion="Selecciona el médico, el consultorio y las horas del turno. Máximo actual: 6 horas diarias y 36 semanales; los turnos deben terminar el mismo día." />
+      descripcion={`Selecciona el médico, el consultorio y las horas del turno. Máximo institucional: ${(configuracion.minutosDiarios / 60).toLocaleString('es-PE')} horas diarias y ${(configuracion.minutosSemanales / 60).toLocaleString('es-PE')} semanales; los turnos deben terminar el mismo día.`} />
     {formulario.cargando || formulario.errorCarga ? <section className="panel"><AvisoCatalogo cargando={formulario.cargando}
       error={formulario.errorCarga} reintentar={formulario.recargar} /><div className="formulario__acciones">{volver}</div></section>
       : inmutable ? <section className="panel"><div className="seccion-formulario"><h2>Turno {formulario.registro.estado.toLocaleLowerCase('es')}</h2>

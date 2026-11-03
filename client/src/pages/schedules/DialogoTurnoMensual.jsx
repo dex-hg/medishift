@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import VentanaPlanificador from './VentanaPlanificador';
 import { diasDelMes, especialidadesCompatibles, nombreMes, turnoInicial } from '../../utils/calendarioMensual';
 import { duracionTurno, validarTurno } from '../../utils/validacionesProgramacion';
@@ -13,7 +13,8 @@ function Campo({ etiqueta, campo, errores, children }) {
 
 export default function DialogoTurnoMensual({ editor, datos, periodo, hoy, ocupado, error, errores: erroresServidor,
   guardar, eliminar, cerrar, actualizarRevision, recargar }) {
-  const [formulario, setFormulario] = useState(() => turnoInicial(editor));
+  const { cuenta } = useOutletContext();
+  const [formulario, setFormulario] = useState(() => turnoInicial(editor, cuenta.preferencias));
   const [erroresLocales, setErroresLocales] = useState({});
   const [confirmaEliminar, setConfirmaEliminar] = useState(false);
   const errores = { ...erroresServidor, ...erroresLocales };
@@ -97,7 +98,7 @@ export default function DialogoTurnoMensual({ editor, datos, periodo, hoy, ocupa
         <Campo etiqueta="Nota (opcional)" campo="observacion" errores={errores}><textarea rows={2} maxLength={180} value={formulario.observacion}
           onChange={(evento) => cambiar('observacion', evento.target.value)} placeholder="Una indicación breve para este turno" /></Campo>
       </fieldset>
-      <p className="planificador-ayuda">{duracion > 0 ? `${(duracion / 60).toLocaleString('es-PE')} horas. ` : ''}El sistema comprueba cruces y los límites actuales de 6 h al día y 36 h por semana.</p>
+      <p className="planificador-ayuda">{duracion > 0 ? `${(duracion / 60).toLocaleString('es-PE')} horas. ` : ''}El sistema comprueba cruces y los límites institucionales de {(datos.politica.minutosDiarios / 60).toLocaleString('es-PE')} h al día y {(datos.politica.minutosSemanales / 60).toLocaleString('es-PE')} h por semana.</p>
       {buscarFeriado(datos.feriados, formulario.fecha) && <p className="planificador-ayuda">Feriado no laborable: se acreditan {datos.feriados.minutosPorFeriado / 60} h institucionales al profesional, reemplazando las horas de sus turnos de ese día.</p>}
       {confirmaEliminar && <div className="planificador-error"><p>¿Eliminar este turno del borrador mensual?</p>
         <button className="boton boton--peligro" type="button" disabled={ocupado || desactualizado} onClick={eliminar}>Confirmar eliminación</button>

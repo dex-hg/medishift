@@ -8,7 +8,7 @@ export function validarFeriados(datos, periodo) {
     && (datos.codigoPais === null || /^(PE|CO|CL|BO|MX|AR)$/.test(datos.codigoPais))
     && typeof datos.pais === 'string' && typeof datos.fuente === 'string' && Boolean(datos.fuente.trim())
     && typeof datos.mensaje === 'string' && typeof datos.requiereActualizacion === 'boolean'
-    && Number.isInteger(datos.minutosPorFeriado) && datos.minutosPorFeriado > 0 && datos.minutosPorFeriado <= 1440
+    && Number.isInteger(datos.minutosPorFeriado) && datos.minutosPorFeriado >= 0 && datos.minutosPorFeriado <= 1440
     && Array.isArray(datos.dias) && new Set(datos.dias.map((dia) => dia?.fecha)).size === datos.dias.length
     && datos.dias.every((dia) => fechaValida(dia?.fecha) && dia.fecha.startsWith(`${periodo}-`)
       && typeof dia.nombre === 'string' && Boolean(dia.nombre.trim()) && dia.nombre.length <= 1000)
