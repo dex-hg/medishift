@@ -14,6 +14,8 @@ import Consultorios from './pages/consulting-rooms/Consultorios';
 import Especialidades from './pages/specialties/Especialidades';
 import FormularioConsultorio from './pages/consulting-rooms/FormularioConsultorio';
 import NoEncontrado from './pages/NoEncontrado';
+import MiPerfil from './pages/account/MiPerfil';
+import Configuraciones from './pages/account/Configuraciones';
 
 function Aplicacion() {
   return (
@@ -23,6 +25,8 @@ function Aplicacion() {
       <Route path="/iniciar-sesion" element={<InicioSesion />} />
       <Route element={<RutaProtegida />}>
         <Route path="panel" element={<Inicio />} />
+        <Route path="mi-perfil" element={<MiPerfil />} />
+        <Route path="configuraciones" element={<Configuraciones />} />
         <Route path="faltas" element={<Faltas />} />
         <Route path="horarios" element={<Horarios />} />
         <Route path="horarios/semanales" element={<HorariosSemanales />} />

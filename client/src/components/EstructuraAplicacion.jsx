@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Building2,
@@ -15,6 +15,9 @@ import {
   X,
 } from 'lucide-react';
 import { cerrarSesion, obtenerSesion } from '../services/sesion';
+import MenuUsuario from './MenuUsuario';
+import useConfiguracionCuenta from '../hooks/useConfiguracionCuenta';
+import { guardarPreferencias } from '../services/configuracion';
 
 const gruposNavegacion = [
   {
@@ -41,6 +44,26 @@ function EstructuraAplicacion({ sesion }) {
   const [barraCompacta, setBarraCompacta] = useState(false);
   const [cerrando, setCerrando] = useState(false);
   const [errorSalida, setErrorSalida] = useState('');
+  const ajustes = useConfiguracionCuenta();
+  const [guardandoPreferencia, cambiarGuardandoPreferencia] = useState(false);
+
+  useEffect(() => {
+    if (ajustes.cuenta) setBarraCompacta(ajustes.cuenta.preferencias.barraCompacta);
+  }, [ajustes.cuenta]);
+
+  const alternarBarra = async () => {
+    if (!ajustes.cuenta || guardandoPreferencia) return;
+    cambiarGuardandoPreferencia(true);
+    setErrorSalida('');
+    try {
+      const cuenta = await guardarPreferencias({ ...ajustes.cuenta.preferencias, barraCompacta: !barraCompacta },
+        { revision: ajustes.cuenta.revision });
+      ajustes.actualizarCuenta(cuenta);
+    } catch (fallo) {
+      if (fallo.estado === 401) navegar('/iniciar-sesion', { replace: true });
+      else setErrorSalida(`${fallo.message} Abre Configuraciones para revisar tus preferencias.`);
+    } finally { cambiarGuardandoPreferencia(false); }
+  };
 
   const cerrarMenu = () => setMenuAbierto(false);
   const cerrarAcceso = async () => {
@@ -64,8 +87,6 @@ function EstructuraAplicacion({ sesion }) {
       setCerrando(false);
     }
   };
-
-  const iniciales = sesion.correo.slice(0, 2).toUpperCase();
 
   return (
     <div className={`aplicacion ${barraCompacta ? 'aplicacion--compacta' : ''}`}>
@@ -121,7 +142,8 @@ function EstructuraAplicacion({ sesion }) {
           <button
             className="boton-compactar"
             type="button"
-            onClick={() => setBarraCompacta((valor) => !valor)}
+            onClick={alternarBarra}
+            disabled={!ajustes.cuenta || guardandoPreferencia}
             aria-label={barraCompacta ? 'Expandir barra lateral' : 'Compactar barra lateral'}
           >
             <ChevronLeft size={17} />
@@ -153,19 +175,16 @@ function EstructuraAplicacion({ sesion }) {
           </button>
           <div className="barra-superior__contexto">
             <Stethoscope size={18} />
-            <span>{sesion.nombreInstitucion}</span>
+            <span>{ajustes.configuracion?.nombreInstitucion || sesion.nombreInstitucion}</span>
           </div>
-          <div className="perfil">
-            <span className="perfil__datos">
-              <strong>{sesion.correo}</strong>
-              <small>{sesion.codigoInstitucion}</small>
-            </span>
-            <span className="perfil__avatar" aria-hidden="true">{iniciales}</span>
-          </div>
+          <MenuUsuario sesion={sesion} cuenta={ajustes.cuenta} cerrando={cerrando} cerrarSesion={cerrarAcceso} error={errorSalida} />
         </header>
 
         <main className="contenido-principal">
-          <Outlet context={{ sesion }} />
+          {ajustes.cargando ? <p role="status">Cargando tus preferencias…</p> : ajustes.error
+            ? <div className="cuenta-aviso cuenta-aviso--error" role="alert"><p>{ajustes.error}</p>
+              <button className="boton boton--secundario" type="button" onClick={ajustes.recargarConfiguracion}>Reintentar</button></div>
+            : <Outlet context={{ sesion, ...ajustes }} />}
         </main>
       </div>
     </div>
