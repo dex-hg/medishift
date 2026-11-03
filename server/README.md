@@ -116,7 +116,17 @@ El inicio reemplaza cualquier sesión anterior y rota su identificador. La sesi�
 
 La sesión caduca tras 30 minutos de inactividad. Viaja solo por cookie `HttpOnly` y `SameSite=Strict`; no se admite el identificador en la URL. `MEDISHIFT_COOKIE_SEGURA=false` permite probar en `localhost` por HTTP. Configura `MEDISHIFT_COOKIE_SEGURA=true` al servir mediante HTTPS para marcar la cookie como `Secure`. El cliente debe enviar la cookie en las solicitudes a `/api`; no debe guardar el identificador ni la contraseña en almacenamiento del navegador. Los endpoints de profesionales, consultorios y especialidades comprueban la sesión y el estado activo de la cuenta e institución. La institución se toma de la sesión y limita cada operación de gestión.
 
-Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Antes de publicar el servicio, debe incorporarse una política de limitación de intentos de autenticación. Profesionales, consultorios y horarios usan PostgreSQL. El encargado asigna los turnos directamente, sin registrar disponibilidades previamente. Los horarios se crean como borrador y se aprueban por semana, con validación completa y reemplazo transaccional de versiones. Los límites temporales por profesional son 6 horas diarias y 36 semanales; su administración aún está pendiente.
+Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Antes de publicar el servicio, debe incorporarse una política de limitación de intentos de autenticación. Profesionales, consultorios y horarios usan PostgreSQL. El encargado asigna los turnos directamente, sin registrar disponibilidades previamente. Los horarios semanales se crean como borrador y se aprueban por semana, con validación completa y reemplazo transaccional de versiones. Los límites iniciales por profesional son 6 horas diarias y 36 semanales; un administrador puede modificarlos en el menú de usuario, Configuraciones. Se aplican al calendario mensual y semanal.
+
+### Perfil y configuraciones
+
+Aplica V004 sobre una base existente mediante `python scripts/administrar_configuracion.py aplicar`, desde la raíz. El procedimiento respalda, restaura y ensaya antes de aplicar la migración, verifica las huellas de las tablas originales y conserva el respaldo en `server/target/respaldos`.
+
+`GET /api/cuenta` devuelve nombre visible, correo de acceso, fecha de creación, rol y preferencias. `PUT /api/cuenta/perfil` modifica el nombre; `PUT /api/cuenta/preferencias` guarda barra compacta y horas inicial/final para nuevos turnos. El correo de acceso se consulta sin modificarlo. `PUT /api/cuenta/contrasena` exige la contraseña actual y una nueva de 12 a 128 caracteres, guarda el hash y rota el identificador de la sesión actual. La auditoría registra únicamente que la contraseña se actualizó.
+
+`GET /api/configuracion` entrega nombre institucional, zona horaria y límites en minutos. `PUT /api/configuracion` exige el rol Administrador vigente. Admite un máximo diario entre 1 y 1440 minutos, un máximo semanal entre uno y siete máximos diarios y un abono por feriado de 0 a 1440 minutos. La reducción revisa los turnos vigentes de las semanas con turnos futuros, incluyendo horas ya programadas en la semana actual. La zona horaria no puede cambiarse cuando existe programación.
+
+Todas las escrituras requieren `If-Match` con la revisión recibida. Una revisión antigua produce 409; la ausencia de cabecera, 428. Cuenta, institución y permisos proceden de la sesión. Las respuestas incluyen `Cache-Control: no-store`.
 
 ## Pruebas
 
@@ -170,7 +180,7 @@ Se reutiliza `attendance`, sin migraciones. La falta es una excepción a la asis
 
 ## Feriados nacionales y copia local
 
-El planificador incluye `feriados` con país, estado, fuente, fecha de consulta, minutos por feriado y fechas civiles del mes. Las seis zonas registrables se asocian explícitamente a `PE`, `CO`, `CL`, `BO`, `MX` y `AR`; una zona desconocida queda pendiente y no hereda el calendario peruano. El abono inicial se define una sola vez en `ServicioFeriados.MINUTOS_POR_FERIADO` (360 minutos), y el cliente utiliza el valor recibido.
+El planificador incluye `feriados` con país, estado, fuente, fecha de consulta, minutos por feriado y fechas civiles del mes. Las seis zonas registrables se asocian explícitamente a `PE`, `CO`, `CL`, `BO`, `MX` y `AR`; una zona desconocida queda pendiente y no hereda el calendario peruano. El abono institucional inicia en 360 minutos y puede modificarse desde Configuraciones. `ServicioFeriados` consulta la política de la institución y el cliente utiliza el valor recibido. Cambiar el abono recalcula los totales y las próximas exportaciones de cualquier mes; no modifica archivos descargados.
 
 `POST /api/planificador/feriados/sincronizar` recibe `periodo` y el booleano opcional `forzar`. Exige sesión y Administrador; país e institución se obtienen del servidor. La descarga ocurre fuera de las transacciones de horarios. La API de Nager.Holidays Community v4 se consulta por país y año, con timeout y validación de respuesta. Se importan únicamente feriados nacionales del tipo `Public`; las fechas repetidas se combinan para evitar abonos duplicados. Para Perú se excluye `Easter Sunday`, que el proveedor incluye pero no corresponde a los feriados nacionales de Semana Santa según la [fuente oficial consultada](https://elperuano.pe/noticia/291141-semana-santa-2026-en-peru-cuando-sera-el-proximo-fin-de-semana-largo).
 
