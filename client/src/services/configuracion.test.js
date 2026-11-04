@@ -10,7 +10,7 @@ const revision = 'a'.repeat(64);
 const cuenta = () => ({ nombre: 'Usuario de ensayo', correo: 'ensayo@example.test', creada: '2026-01-01T12:00:00Z',
   esAdministrador: true, revision, preferencias: { barraCompacta: false, horaInicio: '08:00', horaFin: '12:00' } });
 const configuracion = () => ({ nombreInstitucion: 'Institución ficticia', zonaHoraria: 'America/Lima',
-  minutosDiarios: 480, minutosSemanales: 2400, minutosPorFeriado: 450, revision });
+  minutosDiarios: 480, minutosSemanales: 2400, minutosPorFeriado: 450, autoprogramacionMedica: false, revision });
 const responder = (status, contenido) => ({ status, json: async () => contenido });
 
 test('consulta la cuenta con cookie sin caché y conserva preferencias verificadas', async () => {

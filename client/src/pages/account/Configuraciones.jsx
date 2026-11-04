@@ -38,7 +38,7 @@ function PreferenciasPersonales({ cuenta, actualizar, recargar }) {
 function ConfiguracionInstitucional({ configuracion, administrador, actualizar, recargar }) {
   const [datos, cambiarDatos] = useState(() => ({ nombreInstitucion: configuracion.nombreInstitucion, zonaHoraria: configuracion.zonaHoraria,
     minutosDiarios: mostrarHoras(configuracion.minutosDiarios), minutosSemanales: mostrarHoras(configuracion.minutosSemanales),
-    minutosPorFeriado: mostrarHoras(configuracion.minutosPorFeriado) }));
+    minutosPorFeriado: mostrarHoras(configuracion.minutosPorFeriado), autoprogramacionMedica: configuracion.autoprogramacionMedica }));
   const [errorHoras, cambiarErrorHoras] = useState('');
   const estado = useGuardarCuenta(actualizar);
   const campo = (nombre) => ({ value: datos[nombre], onChange: (evento) => {
@@ -66,6 +66,10 @@ function ConfiguracionInstitucional({ configuracion, administrador, actualizar, 
         pattern="[0-9]{1,3}:[0-5][0-9]" {...campo('minutosDiarios')} error={estado.errores.minutosDiarios} ayuda="Horas y minutos, de 0:01 a 24:00." />
         <CampoCuenta etiqueta="Máximo semanal por profesional" nombre="minutosSemanales" required
           pattern="[0-9]{1,3}:[0-5][0-9]" {...campo('minutosSemanales')} error={estado.errores.minutosSemanales} ayuda="De lunes a domingo. Ejemplo: 36:00." /></div>
+      <label className="cuenta-opcion"><input type="checkbox" checked={datos.autoprogramacionMedica}
+        onChange={(evento) => { const habilitada = evento.target.checked; cambiarDatos((anteriores) => ({ ...anteriores, autoprogramacionMedica: habilitada })); }}
+        aria-describedby="ayuda-autoprogramacion" />
+        <span><strong>Habilitar autoprogramación médica</strong><small id="ayuda-autoprogramacion">Permite que cada doctor cree, cambie o elimine sus propios turnos, eligiendo fecha, horas y un consultorio compatible con su especialidad. Se mantienen los límites y se impiden cruces de médicos y consultorios. El administrador conserva acceso y puede hacer cambios. Al desactivarla, los doctores solo consultan sus turnos; la programación existente se conserva.</small></span></label>
       <CampoCuenta etiqueta="Abono por feriado" nombre="minutosPorFeriado" required pattern="[0-9]{1,3}:[0-5][0-9]"
         {...campo('minutosPorFeriado')} error={estado.errores.minutosPorFeriado} ayuda="De 0:00 a 24:00. Usa 0:00 para desactivar el abono." />
       <p className="cuenta-aviso">Al reducir los límites se revisan los turnos futuros. Cambiar el abono recalcula los totales y las próximas exportaciones de todos los meses; los archivos ya descargados se conservan.</p>

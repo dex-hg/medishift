@@ -22,11 +22,11 @@ export function esPolitica(valor) {
 
 export function extraerConfiguracion(valor) {
   if (!esPolitica(valor) || typeof valor.nombreInstitucion !== 'string' || !valor.nombreInstitucion.trim()
-    || typeof valor.zonaHoraria !== 'string' || !REVISION.test(valor.revision)) respuestaInvalida();
+    || typeof valor.zonaHoraria !== 'string' || typeof valor.autoprogramacionMedica !== 'boolean' || !REVISION.test(valor.revision)) respuestaInvalida();
   try { new Intl.DateTimeFormat('es-PE', { timeZone: valor.zonaHoraria }); } catch { respuestaInvalida(); }
   return { nombreInstitucion: valor.nombreInstitucion, zonaHoraria: valor.zonaHoraria,
     minutosDiarios: valor.minutosDiarios, minutosSemanales: valor.minutosSemanales,
-    minutosPorFeriado: valor.minutosPorFeriado, revision: valor.revision };
+    minutosPorFeriado: valor.minutosPorFeriado, autoprogramacionMedica: valor.autoprogramacionMedica, revision: valor.revision };
 }
 
 export function extraerCuenta(valor) {

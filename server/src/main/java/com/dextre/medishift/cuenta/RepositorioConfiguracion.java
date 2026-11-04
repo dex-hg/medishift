@@ -29,12 +29,13 @@ public class RepositorioConfiguracion {
 		return consultas.query("""
 				SELECT i.name_institution, i.time_zone_institution,
 				coalesce(c.daily_minutes,360) AS diarios, coalesce(c.weekly_minutes,2160) AS semanales,
-				coalesce(c.holiday_credit_minutes,360) AS feriados, coalesce(c.revision_settings,0) AS revision
+				coalesce(c.holiday_credit_minutes,360) AS feriados, coalesce(c.revision_settings,0) AS revision,
+				coalesce(c.medical_self_scheduling,false) AS autoprogramacion
 				FROM institution i LEFT JOIN institution_settings c USING (id_institution)
 				WHERE i.id_institution=?
 				""", (fila, numero) -> new Institucion(fila.getString(1), fila.getString(2), fila.getInt(3),
-				fila.getInt(4), fila.getInt(5), RevisionesProgramacion.resumir(institucion,
-						fila.getString(1), fila.getString(2), fila.getInt(3), fila.getInt(4), fila.getInt(5), fila.getLong(6))),
+				fila.getInt(4), fila.getInt(5), fila.getBoolean(7), RevisionesProgramacion.resumir(institucion,
+						fila.getString(1), fila.getString(2), fila.getInt(3), fila.getInt(4), fila.getInt(5), fila.getLong(6), fila.getBoolean(7))),
 				institucion).stream().findFirst().orElseThrow(CatalogoException::noEncontrado);
 	}
 
@@ -70,11 +71,12 @@ public class RepositorioConfiguracion {
 		consultas.update("UPDATE institution SET name_institution=?,time_zone_institution=? WHERE id_institution=?",
 				datos.nombreInstitucion(), datos.zonaHoraria(), institucion);
 		consultas.update("""
-				INSERT INTO institution_settings (id_institution,daily_minutes,weekly_minutes,holiday_credit_minutes)
-				VALUES (?,?,?,?) ON CONFLICT (id_institution) DO UPDATE SET daily_minutes=excluded.daily_minutes,
+				INSERT INTO institution_settings (id_institution,daily_minutes,weekly_minutes,holiday_credit_minutes,medical_self_scheduling)
+				VALUES (?,?,?,?,?) ON CONFLICT (id_institution) DO UPDATE SET daily_minutes=excluded.daily_minutes,
 				weekly_minutes=excluded.weekly_minutes,holiday_credit_minutes=excluded.holiday_credit_minutes,
+				medical_self_scheduling=excluded.medical_self_scheduling,
 				revision_settings=institution_settings.revision_settings+1
-				""", institucion, datos.minutosDiarios(), datos.minutosSemanales(), datos.minutosPorFeriado());
+				""", institucion, datos.minutosDiarios(), datos.minutosSemanales(), datos.minutosPorFeriado(), datos.autoprogramacionMedica());
 	}
 
 	public boolean tieneProgramacion(UUID institucion) {

@@ -21,7 +21,7 @@ public final class ValidadorConfiguracion {
 	private ValidadorConfiguracion() { }
 
 	public static Institucion institucion(Map<String, Object> datos) {
-		comprobarCampos(datos, Set.of("nombreInstitucion", "zonaHoraria", "minutosDiarios", "minutosSemanales", "minutosPorFeriado"));
+		comprobarCampos(datos, Set.of("nombreInstitucion", "zonaHoraria", "minutosDiarios", "minutosSemanales", "minutosPorFeriado", "autoprogramacionMedica"));
 		Map<String, String> errores = new LinkedHashMap<>();
 		String nombre = texto(datos, "nombreInstitucion", 1, 140, errores, true);
 		String zona = texto(datos, "zonaHoraria", 1, 64, errores, true);
@@ -29,12 +29,15 @@ public final class ValidadorConfiguracion {
 		int diarios = entero(datos, "minutosDiarios", 1, 1440, errores);
 		int semanales = entero(datos, "minutosSemanales", 1, 10080, errores);
 		int feriados = entero(datos, "minutosPorFeriado", 0, 1440, errores);
+		if (!(datos.get("autoprogramacionMedica") instanceof Boolean)) {
+			errores.put("autoprogramacionMedica", "Selecciona si los doctores pueden programar sus propios turnos.");
+		}
 		if (!errores.containsKey("minutosDiarios") && !errores.containsKey("minutosSemanales")
 				&& (semanales < diarios || semanales > diarios * 7)) {
 			errores.put("minutosSemanales", "El máximo semanal debe estar entre uno y siete máximos diarios.");
 		}
 		exigirValido(errores);
-		return new Institucion(nombre, zona, diarios, semanales, feriados, "");
+		return new Institucion(nombre, zona, diarios, semanales, feriados, Boolean.TRUE.equals(datos.get("autoprogramacionMedica")), "");
 	}
 
 	public static Perfil perfil(Map<String, Object> datos) {

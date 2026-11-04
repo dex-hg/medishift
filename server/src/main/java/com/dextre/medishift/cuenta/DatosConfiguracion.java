@@ -11,7 +11,10 @@ public final class DatosConfiguracion {
 	}
 
 	public record Institucion(String nombreInstitucion, String zonaHoraria, int minutosDiarios,
-			int minutosSemanales, int minutosPorFeriado, String revision) {
+			int minutosSemanales, int minutosPorFeriado, boolean autoprogramacionMedica, String revision) {
+		public Institucion(String nombre, String zona, int diarios, int semanales, int feriados, String revision) {
+			this(nombre, zona, diarios, semanales, feriados, false, revision);
+		}
 		public Politica politica() { return new Politica(minutosDiarios, minutosSemanales, minutosPorFeriado); }
 	}
 
