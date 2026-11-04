@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { celdasDelMes, leerArrastre, TIPO_ARRASTRE } from '../../utils/calendarioMensual';
 import { DIAS_SEMANA, mostrarFecha } from '../../utils/validacionesProgramacion';
 import { buscarFeriado } from '../../utils/feriados';
+import { reservasDelDia } from '../../utils/autoprogramacion';
 
-export default function CalendarioMensual({ periodo, consultorio, area, turnos, feriados, hoy, seleccionado, asignar, editar, soltar, ocupado, editable }) {
+export default function CalendarioMensual({ periodo, consultorio, area, turnos, ocupaciones = [], zonaHoraria, feriados, hoy, seleccionado, asignar, editar, soltar, ocupado, editable }) {
   const [destino, setDestino] = useState('');
   const recibir = (evento, fecha) => {
     evento.preventDefault();
@@ -56,6 +57,7 @@ export default function CalendarioMensual({ periodo, consultorio, area, turnos, 
               <span>{turno.profesional}</span><small>{turno.especialidad}</small>
               {turno.asistencia === 'Falta' && <small className="turno-mensual__falta">Falta · 0 h</small>}
             </button>)}</div>
+            {reservasDelDia(ocupaciones, consultorio.id, fecha, zonaHoraria, turnos.map((turno) => turno.id)).map((reserva) => <p key={reserva.idTurno} className="planificador-ayuda" aria-label={'Consultorio ocupado de ' + reserva.horaInicio + ' a ' + reserva.horaFin}><strong>Ocupado</strong><br />{reserva.horaInicio} a {reserva.horaFin}</p>)}
             {habilitado && <button type="button" className="calendario-mensual__asignar" onClick={() => asignar(fecha)}
               aria-label={`Asignar profesional el ${mostrarFecha(fecha)}`}><Plus size={13} /> Asignar</button>}
           </div>;

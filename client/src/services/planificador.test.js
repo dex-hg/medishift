@@ -10,7 +10,7 @@ const turno = () => ({ id: ID, idPlan: OTRO, idArea: ID, idProfesional: ID, prof
   fecha: '2026-10-26', horaInicio: '08:00', horaFin: '12:00', estado: 'Borrador', observacion: '', revision: REVISION,
   asistencia: 'Asistencia', revisionAsistencia: REVISION });
 const responder = (status, contenido) => ({ status, json: async () => contenido });
-const calendario = () => ({ zonaHoraria: 'America/Lima', areas: [{ id: ID, codigo: 'DER', nombre: 'Dermatología', estado: 'Activo', idEspecialidad: ID, especialidad: 'Dermatología' }],
+const calendario = () => ({ permisos: { esAdministrador: true, idProfesional: null, puedeProgramar: true }, ocupaciones: [], zonaHoraria: 'America/Lima', areas: [{ id: ID, codigo: 'DER', nombre: 'Dermatología', estado: 'Activo', idEspecialidad: ID, especialidad: 'Dermatología' }],
   politica: { minutosDiarios: 360, minutosSemanales: 2160, minutosPorFeriado: 360 },
   feriados: { codigoPais: 'PE', pais: 'Perú', estado: 'Disponible', fuente: 'Calendario de ensayo',
     actualizado: '2026-10-26T15:00:00Z', minutosPorFeriado: 360, requiereActualizacion: false, dias: [], mensaje: '' },

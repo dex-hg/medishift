@@ -70,9 +70,21 @@ function extraerCalendario(valor, periodo) {
       || !['Borrador', 'Aprobado', 'Pendiente', 'Cancelado', 'Sustituido'].includes(plan.estado)) respuestaInvalida();
     return { id: plan.id, idUnidad: plan.idUnidad, estado: plan.estado, periodo: plan.periodo, version: plan.version };
   });
+  const permisos = valor.permisos;
+  if (!esObjeto(permisos) || typeof permisos.esAdministrador !== 'boolean' || typeof permisos.puedeProgramar !== 'boolean'
+    || (permisos.idProfesional !== null && !esId(permisos.idProfesional))
+    || (!permisos.esAdministrador && !esId(permisos.idProfesional))) respuestaInvalida();
+  if (!Array.isArray(valor.ocupaciones)) respuestaInvalida();
+  const ocupaciones = valor.ocupaciones.map((reserva) => {
+    if (!esObjeto(reserva) || !esId(reserva.idTurno) || !esId(reserva.idConsultorio)
+      || !Number.isFinite(Date.parse(reserva.inicio)) || !Number.isFinite(Date.parse(reserva.fin))
+      || Date.parse(reserva.inicio) >= Date.parse(reserva.fin)) respuestaInvalida();
+    return { idTurno: reserva.idTurno, idConsultorio: reserva.idConsultorio, inicio: reserva.inicio, fin: reserva.fin };
+  });
   const turnos = lista(valor.turnos, extraerTurno);
+  if (!permisos.esAdministrador && turnos.some((turno) => turno.idProfesional !== permisos.idProfesional)) respuestaInvalida();
   if (turnos.some((turno) => !turno.fecha.startsWith(`${periodo}-`))) respuestaInvalida();
-  return { zonaHoraria: valor.zonaHoraria, politica: valor.politica, feriados: valor.feriados, areas, planes, turnos, especialidades: lista(valor.especialidades, especialidad),
+  return { permisos, ocupaciones, zonaHoraria: valor.zonaHoraria, politica: valor.politica, feriados: valor.feriados, areas, planes, turnos, especialidades: lista(valor.especialidades, especialidad),
     consultorios: lista(valor.consultorios, (valor) => recurso(valor, true)),
     profesionales: lista(valor.profesionales, (valor) => recurso(valor)) };
 }
@@ -106,7 +118,7 @@ async function solicitar(ruta, metodo, { datos, revision, senal, estadoEsperado,
         const errores = esObjeto(contenido?.errores) ? Object.fromEntries(camposError.filter((campo) => esTexto(contenido.errores[campo]))
           .map((campo) => [campo, contenido.errores[campo]])) : {};
         throw new ErrorProgramacion(respuesta.status === 401 ? 'Tu sesión terminó. Inicia sesión nuevamente.'
-          : respuesta.status === 403 ? 'Esta operación requiere el permiso de administrador.'
+          : respuesta.status === 403 ? 'No tienes permiso para este cambio. Comprueba si la autoprogramación sigue habilitada y si el turno es tuyo.'
             : esTexto(contenido?.mensaje) ? contenido.mensaje : 'No se pudo guardar el horario.', { estado: respuesta.status, errores });
       }
       return contenido;

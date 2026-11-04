@@ -38,7 +38,7 @@ export default function usePlanificadorMensual(destino = '/horarios', periodoIni
     cambiarErrorFeriados('');
     cargarPlanificador(periodo, { senal: controlador.signal }).then(async (resultado) => {
       const clave = `${resultado.feriados.codigoPais}-${periodo.slice(0, 4)}`;
-      if (resultado.feriados.codigoPais && resultado.feriados.requiereActualizacion && !intentosFeriados.current.has(clave)) {
+      if (resultado.permisos.esAdministrador && resultado.feriados.codigoPais && resultado.feriados.requiereActualizacion && !intentosFeriados.current.has(clave)) {
         try {
           const feriados = await sincronizarFeriados(periodo, { senal: controlador.signal });
           resultado = { ...resultado, feriados };
@@ -89,7 +89,7 @@ export default function usePlanificadorMensual(destino = '/horarios', periodoIni
         manejarAcceso(fallo);
         setError(fallo.message);
         setErrores(fallo.errores || {});
-        if (fallo.estado === 409) setIntento((valor) => valor + 1);
+        if ([403, 409].includes(fallo.estado)) setIntento((valor) => valor + 1);
       }
       return false;
     } finally {

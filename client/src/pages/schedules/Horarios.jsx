@@ -24,21 +24,26 @@ export default function Horarios() {
   const [reporteAbierto, setReporteAbierto] = useState(false);
   const { datos, periodo, cargando, guardando } = consulta;
   const ocupado = cargando || guardando;
+  const esAdministrador = datos?.permisos.esAdministrador ?? sesion.esAdministrador;
+  const profesionalPropio = datos?.profesionales.find((persona) => persona.id === datos.permisos.idProfesional);
+  const consultoriosVisibles = datos?.consultorios.filter((sala) => esAdministrador || especialidadesCompatibles(profesionalPropio, sala).length) || [];
+  const areasVisibles = datos?.areas.filter((registro) => esAdministrador || consultoriosVisibles.some((sala) => sala.idArea === registro.id)) || [];
   const consultorio = datos?.consultorios.find((registro) => registro.id === idConsultorio);
   const area = datos?.areas.find((registro) => registro.id === consultorio?.idArea);
   const plan = datos?.planes.find((registro) => registro.idUnidad === area?.id && ['Borrador', 'Pendiente', 'Aprobado'].includes(registro.estado));
-  const editable = consultorio?.estado === 'Activo' && area?.estado === 'Activo' && Boolean(area?.idEspecialidad) && (!plan || plan.estado === 'Borrador');
+  const editable = datos?.permisos.puedeProgramar && consultorio?.estado === 'Activo' && area?.estado === 'Activo' && Boolean(area?.idEspecialidad) && (!plan || plan.estado === 'Borrador');
   const hoy = fechaActual(datos?.zonaHoraria);
 
   useEffect(() => {
     if (!datos) return;
-    setIdConsultorio((anterior) => datos.consultorios.some((registro) => registro.id === anterior && registro.idArea)
-      ? anterior : datos.consultorios.find((registro) => registro.estado === 'Activo' && registro.idArea)?.id || '');
+    setIdConsultorio((anterior) => consultoriosVisibles.some((registro) => registro.id === anterior && registro.idArea)
+      ? anterior : consultoriosVisibles.find((registro) => registro.estado === 'Activo' && registro.idArea)?.id || '');
   }, [datos]);
 
   useEffect(() => {
     if (!datos) return;
     const sala = datos.consultorios.find((registro) => registro.id === idConsultorio);
+    if (!datos.permisos.esAdministrador) { setIdProfesional(datos.permisos.idProfesional); return; }
     setIdProfesional((anterior) => especialidadesCompatibles(datos.profesionales.find((registro) => registro.id === anterior), sala).length ? anterior : '');
   }, [datos, idConsultorio]);
 
@@ -46,7 +51,7 @@ export default function Horarios() {
   const abrir = (fecha, turno, profesional) => {
     if (ocupado || !consultorio) return;
     consulta.limpiarError();
-    setEditor({ fecha, turno, consultorio, profesional: profesional || datos.profesionales.find((registro) => registro.id === (turno?.idProfesional || idProfesional)) });
+    setEditor({ fecha, turno, consultorio, profesional: profesionalPropio || profesional || datos.profesionales.find((registro) => registro.id === (turno?.idProfesional || idProfesional)) });
   };
   const soltar = (contenido, fecha) => {
     if (contenido.tipo === 'profesional') {
@@ -74,8 +79,8 @@ export default function Horarios() {
   };
 
   return <>
-    <EncabezadoPagina ruta={[{ etiqueta: 'Horarios' }]} titulo="Horarios mensuales"
-      descripcion="Organiza a tus profesionales por área, consultorio y día. Todo el mes en un solo calendario."
+    <EncabezadoPagina ruta={[{ etiqueta: 'Horarios' }]} titulo={esAdministrador ? "Horarios mensuales" : "Mis horarios"}
+      descripcion={esAdministrador ? "Organiza a tus profesionales por área, consultorio y día. Todo el mes en un solo calendario." : "Elige fecha, horas y un consultorio compatible para organizar tus turnos."}
       acciones={sesion.esAdministrador && <>
         <button className="boton boton--secundario" type="button" disabled={ocupado || !datos || Boolean(consulta.errorCarga) || datos?.feriados.estado !== 'Disponible'}
           onClick={() => setReporteAbierto(true)}><FileDown size={17} /> Exportar horario</button>
@@ -91,26 +96,28 @@ export default function Horarios() {
     {cargando && <p className="planificador-aviso" role="status">Cargando el mes y sus consultorios…</p>}
     {consulta.errorCarga && <div className="planificador-error" role="alert"><p>{consulta.errorCarga}</p><button className="boton boton--secundario" type="button" onClick={consulta.recargar}>Volver a intentar</button></div>}
     {consulta.mensaje && <p className="planificador-exito" role="status">{consulta.mensaje}</p>}
-    {datos && !consulta.errorCarga && <ResumenFeriados feriados={datos.feriados} error={consulta.errorFeriados || consulta.error}
+    {datos && !consulta.errorCarga && esAdministrador && <ResumenFeriados feriados={datos.feriados} error={consulta.errorFeriados || consulta.error}
       ocupado={ocupado} actualizar={consulta.actualizarFeriados} />}
-    {datos && !consulta.errorCarga && sesion.esAdministrador && <div className="planificador" aria-busy={ocupado}>
-      <aside className="planificador__lateral"><ArbolAreas areas={datos.areas} consultorios={datos.consultorios}
+    {datos && !consulta.errorCarga && <div className="planificador" aria-busy={ocupado}>
+      <aside className="planificador__lateral"><ArbolAreas areas={areasVisibles} consultorios={consultoriosVisibles}
         seleccionado={idConsultorio} seleccionar={(valor) => { setIdConsultorio(valor); setIdProfesional(''); }} ocupado={ocupado}
-        agregar={(valor) => { consulta.limpiarError(); setAccion(valor); }} />
-        <BancoProfesionales profesionales={datos.profesionales} turnos={datos.turnos} feriados={datos.feriados} consultorio={consultorio}
-          seleccionado={idProfesional} seleccionar={setIdProfesional} ocupado={ocupado || !editable} /></aside>
+        agregar={esAdministrador ? (valor) => { consulta.limpiarError(); setAccion(valor); } : undefined} />
+        {esAdministrador ? <BancoProfesionales profesionales={datos.profesionales} turnos={datos.turnos} feriados={datos.feriados} consultorio={consultorio}
+          seleccionado={idProfesional} seleccionar={setIdProfesional} ocupado={ocupado || !editable} />
+          : <section className="panel planificador-arbol"><h2>{profesionalPropio?.nombre}</h2><p>Solo puedes modificar tus propios turnos. Los bloques ocupados de otros profesionales se muestran para elegir tus horas.</p>
+            {!datos.permisos.puedeProgramar && <p className="planificador-aviso" role="status">La autoprogramación está desactivada. Puedes consultar tus horarios. Solicita los cambios al administrador.</p>}
+            {!consultoriosVisibles.length && <p role="status">No hay consultorios compatibles disponibles. Solicita al administrador que revise tu especialidad y las áreas.</p>}</section>}</aside>
       <div className="planificador__principal"><CalendarioMensual periodo={periodo} consultorio={consultorio} area={area} hoy={hoy}
-        turnos={datos.turnos.filter((turno) => turno.idConsultorio === idConsultorio)} feriados={datos.feriados} seleccionado={idProfesional}
+        turnos={datos.turnos.filter((turno) => turno.idConsultorio === idConsultorio)} ocupaciones={datos.ocupaciones} zonaHoraria={datos.zonaHoraria} feriados={datos.feriados} seleccionado={idProfesional}
         asignar={(fecha) => abrir(fecha)} editar={(turno) => abrir(turno.fecha, turno)} soltar={soltar} ocupado={ocupado} editable={editable} />
-        {area && !area.idEspecialidad && <div className="planificador-error" role="status"><p>Selecciona la especialidad de {area.nombre} para asignar nuevos turnos.</p>
+        {esAdministrador && area && !area.idEspecialidad && <div className="planificador-error" role="status"><p>Selecciona la especialidad de {area.nombre} para asignar nuevos turnos.</p>
           <button className="boton boton--secundario" type="button" disabled={ocupado} onClick={() => { consulta.limpiarError(); setAccion({ tipo: 'especialidad-area', idArea: area.id }); }}>Configurar especialidad del área</button></div>}
-        <p className="planificador-pie"><strong>{datos.turnos.filter((turno) => turno.idConsultorio === idConsultorio).length} turnos en este consultorio.</strong> Arrastra un turno a otro día para moverlo; pulsa sobre él para editarlo o eliminarlo.</p>
-        <p className="planificador-ayuda">Cada turno se guarda al confirmar. La aprobación mensual todavía está pendiente. Zona horaria: {datos.zonaHoraria}.</p>
+        <p className="planificador-pie"><strong>{datos.turnos.filter((turno) => turno.idConsultorio === idConsultorio).length} turnos en este consultorio.</strong> {datos.permisos.puedeProgramar ? 'Arrastra un turno a otro día para moverlo; pulsa sobre él para editarlo o eliminarlo.' : 'Pulsa un turno para consultar sus datos.'}</p>
+        <p className="planificador-ayuda">Cada turno se guarda al confirmar. El consultorio queda reservado durante las horas del turno. Zona horaria: {datos.zonaHoraria}.</p>
       </div>
     </div>}
-    {!sesion.esAdministrador && <p className="planificador-error">Tu cuenta necesita el permiso de administrador para organizar los horarios mensuales.</p>}
-    <details className="planificador-legado"><summary>Consultar programación semanal anterior</summary><p>Los horarios semanales anteriores son independientes del calendario mensual.</p>
-      <Link className="planificador-enlace" to="/horarios/semanales">Abrir historial semanal</Link></details>
+    {esAdministrador && <details className="planificador-legado"><summary>Consultar programación semanal anterior</summary><p>Los horarios semanales anteriores son independientes del calendario mensual.</p>
+      <Link className="planificador-enlace" to="/horarios/semanales">Abrir historial semanal</Link></details>}
     {editor && datos && <DialogoTurnoMensual editor={editor} datos={datos} periodo={periodo} hoy={hoy} ocupado={guardando || cargando}
       error={consulta.error || consulta.errorCarga} errores={consulta.errores} guardar={guardarTurno} eliminar={borrarTurno} cerrar={() => setEditor(null)} recargar={consulta.recargar}
       actualizarRevision={(turno) => { setEditor((anterior) => ({ ...anterior, turno })); consulta.limpiarError(); }} />}
