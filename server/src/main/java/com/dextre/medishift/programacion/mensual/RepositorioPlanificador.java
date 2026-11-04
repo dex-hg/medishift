@@ -165,6 +165,18 @@ public class RepositorioPlanificador {
 				""", (fila, numero) -> leerTurno(fila), institucion, periodo.inicio());
 	}
 
+	public List<DatosPlanificador.OcupacionConsultorio> ocupaciones(UUID institucion, Instant inicio, Instant fin) {
+		return consultas.query("""
+				SELECT t.id_shift,t.id_room,t.start_at_shift,t.end_at_shift FROM shift t
+				JOIN schedule h USING (id_institution,id_schedule)
+				WHERE t.id_institution=? AND t.start_at_shift<? AND t.end_at_shift>?
+				AND t.status_shift IN ('draft','pending','approved') AND h.status_schedule IN ('draft','pending','approved')
+				ORDER BY t.start_at_shift,t.id_shift
+				""", (fila, numero) -> new DatosPlanificador.OcupacionConsultorio(fila.getObject(1, UUID.class),
+				fila.getObject(2, UUID.class), fila.getTimestamp(3).toInstant(), fila.getTimestamp(4).toInstant()),
+				institucion, Timestamp.from(fin), Timestamp.from(inicio));
+	}
+
 	public RegistroTurno buscarTurno(UUID institucion, UUID identificador) {
 		return consultas.query(CONSULTA_TURNOS + " AND h.period_type_schedule = 'monthly' AND t.id_shift = ?",
 				(fila, numero) -> leerTurno(fila), institucion, identificador).stream().findFirst()

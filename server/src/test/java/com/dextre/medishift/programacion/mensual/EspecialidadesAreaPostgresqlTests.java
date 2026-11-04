@@ -81,6 +81,7 @@ class EspecialidadesAreaPostgresqlTests extends SoporteApiPlanesMensuales {
 	void nuevasEspecialidadesSonPrivadasYLosNombresIgualesNoConcedenAccesoEntreInstituciones() throws Exception {
 		UUID otraInstitucion = nuevaInstitucion();
 		UUID otraCuenta = nuevoActor(otraInstitucion);
+		inicializar(otraInstitucion, otraCuenta);
 		MockHttpSession otraSesion = sesionDe(otraInstitucion, otraCuenta);
 		solicitar(get("/api/especialidades").session(otraSesion)).andExpect(status().isOk())
 				.andExpect(jsonPath("$[*].id").value(not(hasItem(dermatologia.toString()))));

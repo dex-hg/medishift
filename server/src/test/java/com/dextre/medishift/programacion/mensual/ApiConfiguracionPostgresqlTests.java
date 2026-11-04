@@ -194,7 +194,7 @@ class ApiConfiguracionPostgresqlTests extends SoporteApiPlanesMensuales {
 
 	private String reglas(int diarios, int semanales, int feriados) {
 		return "{\"nombreInstitucion\":\"Ensayo aislado\",\"zonaHoraria\":\"America/Lima\",\"minutosDiarios\":" + diarios
-				+ ",\"minutosSemanales\":" + semanales + ",\"minutosPorFeriado\":" + feriados + "}";
+				+ ",\"minutosSemanales\":" + semanales + ",\"minutosPorFeriado\":" + feriados + ",\"autoprogramacionMedica\":false}";
 	}
 
 	private String revision(String ruta) throws Exception {

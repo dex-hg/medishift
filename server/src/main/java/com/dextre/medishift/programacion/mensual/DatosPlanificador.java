@@ -27,7 +27,12 @@ public final class DatosPlanificador {
 	public record CalendarioMensual(String zonaHoraria, List<Area> areas, List<ConsultorioArea> consultorios,
 			List<ProfesionalRecurso> profesionales, List<PlanMensual> planes, List<TurnoMensual> turnos,
 			List<EspecialidadRecurso> especialidades, CalendarioFeriados feriados,
-			com.dextre.medishift.cuenta.DatosConfiguracion.Politica politica) { }
+			com.dextre.medishift.cuenta.DatosConfiguracion.Politica politica,
+			com.dextre.medishift.acceso.ServicioAccesoMensual.PermisosProgramacion permisos,
+			List<OcupacionConsultorio> ocupaciones) { }
+
+	/** Reservas compartidas sin nombres, notas ni datos de asistencia de otros profesionales. */
+	public record OcupacionConsultorio(UUID idTurno, UUID idConsultorio, java.time.Instant inicio, java.time.Instant fin) { }
 
 	public record TurnoMensual(UUID id, UUID idPlan, UUID idArea, UUID idProfesional, String profesional,
 			UUID idConsultorio, String consultorio, UUID idEspecialidad, String especialidad, LocalDate fecha,

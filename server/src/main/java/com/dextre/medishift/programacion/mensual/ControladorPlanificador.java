@@ -51,7 +51,7 @@ public class ControladorPlanificador {
 
 	@GetMapping
 	public CalendarioMensual consultar(@RequestParam(required = false) String periodo, HttpServletRequest solicitud) {
-		Contexto contexto = autorizar(solicitud);
+		Contexto contexto = identificar(solicitud);
 		return servicio.consultar(contexto.institucion(), contexto.actor(), ValidadorPlanesMensuales.periodo(periodo));
 	}
 
@@ -92,7 +92,7 @@ public class ControladorPlanificador {
 
 	@PostMapping(value = "/turnos", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<TurnoMensual> crearTurno(@RequestBody Map<String, Object> datos, HttpServletRequest solicitud) {
-		Contexto contexto = autorizar(solicitud);
+		Contexto contexto = identificar(solicitud);
 		TurnoMensual turno = servicio.crearTurno(contexto.institucion(), contexto.actor(), ValidadorPlanificador.turno(datos));
 		return ResponseEntity.created(URI.create("/api/planificador/turnos/" + turno.id())).eTag(turno.revision()).body(turno);
 	}
@@ -100,7 +100,7 @@ public class ControladorPlanificador {
 	@PutMapping(value = "/turnos/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<TurnoMensual> actualizarTurno(@PathVariable String id, @RequestBody Map<String, Object> datos,
 			@RequestHeader(value = "If-Match", required = false) String revision, HttpServletRequest solicitud) {
-		Contexto contexto = autorizar(solicitud);
+		Contexto contexto = identificar(solicitud);
 		TurnoMensual turno = servicio.actualizarTurno(contexto.institucion(), contexto.actor(),
 				ValidadorPlanesMensuales.identificador(id, "id"), RevisionesProgramacion.leerCondicion(revision),
 				ValidadorPlanificador.turno(datos));
@@ -120,7 +120,7 @@ public class ControladorPlanificador {
 	@DeleteMapping("/turnos/{id}")
 	public ResponseEntity<Void> eliminarTurno(@PathVariable String id,
 			@RequestHeader(value = "If-Match", required = false) String revision, HttpServletRequest solicitud) {
-		Contexto contexto = autorizar(solicitud);
+		Contexto contexto = identificar(solicitud);
 		servicio.eliminarTurno(contexto.institucion(), contexto.actor(), ValidadorPlanesMensuales.identificador(id, "id"),
 				RevisionesProgramacion.leerCondicion(revision));
 		return ResponseEntity.noContent().build();
@@ -131,6 +131,10 @@ public class ControladorPlanificador {
 		UUID actor = sesiones.obtenerCuenta(solicitud);
 		acceso.exigirAdministrador(institucion, actor);
 		return new Contexto(institucion, actor);
+	}
+
+	private Contexto identificar(HttpServletRequest solicitud) {
+		return new Contexto(sesiones.obtenerInstitucion(solicitud), sesiones.obtenerCuenta(solicitud));
 	}
 
 	private record Contexto(UUID institucion, UUID actor) { }

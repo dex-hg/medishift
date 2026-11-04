@@ -64,16 +64,22 @@ public class ServicioPlanificador {
 
 	@Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
 	public CalendarioMensual consultar(UUID institucion, UUID actor, PeriodoMensual periodo) {
-		preparar(institucion, actor, false);
+		var permisos = acceso.consultarProgramacion(institucion, actor);
+		planes.verificarEsquema();
+		calendario.verificarEsquema();
 		ZoneId zona = horarios.zona(institucion);
 		List<Area> areas = calendario.areas(institucion);
 		List<PlanMensual> cabeceras = areas.stream().flatMap(area -> planes.planes(institucion, area.id(), periodo).stream()).toList();
 		return new CalendarioMensual(zona.getId(), areas, calendario.consultorios(institucion),
-				recursos.listar(institucion).profesionales(), cabeceras,
-				calendario.turnos(institucion, periodo).stream().map(registro -> vista(registro, zona)).toList(),
+				recursos.listar(institucion).profesionales().stream()
+						.filter(persona -> permisos.esAdministrador() || persona.id().equals(permisos.idProfesional())).toList(), cabeceras,
+				calendario.turnos(institucion, periodo).stream()
+						.filter(registro -> permisos.esAdministrador() || registro.turno().profesional().equals(permisos.idProfesional()))
+						.map(registro -> vista(registro, zona)).toList(),
 				exclusiones.listar(institucion).stream().map(especialidad -> new com.dextre.medishift.programacion.DatosProgramacion.EspecialidadRecurso(
 						especialidad.id(), especialidad.nombre())).toList(), feriados.consultar(institucion, zona.getId(), periodo),
-				carga.politica(institucion));
+				carga.politica(institucion), permisos, calendario.ocupaciones(institucion,
+						periodo.inicio().atStartOfDay(zona).toInstant(), periodo.inicio().plusMonths(1).atStartOfDay(zona).toInstant()));
 	}
 
 	@Transactional
@@ -123,7 +129,7 @@ public class ServicioPlanificador {
 
 	@Transactional
 	public TurnoMensual crearTurno(UUID institucion, UUID actor, SolicitudAsignacion solicitud) {
-		preparar(institucion, actor, true);
+		prepararTurno(institucion, actor, solicitud.turno().idProfesional());
 		ZoneId zona = horarios.zona(institucion);
 		PlanMensual plan = borrador(institucion, actor, solicitud.idArea(), solicitud.turno().fecha());
 		Turno nuevo = construir(UUID.randomUUID(), plan.id(), solicitud, zona);
@@ -137,8 +143,9 @@ public class ServicioPlanificador {
 	@Transactional
 	public TurnoMensual actualizarTurno(UUID institucion, UUID actor, UUID identificador,
 			String revision, SolicitudAsignacion solicitud) {
-		preparar(institucion, actor, true);
+		prepararTurno(institucion, actor, solicitud.turno().idProfesional());
 		RegistroTurno actual = calendario.buscarTurno(institucion, identificador);
+		acceso.exigirTurnoPropio(institucion, actor, actual.turno().profesional());
 		RevisionesProgramacion.comprobar(revision, revision(actual));
 		exigirEditable(institucion, actual);
 		ZoneId zona = horarios.zona(institucion);
@@ -154,8 +161,12 @@ public class ServicioPlanificador {
 
 	@Transactional
 	public void eliminarTurno(UUID institucion, UUID actor, UUID identificador, String revision) {
-		preparar(institucion, actor, true);
+		exclusiones.bloquearInstitucion(institucion);
+		acceso.consultarProgramacion(institucion, actor);
+		planes.verificarEsquema();
+		calendario.verificarEsquema();
 		RegistroTurno actual = calendario.buscarTurno(institucion, identificador);
+		acceso.exigirTurnoPropio(institucion, actor, actual.turno().profesional());
 		RevisionesProgramacion.comprobar(revision, revision(actual));
 		exigirEditable(institucion, actual);
 		String antes = calendario.captura(institucion, identificador, false);
@@ -166,6 +177,13 @@ public class ServicioPlanificador {
 	private void preparar(UUID institucion, UUID actor, boolean escritura) {
 		if (escritura) { exclusiones.bloquearInstitucion(institucion); }
 		acceso.exigirAdministrador(institucion, actor);
+		planes.verificarEsquema();
+		calendario.verificarEsquema();
+	}
+
+	private void prepararTurno(UUID institucion, UUID actor, UUID profesional) {
+		exclusiones.bloquearInstitucion(institucion);
+		acceso.exigirTurnoPropio(institucion, actor, profesional);
 		planes.verificarEsquema();
 		calendario.verificarEsquema();
 	}
