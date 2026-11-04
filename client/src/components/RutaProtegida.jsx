@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import EstructuraAplicacion from './EstructuraAplicacion';
 import { obtenerSesion } from '../services/sesion';
+import { rutaPermitida } from '../utils/autoprogramacion';
 
 function RutaProtegida() {
   const ubicacion = useLocation();
@@ -48,6 +49,12 @@ function RutaProtegida() {
     return <main className="estado-acceso" role="status">Comprobando tu sesión…</main>;
   }
 
+  if (!rutaPermitida(acceso.sesion, ruta)) {
+    if (acceso.sesion.esDoctor) return <Navigate to="/horarios" replace />;
+    if (!['/mi-perfil', '/configuraciones'].includes(ruta)) return <main className="estado-acceso" role="alert"><h1>Cuenta sin acceso operativo</h1>
+      <p>Solicita al administrador que habilite tu rol de doctor y lo vincule con tu registro profesional.</p>
+      <a href="/mi-perfil">Abrir mi perfil</a></main>;
+  }
   return <EstructuraAplicacion sesion={acceso.sesion} />;
 }
 

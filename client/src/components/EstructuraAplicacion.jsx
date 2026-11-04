@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cerrarSesion, obtenerSesion } from '../services/sesion';
 import MenuUsuario from './MenuUsuario';
+import { rutaPermitida } from '../utils/autoprogramacion';
 import useConfiguracionCuenta from '../hooks/useConfiguracionCuenta';
 import { guardarPreferencias } from '../services/configuracion';
 
@@ -110,7 +111,7 @@ function EstructuraAplicacion({ sesion }) {
         </div>
 
         <nav className="navegacion" aria-label="Navegación principal">
-          {gruposNavegacion.map((grupo) => (
+          {gruposNavegacion.map((grupo) => ({ ...grupo, enlaces: grupo.enlaces.filter((enlace) => rutaPermitida(sesion, enlace.destino)) })).filter((grupo) => grupo.enlaces.length).map((grupo) => (
             <div className="navegacion__grupo" key={grupo.titulo}>
               <p className="navegacion__titulo">{grupo.titulo}</p>
               {grupo.enlaces.map(({ destino, etiqueta, icono: Icono, fin }) => (

@@ -37,7 +37,8 @@ function extraerCuenta(contenido) {
     throw new ErrorSesion('El servicio devolvió una respuesta inválida.', { tipo: 'respuesta' });
   }
   return { ...Object.fromEntries(CAMPOS_CUENTA.map((campo) => [campo, contenido[campo]])),
-    esAdministrador: contenido.esAdministrador };
+    esAdministrador: contenido.esAdministrador, esDoctor: contenido.esDoctor === true,
+    idProfesional: typeof contenido.idProfesional === 'string' ? contenido.idProfesional : null };
 }
 
 async function solicitarSesion(metodo, { datos, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000 } = {}) {

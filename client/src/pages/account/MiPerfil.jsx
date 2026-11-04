@@ -7,6 +7,7 @@ import useGuardarCuenta from '../../hooks/useGuardarCuenta';
 import { CampoCuenta, EstadoGuardado } from './ElementosCuenta';
 
 function FormularioPerfil({ cuenta, actualizar, recargar }) {
+  const { sesion } = useOutletContext();
   const [nombre, cambiarNombre] = useState(cuenta.nombre);
   const estado = useGuardarCuenta(actualizar);
   return <form className="panel cuenta-tarjeta" onSubmit={(evento) => {
@@ -20,7 +21,7 @@ function FormularioPerfil({ cuenta, actualizar, recargar }) {
         autoComplete="name" onChange={(evento) => cambiarNombre(evento.target.value)} error={estado.errores.nombre} />
       <CampoCuenta etiqueta="Correo de acceso" nombre="correo" value={cuenta.correo} type="email" readOnly
         ayuda="Este correo identifica tu cuenta de acceso." />
-      <div className="cuenta-datos"><span>Rol: <strong>{cuenta.esAdministrador ? 'Administrador' : 'Usuario'}</strong></span>
+      <div className="cuenta-datos"><span>Rol: <strong>{cuenta.esAdministrador ? 'Administrador' : sesion.esDoctor ? 'Doctor' : 'Usuario'}</strong></span>
         <span>Cuenta creada: <strong>{new Intl.DateTimeFormat('es-PE', { dateStyle: 'long' }).format(new Date(cuenta.creada))}</strong></span></div>
       <button className="boton boton--primario" type="submit">{estado.guardando ? 'Guardando…' : 'Guardar perfil'}</button>
     </fieldset><EstadoGuardado estado={estado} recargar={recargar} />

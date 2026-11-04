@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Plus, Search, Trash2, UserRoundSearch } from 'lucide-react';
+import { KeyRound, Pencil, Plus, Search, Trash2, UserRoundSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import Estado from '../../components/Estado';
+import DialogoAccesoDoctor from './DialogoAccesoDoctor';
 import { AvisoCatalogo, ConfirmacionEliminar } from '../../components/AvisoCatalogo';
 import { useListadoCatalogo } from '../../hooks/useCatalogos';
 import { eliminarProfesional, obtenerProfesionales } from '../../services/catalogos';
 
 function Profesionales() {
   const listado = useListadoCatalogo(obtenerProfesionales, eliminarProfesional);
+  const [accesoDoctor, cambiarAccesoDoctor] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState('Todos');
   const profesionalesFiltrados = useMemo(() => {
@@ -64,6 +66,8 @@ function Profesionales() {
                   <small>{profesional.telefono || 'Sin teléfono'}</small></span></td>
                 <td><Estado valor={profesional.estado} /></td>
                 <td><div className="acciones-tabla">
+                  <button className="boton-icono" type="button" disabled={listado.eliminando} onClick={() => cambiarAccesoDoctor(profesional)}
+                    aria-label={'Acceso del doctor ' + nombreCompleto} title="Acceso del doctor"><KeyRound size={16} aria-hidden="true" /></button>
                   <Link className="boton-icono" to={`/profesionales/${profesional.id}/editar`}
                     aria-label={`Editar ${nombreCompleto}`} aria-disabled={listado.eliminando || undefined}
                     onClick={(evento) => { if (listado.eliminando) evento.preventDefault(); }}>
@@ -85,6 +89,7 @@ function Profesionales() {
           </div>
         ))}
       </section>
+      {accesoDoctor && <DialogoAccesoDoctor profesional={accesoDoctor} cerrar={() => cambiarAccesoDoctor(null)} />}
     </>
   );
 }

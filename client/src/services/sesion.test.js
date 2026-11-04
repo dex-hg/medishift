@@ -10,7 +10,7 @@ const cuenta = Object.freeze({
   idCuenta: '0575aa71-daf6-425a-aec1-9d93a0df068d',
   idInstitucion: '532b3f90-eb0e-4f45-84cf-7cf3dc419ef7',
   codigoInstitucion: 'CLINICA-SUR', nombreInstitucion: 'Clínica Sur',
-  correo: 'persona@institucion.pe', esAdministrador: true,
+  correo: 'persona@institucion.pe', esAdministrador: true, esDoctor: false, idProfesional: null,
 });
 const respuesta = (estado, contenido) => ({ status: estado, json: async () => contenido });
 
