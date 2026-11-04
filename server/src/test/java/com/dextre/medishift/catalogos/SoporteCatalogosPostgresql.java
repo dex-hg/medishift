@@ -34,6 +34,8 @@ abstract class SoporteCatalogosPostgresql {
 	@Autowired
 	private PlatformTransactionManager gestor;
 	protected MockMvc cliente;
+	@Autowired private com.dextre.medishift.acceso.RepositorioAccesoMensual roles;
+	private Integer rolCreado;
 	protected CuentaPrueba cuenta;
 	protected MockHttpSession sesion;
 	private final List<CuentaPrueba> cuentas = new ArrayList<>();
@@ -65,6 +67,7 @@ abstract class SoporteCatalogosPostgresql {
 				consultas.update("DELETE FROM room_specialty WHERE id_room IN "
 						+ "(SELECT id_room FROM room WHERE id_institution = ?)", institucion);
 				consultas.update("DELETE FROM room WHERE id_institution = ?", institucion);
+				consultas.update("DELETE FROM user_role WHERE id_user_account=?", fixture.cuenta());
 				consultas.update("DELETE FROM user_account WHERE id_user_account = ? AND id_institution = ?",
 						fixture.cuenta(), institucion);
 				consultas.update("DELETE FROM institution WHERE id_institution = ?", institucion);
@@ -77,6 +80,7 @@ abstract class SoporteCatalogosPostgresql {
 				consultas.update("DELETE FROM specialty WHERE id_specialty = ?", especialidad);
 			}
 		});
+		if (rolCreado != null) consultas.update("DELETE FROM role WHERE id_role=? AND NOT EXISTS(SELECT 1 FROM user_role WHERE id_role=?)", rolCreado, rolCreado);
 		cuentas.clear();
 		especialidades.clear();
 		nombresNuevos.clear();
@@ -95,6 +99,10 @@ abstract class SoporteCatalogosPostgresql {
 					password_hash_user_account, status_user_account)
 					VALUES (?, ?, 'catalogo@medishift.test', 'hash-fixture-sin-acceso', 'active')
 					""", fixture.cuenta(), fixture.institucion());
+			boolean existia = !consultas.queryForList("SELECT id_role FROM role WHERE code_role='administrador'").isEmpty();
+			int rol = roles.resolverRolAdministrador();
+			if (!existia) rolCreado = rol;
+			consultas.update("INSERT INTO user_role VALUES (?,?)", fixture.cuenta(), rol);
 		});
 		return fixture;
 	}

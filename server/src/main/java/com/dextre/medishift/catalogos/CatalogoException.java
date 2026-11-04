@@ -36,6 +36,11 @@ public class CatalogoException extends RuntimeException {
 				"La programación mensual requiere el rol Administrador.", Map.of());
 	}
 
+	public static CatalogoException autoprogramacionDenegada() {
+		return new CatalogoException(HttpStatus.FORBIDDEN,
+				"No tienes permiso para este cambio. El turno debe ser tuyo y la autoprogramación debe estar habilitada.", Map.of());
+	}
+
 	public static CatalogoException noDisponible(String mensaje) {
 		return new CatalogoException(HttpStatus.SERVICE_UNAVAILABLE, mensaje, Map.of());
 	}

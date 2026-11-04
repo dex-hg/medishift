@@ -27,6 +27,25 @@ public class ServicioAccesoMensual {
 		}
 	}
 
+	public record PermisosProgramacion(boolean esAdministrador, UUID idProfesional, boolean puedeProgramar) { }
+
+	@Transactional(readOnly = true)
+	public PermisosProgramacion consultarProgramacion(UUID institucion, UUID actor) {
+		if (institucion == null || actor == null) throw CatalogoException.autoprogramacionDenegada();
+		if (accesos.administradorActivo(institucion, actor)) return new PermisosProgramacion(true, null, true);
+		UUID profesional = accesos.doctorActivo(institucion, actor);
+		if (profesional == null) throw CatalogoException.autoprogramacionDenegada();
+		return new PermisosProgramacion(false, profesional, accesos.autoprogramacionHabilitada(institucion));
+	}
+
+	@Transactional(readOnly = true)
+	public void exigirTurnoPropio(UUID institucion, UUID actor, UUID profesional) {
+		PermisosProgramacion permisos = consultarProgramacion(institucion, actor);
+		if (!permisos.esAdministrador() && (!permisos.puedeProgramar() || !permisos.idProfesional().equals(profesional))) {
+			throw CatalogoException.autoprogramacionDenegada();
+		}
+	}
+
 	/** Solo para la inicialización local explícita de una cuenta existente. */
 	@Transactional
 	public boolean inicializarAdministrador(UUID institucion, UUID cuenta) {

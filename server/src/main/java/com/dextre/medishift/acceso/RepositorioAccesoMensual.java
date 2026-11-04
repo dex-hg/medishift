@@ -39,6 +39,24 @@ public class RepositorioAccesoMensual {
 				""", Boolean.class, institucion, cuenta));
 	}
 
+	public UUID doctorActivo(UUID institucion, UUID cuenta) {
+		return consultas.query("""
+				SELECT p.id_professional FROM professional p
+				JOIN user_account u USING (id_institution,id_user_account)
+				JOIN institution i USING (id_institution)
+				WHERE p.id_institution=? AND p.id_user_account=? AND p.status_professional='active'
+				AND u.status_user_account='active' AND i.status_institution='active'
+				AND EXISTS (SELECT 1 FROM user_role ur JOIN role r USING (id_role)
+				 WHERE ur.id_user_account=u.id_user_account AND r.code_role='doctor')
+				""", (fila, numero) -> fila.getObject(1, UUID.class), institucion, cuenta).stream().findFirst().orElse(null);
+	}
+
+	public boolean autoprogramacionHabilitada(UUID institucion) {
+		return Boolean.TRUE.equals(consultas.queryForObject("""
+				SELECT coalesce((SELECT medical_self_scheduling FROM institution_settings WHERE id_institution=?),false)
+				""", Boolean.class, institucion));
+	}
+
 	public boolean existeAdministradorActivo(UUID institucion) {
 		return Boolean.TRUE.equals(consultas.queryForObject("""
 				SELECT EXISTS (

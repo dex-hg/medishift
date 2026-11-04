@@ -36,6 +36,8 @@ abstract class SoporteProgramacionPostgresql {
 	@Autowired private WebApplicationContext contexto;
 	@Autowired private PlatformTransactionManager gestor;
 	protected MockMvc cliente;
+	@Autowired private com.dextre.medishift.acceso.RepositorioAccesoMensual roles;
+	private Integer rolCreado;
 	protected MockHttpSession sesion;
 	protected CuentaTemporal cuenta;
 	protected UUID profesional;
@@ -80,10 +82,12 @@ abstract class SoporteProgramacionPostgresql {
 							+ "(SELECT id_room FROM room WHERE id_institution = ?)", institucion);
 				}
 				consultas.update("DELETE FROM room WHERE id_institution = ?", institucion);
+				consultas.update("DELETE FROM user_role WHERE id_user_account=?", temporal.usuario());
 				consultas.update("DELETE FROM user_account WHERE id_user_account = ? AND id_institution = ?",
 						temporal.usuario(), institucion);
 				consultas.update("DELETE FROM institution WHERE id_institution = ?", institucion);
 			}
+			if (rolCreado != null) consultas.update("DELETE FROM role WHERE id_role=? AND NOT EXISTS(SELECT 1 FROM user_role WHERE id_role=?)", rolCreado, rolCreado);
 			for (UUID id : especialidades) { consultas.update("DELETE FROM specialty WHERE id_specialty = ?", id); }
 		});
 	}
@@ -97,6 +101,12 @@ abstract class SoporteProgramacionPostgresql {
 				INSERT INTO user_account (id_user_account,id_institution,email_user_account,
 				password_hash_user_account,status_user_account) VALUES (?,?,'horarios@medishift.test','hash-fixture','active')
 				""", resultado.usuario(), resultado.institucion());
+		new TransactionTemplate(gestor).executeWithoutResult(estado -> {
+			boolean existia = !consultas.queryForList("SELECT id_role FROM role WHERE code_role='administrador'").isEmpty();
+			int rol = roles.resolverRolAdministrador();
+			if (!existia) rolCreado = rol;
+			consultas.update("INSERT INTO user_role VALUES (?,?)", resultado.usuario(), rol);
+		});
 		return resultado;
 	}
 
