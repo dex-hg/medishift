@@ -51,6 +51,8 @@ class AdministradorConfiguracion(AdministradorMigracion):
             actuales = json.loads(self.consultar(base, "SELECT json_agg(attname ORDER BY attnum) FROM pg_attribute "
                                                 "WHERE attrelid=" + literal("public." + tabla)
                                                 + "::regclass AND attnum>0 AND NOT attisdropped"))
+            # V005 añade una opción sin cambiar las columnas ni los valores de V004.
+            actuales = [columna for columna in actuales if columna != "medical_self_scheduling"]
             exigir(actuales == esperadas, "Las columnas de configuración no coinciden con V004.")
         restricciones = json.loads(self.consultar(base, """
             SELECT json_build_array(
