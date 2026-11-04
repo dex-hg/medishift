@@ -421,6 +421,7 @@ CREATE TABLE institution_settings (
     weekly_minutes integer NOT NULL DEFAULT 2160,
     holiday_credit_minutes integer NOT NULL DEFAULT 360 CHECK (holiday_credit_minutes BETWEEN 0 AND 1440),
     revision_settings bigint NOT NULL DEFAULT 1 CHECK (revision_settings > 0),
+    medical_self_scheduling boolean NOT NULL DEFAULT false,
     CONSTRAINT institution_settings_week_valid CHECK (
         weekly_minutes >= daily_minutes AND weekly_minutes <= daily_minutes * 7
     )
