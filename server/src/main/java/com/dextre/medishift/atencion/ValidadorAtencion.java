@@ -89,6 +89,13 @@ public final class ValidadorAtencion {
         return valor;
     }
 
+    public static String consultaDni(Map<String, Object> datos) {
+        var errores = iniciar(datos, Set.of("dni"));
+        String documento = texto(datos, "dni", 8, true, errores);
+        exigir(errores);
+        return dni(documento);
+    }
+
     private static Map<String, String> iniciar(Map<String, Object> datos, Set<String> campos) {
         if (datos == null) throw new CatalogoException(HttpStatus.BAD_REQUEST, "Envía un objeto JSON.", Map.of());
         var errores = new LinkedHashMap<String, String>();

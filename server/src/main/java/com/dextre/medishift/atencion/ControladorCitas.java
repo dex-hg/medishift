@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import com.dextre.medishift.atencion.DatosAtencion.Agenda;
 import com.dextre.medishift.atencion.DatosAtencion.Cita;
+import com.dextre.medishift.atencion.DatosAtencion.CalendarioAgenda;
+import com.dextre.medishift.programacion.mensual.ValidadorPlanesMensuales;
 import com.dextre.medishift.catalogos.AccesoCatalogos;
 import com.dextre.medishift.catalogos.ValidadorCatalogos;
 import com.dextre.medishift.programacion.RevisionesProgramacion;
@@ -26,6 +28,12 @@ public class ControladorCitas {
     public Agenda agenda(@RequestParam String fecha, HttpServletRequest solicitud) {
         var contexto = identificar(solicitud);
         return citas.agenda(contexto.institucion(), contexto.actor(), ValidadorAtencion.fecha(fecha));
+    }
+
+    @GetMapping("/calendario")
+    public CalendarioAgenda calendario(@RequestParam String periodo, HttpServletRequest solicitud) {
+        var contexto = identificar(solicitud);
+        return citas.calendario(contexto.institucion(), contexto.actor(), ValidadorPlanesMensuales.periodo(periodo));
     }
 
     @GetMapping("/{id}")

@@ -52,6 +52,18 @@ public class ServicioCitas {
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public CalendarioAgenda calendario(UUID institucion, UUID actor,
+            com.dextre.medishift.programacion.mensual.PeriodoMensual periodo) {
+        var permisos = preparar(institucion, actor);
+        ZoneId zona = horarios.zona(institucion);
+        Instant inicio = periodo.inicioInstantaneo(zona);
+        Instant fin = periodo.finExclusivoInstantaneo(zona);
+        return new CalendarioAgenda(periodo.inicio().toString().substring(0, 7), zona.getId(),
+                citas.turnos(institucion, permisos.idProfesional(), inicio, fin),
+                citas.agenda(institucion, permisos.idProfesional(), inicio, fin));
+    }
+
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public HistorialCitas historial(UUID institucion, UUID actor, UUID paciente, int pagina) {
         var permisos = preparar(institucion, actor);
         fichas.buscar(institucion, actor, paciente);

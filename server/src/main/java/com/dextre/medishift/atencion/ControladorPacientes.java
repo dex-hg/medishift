@@ -20,9 +20,17 @@ public class ControladorPacientes {
     private final AccesoCatalogos sesiones;
     private final ServicioPacientes pacientes;
     private final ServicioCitas citas;
+    private final ServicioIdentidadDni identidad;
 
-    public ControladorPacientes(AccesoCatalogos sesiones, ServicioPacientes pacientes, ServicioCitas citas) {
-        this.sesiones = sesiones; this.pacientes = pacientes; this.citas = citas;
+    public ControladorPacientes(AccesoCatalogos sesiones, ServicioPacientes pacientes, ServicioCitas citas,
+            ServicioIdentidadDni identidad) {
+        this.sesiones = sesiones; this.pacientes = pacientes; this.citas = citas; this.identidad = identidad;
+    }
+
+    @PostMapping(value = "/consultar-dni", consumes = "application/json")
+    public IdentidadDni consultarDni(@RequestBody Map<String, Object> datos, HttpServletRequest solicitud) {
+        var contexto = identificar(solicitud);
+        return identidad.consultar(contexto.institucion(), contexto.actor(), ValidadorAtencion.consultaDni(datos));
     }
 
     @GetMapping

@@ -24,5 +24,7 @@ public final class DatosAtencion {
             UUID idProfesional, String profesional, UUID idConsultorio, String consultorio,
             Instant inicio, Instant fin, String estado, String revision) { }
     public record Agenda(LocalDate fecha, String zonaHoraria, List<TurnoAgenda> turnos, List<Cita> citas) { }
+    public record CalendarioAgenda(String periodo, String zonaHoraria, List<TurnoAgenda> turnos, List<Cita> citas) { }
+    public record IdentidadDni(String dni, String nombres, String apellidos) { }
     public record HistorialCitas(List<Cita> citas, long total, int pagina, String zonaHoraria) { }
 }
