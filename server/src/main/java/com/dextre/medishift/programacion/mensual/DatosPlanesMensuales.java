@@ -22,4 +22,6 @@ public final class DatosPlanesMensuales {
 			UUID idAprobador, Instant aprobadoEn, String revision) { }
 
 	public record ListadoPlanes(List<PlanMensual> planes) { }
+
+	public record VersionArchivada(int version, Instant archivadoEn, UUID idActor, String contenido) { }
 }

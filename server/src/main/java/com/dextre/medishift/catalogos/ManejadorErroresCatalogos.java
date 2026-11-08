@@ -23,7 +23,10 @@ import com.dextre.medishift.sesion.AccesoNoAutorizadoException;
 		com.dextre.medishift.acceso.ControladorAccesoDoctores.class,
 		com.dextre.medishift.programacion.mensual.ControladorPlanesMensuales.class,
 		com.dextre.medishift.cuenta.ControladorConfiguracion.class,
-		com.dextre.medishift.programacion.mensual.ControladorPlanificador.class })
+		com.dextre.medishift.programacion.mensual.ControladorPlanificador.class,
+		com.dextre.medishift.atencion.ControladorPacientes.class,
+		com.dextre.medishift.atencion.ControladorCitas.class,
+		com.dextre.medishift.programacion.mensual.ControladorAprobacionMensual.class })
 public class ManejadorErroresCatalogos {
 
 	public record RespuestaError(String mensaje, Map<String, String> errores) {
@@ -60,6 +63,9 @@ public class ManejadorErroresCatalogos {
 		if ("23503".equals(estadoSql)) {
 			return responder(HttpStatus.CONFLICT,
 					"El registro tiene datos vinculados. Puedes marcarlo como Inactivo.", Map.of());
+		}
+		if ("23P01".equals(estadoSql) || "23514".equals(estadoSql)) {
+			return responder(HttpStatus.CONFLICT, "La operación afecta una reserva o un registro vinculado. Recarga los datos y resuelve las citas afectadas.", Map.of());
 		}
 		return errorInterno();
 	}

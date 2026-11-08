@@ -46,11 +46,13 @@ public class ServicioPlanificador {
 	private final RepositorioEspecialidades exclusiones;
 	private final ReglasCargaProgramacion carga;
 	private final ServicioFeriados feriados;
+	private final com.dextre.medishift.atencion.RepositorioProteccionCitas citas;
 
 	public ServicioPlanificador(ServicioAccesoMensual acceso, RepositorioPlanesMensuales planes,
 			RepositorioPlanificador calendario, RepositorioProgramacion horarios, RepositorioRecursosProgramacion recursos,
 			RepositorioRestriccionesProgramacion restricciones, RepositorioEspecialidades exclusiones,
-			ReglasCargaProgramacion carga, ServicioFeriados feriados) {
+			ReglasCargaProgramacion carga, ServicioFeriados feriados,
+			com.dextre.medishift.atencion.RepositorioProteccionCitas citas) {
 		this.acceso = acceso;
 		this.planes = planes;
 		this.calendario = calendario;
@@ -60,6 +62,7 @@ public class ServicioPlanificador {
 		this.exclusiones = exclusiones;
 		this.carga = carga;
 		this.feriados = feriados;
+		this.citas = citas;
 	}
 
 	@Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -153,6 +156,7 @@ public class ServicioPlanificador {
 		Turno nuevo = construir(identificador, destino.id(), solicitud, zona);
 		validar(institucion, solicitud.idArea(), nuevo, zona);
 		String antes = calendario.captura(institucion, identificador, false);
+		citas.exigirCambioPermitido(institucion, identificador, nuevo.profesional(), nuevo.consultorio(), nuevo.inicio(), nuevo.fin());
 		calendario.actualizar(institucion, nuevo);
 		calendario.auditar(institucion, actor, identificador, false, "update", antes,
 				calendario.captura(institucion, identificador, false));
@@ -170,7 +174,8 @@ public class ServicioPlanificador {
 		RevisionesProgramacion.comprobar(revision, revision(actual));
 		exigirEditable(institucion, actual);
 		String antes = calendario.captura(institucion, identificador, false);
-		calendario.eliminar(institucion, identificador);
+		citas.exigirRetiroPermitido(institucion, identificador);
+		if (!citas.conservarAlEliminar(institucion, identificador)) calendario.eliminar(institucion, identificador);
 		calendario.auditar(institucion, actor, identificador, false, "delete", antes, null);
 	}
 
@@ -227,6 +232,22 @@ public class ServicioPlanificador {
 	}
 
 	private void validar(UUID institucion, UUID area, Turno turno, ZoneId zona) {
+		validar(institucion, area, turno, zona, true);
+	}
+
+	/** La reaprobación también valida los turnos históricos sin exigir que vuelvan a ser futuros. */
+	void validarAprobacion(UUID institucion, PlanMensual plan) {
+		validarArea(institucion, plan.idUnidad());
+		var registros = calendario.turnos(institucion, new PeriodoMensual(plan.fechaInicio().getYear(), plan.fechaInicio().getMonthValue()))
+				.stream().filter(registro -> registro.turno().horario().equals(plan.id()))
+				.filter(registro -> !List.of("cancelled", "superseded").contains(registro.turno().estado())).toList();
+		if (registros.isEmpty()) throw CatalogoException.conflicto("turnos", "Añade al menos un turno antes de aprobar el mes.");
+		ZoneId zona = horarios.zona(institucion);
+		for (var registro : registros) validar(institucion, plan.idUnidad(), registro.turno(), zona, false);
+		carga.validarCobertura(registros.stream().map(RegistroTurno::turno).toList(), horarios.requisitos(plan.id()));
+	}
+
+	private void validar(UUID institucion, UUID area, Turno turno, ZoneId zona, boolean exigirFuturo) {
 		Area seleccionada = exigirEspecialidadArea(institucion, area);
 		if (!seleccionada.idEspecialidad().equals(turno.especialidad())) {
 			throw CatalogoException.conflicto("idEspecialidad", "Esta área solo admite " + seleccionada.especialidad() + ". Selecciona un profesional de esa especialidad.");
@@ -235,7 +256,7 @@ public class ServicioPlanificador {
 		if (!area.equals(calendario.buscarConsultorio(institucion, turno.consultorio()).idArea())) {
 			throw CatalogoException.conflicto("idConsultorio", "El consultorio debe pertenecer al área seleccionada.");
 		}
-		if (!turno.inicio().isAfter(Instant.now())) {
+		if (exigirFuturo && !turno.inicio().isAfter(Instant.now())) {
 			throw CatalogoException.conflicto("fecha", "Selecciona un turno que todavía no haya comenzado.");
 		}
 		if (restricciones.tieneAusenciaAprobada(turno.profesional(), turno.inicio(), turno.fin())) {

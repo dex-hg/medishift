@@ -29,13 +29,16 @@ public class ServicioProgramacion {
 	private final RepositorioRecursosProgramacion recursos;
 	private final RepositorioEspecialidades exclusiones;
 	private final ReglasProgramacion reglas;
+	private final com.dextre.medishift.atencion.RepositorioProteccionCitas citas;
 
 	public ServicioProgramacion(RepositorioProgramacion horarios, RepositorioRecursosProgramacion recursos,
-			RepositorioEspecialidades exclusiones, ReglasProgramacion reglas) {
+			RepositorioEspecialidades exclusiones, ReglasProgramacion reglas,
+			com.dextre.medishift.atencion.RepositorioProteccionCitas citas) {
 		this.horarios = horarios;
 		this.recursos = recursos;
 		this.exclusiones = exclusiones;
 		this.reglas = reglas;
+		this.citas = citas;
 	}
 
 	@Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -84,6 +87,7 @@ public class ServicioProgramacion {
 		propuestos.removeIf(turno -> turno.id().equals(identificador));
 		propuestos.add(nuevo);
 		reglas.validar(institucion, horario, propuestos, false);
+		citas.exigirCambioPermitido(institucion, identificador, nuevo.profesional(), nuevo.consultorio(), nuevo.inicio(), nuevo.fin());
 		horarios.actualizarTurno(institucion, nuevo);
 		return buscarTurno(institucion, identificador);
 	}
@@ -94,7 +98,8 @@ public class ServicioProgramacion {
 		Turno actual = horarios.buscarTurno(institucion, identificador);
 		RevisionesProgramacion.comprobar(revision, RevisionesProgramacion.deTurno(actual));
 		editable(institucion, actual);
-		horarios.eliminarTurno(institucion, identificador);
+		citas.exigirRetiroPermitido(institucion, identificador);
+		if (!citas.conservarAlEliminar(institucion, identificador)) horarios.eliminarTurno(institucion, identificador);
 	}
 
 	@Transactional
@@ -107,6 +112,7 @@ public class ServicioProgramacion {
 				horarios.verificarSinEjecucion(institucion, anterior.id()));
 		List<Turno> turnos = activos(horarios.turnos(institucion, horario.id()));
 		reglas.validar(institucion, horario, turnos, true);
+		horarios.aprobado(institucion, horario.inicio()).ifPresent(anterior -> citas.exigirRetiroHorario(institucion, anterior.id()));
 		horarios.aprobado(institucion, horario.inicio()).ifPresent(anterior ->
 				horarios.cambiarEstado(institucion, anterior.id(), "superseded"));
 		horarios.aprobar(institucion, horario.id(), actor);
@@ -134,6 +140,8 @@ public class ServicioProgramacion {
 			throw CatalogoException.conflicto("estado", "La semana ya está cancelada.");
 		}
 		horarios.verificarSinEjecucion(institucion, actual.id());
+		citas.exigirRetiroHorario(institucion, actual.id());
+		horarios.aprobado(institucion, actual.inicio()).ifPresent(aprobado -> citas.exigirRetiroHorario(institucion, aprobado.id()));
 		horarios.aprobado(institucion, actual.inicio()).ifPresent(aprobado ->
 				horarios.verificarSinEjecucion(institucion, aprobado.id()));
 		horarios.aprobado(institucion, actual.inicio()).ifPresent(aprobado ->

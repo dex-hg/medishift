@@ -23,7 +23,9 @@ import com.dextre.medishift.programacion.mensual.DatosPlanesMensuales.UnidadPlan
 public class RepositorioPlanesMensuales {
 
 	private static final String CONSULTA_PLAN = """
-			SELECT h.*, i.time_zone_institution, to_jsonb(h)::text AS contenido_revision
+			SELECT h.*, i.time_zone_institution, (to_jsonb(h)::text || coalesce((
+			 SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id_shift)::text FROM shift t
+			 WHERE t.id_institution=h.id_institution AND t.id_schedule=h.id_schedule),'[]')) AS contenido_revision
 			FROM schedule h JOIN institution i ON i.id_institution = h.id_institution
 			WHERE h.id_institution = ? AND h.period_type_schedule = 'monthly'
 			""";
