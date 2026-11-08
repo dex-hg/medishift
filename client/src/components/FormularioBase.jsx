@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 
-function FormularioBase({ children, accionesSecundarias, onGuardar, guardando = false, bloquearGuardado = false, error = '', errores = {} }) {
+function FormularioBase({ children, accionesSecundarias, onGuardar, guardando = false, bloquearGuardado = false, error = '', errores = {}, etiquetaGuardar = 'Guardar' }) {
   const formulario = useRef(null);
   const aviso = useRef(null);
   const solicitudEnCurso = useRef(false);
@@ -54,7 +54,7 @@ function FormularioBase({ children, accionesSecundarias, onGuardar, guardando = 
       <div className="formulario__acciones">
         {accionesSecundarias}
         <button className="boton boton--primario" type="submit" disabled={ocupado || bloquearGuardado || !onGuardar}>
-          {ocupado ? 'Guardando…' : 'Guardar'}
+          {ocupado ? 'Guardando…' : etiquetaGuardar}
         </button>
       </div>
     </form>

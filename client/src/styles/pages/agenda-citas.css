@@ -1,0 +1,124 @@
+.agenda-herramientas {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.agenda-herramientas .campo-planificador { margin: 0; min-width: 13rem; }
+.agenda-herramientas p { margin: 0; padding-bottom: .5rem; }
+.agenda-herramientas > button { margin-left: auto; }
+.agenda-distribucion { display: grid; grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem); gap: 1.25rem; align-items: start; }
+.agenda-distribucion__calendario { min-width: 0; display: grid; gap: 1.25rem; }
+.agenda-calendario { overflow: hidden; }
+.agenda-calendario__cabecera,
+.agenda-dia > header,
+.reserva-cita__cabecera { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem; }
+.agenda-calendario__cabecera { flex-wrap: wrap; }
+.agenda-calendario__cabecera small,
+.agenda-dia > header small,
+.reserva-cita__cabecera small { color: var(--texto-secundario); font-size: .75rem; }
+.agenda-calendario h2,
+.agenda-dia h2,
+.reserva-cita h2 { font-size: 1.05rem; margin: .4rem 0 0; }
+.agenda-calendario h2 { text-transform: capitalize; }
+.agenda-meses { display: flex; gap: .25rem; align-items: center; }
+.agenda-meses label { min-width: 0; }
+.agenda-meses input { width: 12rem; max-width: 100%; padding: .5rem; font-size: .8rem; color: var(--texto); background: var(--fondo); border: 1px solid var(--borde); border-radius: .5rem; color-scheme: dark; }
+.agenda-calendario__rejilla { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; border-block: 1px solid var(--borde); background: var(--borde); }
+.agenda-calendario__semana { background: var(--panel); text-align: center; padding: .75rem .1rem; text-decoration: none; color: var(--texto-secundario); font-size: .7rem; }
+.agenda-calendario__dia { display: flex; flex-direction: column; align-items: start; gap: .3rem; min-width: 0; min-height: 4.25rem; border: 0; padding: .6rem .5rem; background: var(--panel); text-align: left; cursor: pointer; }
+.agenda-calendario__dia:hover { background: var(--panel-claro); }
+.agenda-calendario__dia time { font-size: .9rem; font-weight: 700; }
+.agenda-calendario__dia span,
+.agenda-calendario__dia small { font-size: .65rem; color: var(--texto-secundario); }
+.agenda-calendario__dia .agenda-calendario__libre { color: var(--turquesa); }
+.agenda-calendario__dia--hoy time { color: var(--turquesa); text-decoration: underline; text-underline-offset: .25rem; }
+.agenda-calendario__dia--elegido { background: rgb(45 212 191 / 9%); box-shadow: inset 0 0 0 2px var(--turquesa); }
+.agenda-calendario__fuera { background: var(--fondo); }
+.agenda-calendario__leyenda { margin: 0; padding: 1rem 1.25rem; color: var(--texto-secundario); font-size: .7rem; line-height: 1.7; }
+.agenda-calendario__leyenda span { display: block; color: var(--turquesa); }
+.agenda-dia { max-height: 24rem; overflow-y: auto; }
+.agenda-dia > header { position: sticky; top: 0; z-index: 1; background: var(--panel); border-bottom: 1px solid var(--borde); }
+.agenda-dia > header > svg,
+.reserva-cita__cabecera > svg { color: var(--turquesa); flex-shrink: 0; }
+.agenda-dia__vacio { padding: 1.5rem 1.25rem; }
+.agenda-dia__vacio p { margin-bottom: .5rem; font-size: .85rem; }
+.agenda-dia__vacio span { color: var(--texto-secundario); font-size: .75rem; line-height: 1.6; }
+.agenda-turno { padding: 1.25rem; border-bottom: 1px solid var(--borde-suave); }
+.agenda-turno:last-child { border-bottom: 0; }
+.agenda-turno--elegido { background: rgb(45 212 191 / 3%); }
+.agenda-turno__cabecera { display: flex; justify-content: space-between; gap: .75rem; align-items: start; flex-wrap: wrap; }
+.agenda-turno h3 { font-size: .85rem; margin-bottom: .4rem; }
+.agenda-turno p { font-size: .7rem; color: var(--texto-secundario); line-height: 1.6; }
+.agenda-turno__cabecera > strong { font-size: .75rem; white-space: nowrap; }
+.agenda-turno__franjas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: .6rem; }
+.agenda-franja { display: flex; flex-direction: column; align-items: start; gap: .35rem; padding: .85rem; border: 1px solid var(--borde); border-radius: .5rem; text-align: left; min-width: 0; overflow-wrap: anywhere; }
+.agenda-franja strong { font-size: .8rem; }
+.agenda-franja span,
+.agenda-franja small { font-size: .7rem; line-height: 1.5; }
+.agenda-franja--libre { background: rgb(45 212 191 / 6%); color: var(--turquesa); border-color: rgb(45 212 191 / 35%); cursor: pointer; }
+.agenda-franja--libre:hover { background: rgb(45 212 191 / 13%); }
+.agenda-franja--ocupada { background: var(--panel-claro); color: var(--texto); cursor: pointer; }
+.agenda-franja--ocupada span { color: var(--texto-secundario); }
+.agenda-franja--pasada { color: var(--texto-secundario); background: var(--fondo); }
+.agenda-listado { min-width: 0; overflow: hidden; }
+.agenda-listado h2 { font-size: .9rem; padding: 1.25rem; margin: 0; border-bottom: 1px solid var(--borde); }
+.agenda-listado > summary { padding: 1.25rem; font-size: .85rem; font-weight: 650; cursor: pointer; }
+.agenda-listado[open] > summary { border-bottom: 1px solid var(--borde); }
+.agenda-listado .tabla-citas { min-width: 42rem; }
+.reserva-cita { position: sticky; top: 5.5rem; max-height: calc(100dvh - 6.5rem); overflow-y: auto; min-width: 0; scroll-margin-top: 5.5rem; }
+.reserva-cita__cabecera { position: sticky; top: 0; z-index: 2; background: var(--panel); border-bottom: 1px solid var(--borde); }
+.reserva-cita__fecha { display: flex; align-items: center; gap: .5rem; color: var(--texto-secundario); font-size: .8rem; padding: 1.25rem 1.25rem 0; }
+.reserva-cita__cabecera .reserva-cita__fecha { padding: 0; margin: .65rem 0 0; }
+.selector-paciente-cita,
+.reserva-paciente { margin: 1.25rem; }
+.reserva-busqueda { display: grid; gap: .75rem; }
+.reserva-busqueda .campo-planificador { margin: 0; }
+.reserva-paciente { display: flex; gap: .65rem; align-items: start; flex-wrap: wrap; padding: .85rem; background: rgb(45 212 191 / 5%); border: 1px solid var(--borde); border-radius: .5rem; }
+.reserva-paciente__icono { color: var(--turquesa); }
+.reserva-paciente > div { min-width: 0; flex: 1; }
+.reserva-paciente strong { display: block; font-size: .85rem; overflow-wrap: anywhere; }
+.reserva-paciente small { display: block; margin-top: .35rem; font-size: .7rem; color: var(--texto-secundario); }
+.reserva-paciente .boton { min-height: 1.75rem; padding: .25rem; font-size: .7rem; }
+.reserva-nuevo { display: flex; align-items: start; gap: .5rem; font-size: .8rem; line-height: 1.6; color: var(--texto-secundario); }
+.reserva-nuevo svg { flex-shrink: 0; margin-top: .2rem; color: var(--turquesa); }
+.registro-paciente-integrado .seccion-formulario { padding: .75rem 0; }
+.registro-paciente-integrado .seccion-formulario__titulo h2 { font-size: .9rem; }
+.registro-paciente-integrado .rejilla-formulario { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.registro-paciente-integrado .campo--doble { grid-column: 1 / -1; }
+.registro-paciente-integrado .formulario__acciones { padding: 1rem 0; flex-direction: column; align-items: stretch; gap: .5rem; }
+.registro-paciente-integrado .formulario__acciones .boton { width: 100%; }
+.registro-paciente-integrado .aviso--restriccion { margin: .75rem 0; padding: .75rem; }
+.consulta-dni-fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .5rem; }
+.consulta-dni-fila > button { margin-top: 1.5rem; align-self: start; }
+.consulta-dni-aviso { color: var(--texto-secundario); font-size: .75rem; line-height: 1.6; margin: 0; }
+.registro-paciente-integrado .consulta-dni-fila { grid-template-columns: minmax(0, 1fr); }
+.registro-paciente-integrado .consulta-dni-fila > button { margin: 0; }
+.reserva-cita__formulario { padding: 0 1.25rem 1.25rem; }
+.reserva-cita__formulario .campo-planificador { margin-bottom: .85rem; }
+.reserva-cita__horas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.reserva-cita__consultorio,
+.reserva-cita__ayuda { color: var(--texto-secundario); font-size: .75rem; line-height: 1.7; }
+.reserva-cita__guardar { width: 100%; margin-top: .75rem; }
+.reserva-duraciones > span { display: block; color: var(--texto-secundario); font-size: .7rem; margin-bottom: .5rem; }
+.reserva-duraciones > div { display: flex; gap: .25rem; flex-wrap: wrap; }
+.reserva-duraciones button { padding: .35rem .6rem; min-height: 2rem; font-size: .75rem; }
+.agenda-resultado { padding: 1rem; color: var(--turquesa); background: rgb(45 212 191 / 6%); border-left: 2px solid var(--turquesa); font-size: .85rem; }
+@media (max-width: 980px) {
+  .agenda-distribucion { grid-template-columns: minmax(0, 1fr); }
+  .reserva-cita { position: static; max-height: none; overflow-y: visible; }
+}
+@media (max-width: 600px) {
+  .agenda-calendario__cabecera { padding: 1rem .75rem; gap: .75rem; }
+  .agenda-meses { width: 100%; justify-content: space-between; }
+  .agenda-calendario__dia { min-height: 4.5rem; padding: .6rem .3rem; gap: .3rem; }
+  .agenda-calendario__dia time { font-size: .8rem; }
+  .agenda-calendario__dia span,
+  .agenda-calendario__dia small { font-size: .6rem; }
+  .agenda-herramientas .campo-planificador { width: 100%; min-width: 0; }
+  .agenda-herramientas > button { margin-left: 0; }
+  .reserva-cita__horas,
+  .consulta-dni-fila { grid-template-columns: minmax(0, 1fr); }
+  .consulta-dni-fila > button { margin-top: 0; }
+}

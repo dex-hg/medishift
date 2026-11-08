@@ -1,5 +1,6 @@
 import { REVISION, UUID, fechaValida } from '../utils/validacionesProgramacion.js';
 import { normalizarPaciente, validarPaciente, normalizarCita, validarCita, etiquetasEstadoCita } from '../utils/validacionesAtencion.js';
+import { periodoValido } from './planesMensuales.js';
 
 export class ErrorAtencion extends Error {
   constructor(mensaje, { estado = 0, errores = {} } = {}) {
@@ -93,6 +94,22 @@ export const guardarPaciente = (datos, { id, ...opciones } = {}) => {
 export const obtenerAgenda = (fecha, opciones) => {
   if (!fechaValida(fecha)) throw new ErrorAtencion('Selecciona una fecha válida.');
   return solicitarAtencion(`/api/citas?fecha=${fecha}`, 'GET', extraerAgenda, opciones);
+};
+export const obtenerCalendarioCitas = (periodo, opciones) => {
+  if (!periodoValido(periodo)) throw new ErrorAtencion('Selecciona un mes válido.');
+  return solicitarAtencion(`/api/citas/calendario?periodo=${periodo}`, 'GET', (valor) => {
+    if (!objeto(valor) || valor.periodo !== periodo) invalida();
+    extraerAgenda({ ...valor, fecha: `${periodo}-01` });
+    return valor;
+  }, opciones);
+};
+export const consultarIdentidadDni = (dni, opciones) => {
+  if (!/^[0-9]{8}$/.test(dni)) throw new ErrorAtencion('Ingresa un DNI de 8 dígitos.');
+  return solicitarAtencion('/api/pacientes/consultar-dni', 'POST', (valor) => {
+    if (!objeto(valor) || valor.dni !== dni || !texto(valor.nombres) || !texto(valor.apellidos)
+      || [...valor.nombres].length > 80 || [...valor.apellidos].length > 100) invalida();
+    return { dni: valor.dni, nombres: valor.nombres, apellidos: valor.apellidos };
+  }, { ...opciones, datos: { dni } });
 };
 export const guardarCita = (datos, { id, ...opciones } = {}) => {
   const normalizados = normalizarCita(datos);

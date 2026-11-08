@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { guardarPaciente, buscarPacienteDni, obtenerAgenda, guardarCita, cambiarEstadoCita, solicitarAtencion } from './atencion.js';
+import { guardarPaciente, buscarPacienteDni, obtenerAgenda, guardarCita, cambiarEstadoCita, solicitarAtencion, consultarIdentidadDni, obtenerCalendarioCitas } from './atencion.js';
 
 const id = '11111111-1111-4111-8111-111111111111';
 const otro = '22222222-2222-4222-8222-222222222222';
@@ -10,6 +10,21 @@ const cita = { id: otro, idPaciente: id, paciente: 'Ana Pérez', codigoPaciente:
   profesional: 'Doctor', idConsultorio: otro, consultorio: 'Sala', inicio: '2032-11-02T13:00:00Z', fin: '2032-11-02T13:17:00Z', estado: 'programada', revision };
 const datosCita = { idPaciente: id, idTurno: otro, fecha: '2032-11-02', horaInicio: '08:00', horaFin: '08:17' };
 const responder = (contenido, estado = 200) => async () => new Response(JSON.stringify(contenido), { status: estado, headers: { 'Content-Type': 'application/json' } });
+
+test('consulta DNI por backend sin enviar token y omite campos adicionales de la respuesta', async () => {
+  const resultado = await consultarIdentidadDni('00123456', { ejecutarSolicitud: async (ruta, opciones) => {
+    assert.equal(ruta, '/api/pacientes/consultar-dni'); assert.equal(opciones.method, 'POST');
+    assert.deepEqual(JSON.parse(opciones.body), { dni: '00123456' });
+    return new Response(JSON.stringify({ dni: '00123456', nombres: 'Ana', apellidos: 'Pérez', token: 'no-publicar', fechaNacimiento: 'inventada' }));
+  } });
+  assert.deepEqual(resultado, { dni: '00123456', nombres: 'Ana', apellidos: 'Pérez' });
+  assert.throws(() => consultarIdentidadDni('123'), /8 dígitos/);
+});
+test('consulta el mes completo con sesión y rechaza calendarios de otro mes', async () => {
+  const calendario = { periodo: '2032-11', zonaHoraria: 'America/Lima', turnos: [], citas: [cita] };
+  assert.equal((await obtenerCalendarioCitas('2032-11', { ejecutarSolicitud: responder(calendario) })).citas.length, 1);
+  await assert.rejects(obtenerCalendarioCitas('2032-11', { ejecutarSolicitud: responder({ ...calendario, periodo: '2032-12' }) }), /no es válida/);
+});
 
 test('crea ficha sin enviar institución, código ni campos clínicos y conserva ceros del DNI', async () => {
   let solicitud;
