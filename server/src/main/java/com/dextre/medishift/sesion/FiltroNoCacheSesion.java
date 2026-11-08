@@ -18,6 +18,8 @@ public class FiltroNoCacheSesion extends OncePerRequestFilter {
 			FilterChain filtros) throws ServletException, IOException {
 		String ruta = solicitud.getRequestURI().substring(solicitud.getContextPath().length());
 		if (ruta.equals("/api/sesion") || ruta.equals("/api/especialidades")
+				|| ruta.equals("/api/pacientes") || ruta.startsWith("/api/pacientes/")
+				|| ruta.equals("/api/citas") || ruta.startsWith("/api/citas/")
 				|| ruta.equals("/api/cuenta") || ruta.startsWith("/api/cuenta/") || ruta.equals("/api/configuracion")
 				|| ruta.equals("/api/profesionales") || ruta.startsWith("/api/profesionales/")
 				|| ruta.equals("/api/consultorios") || ruta.startsWith("/api/consultorios/")
