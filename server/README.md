@@ -1,6 +1,6 @@
 # Backend de MediShift
 
-Spring Boot 4.1.2, Java 21 y PostgreSQL. El backend comprueba la conexión durante el arranque y expone registro, sesión y gestión de profesionales, consultorios y horarios semanales. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
+Spring Boot 4.1.2, Java 21 y PostgreSQL. El backend expone registro, sesión, catálogos, programación semanal y mensual, pacientes y citas. El servidor HTTP escucha en el puerto 8080 de forma predeterminada.
 
 ## Arquitectura
 
@@ -150,7 +150,7 @@ La sección `/horarios` reúne las vistas Meses y áreas y Turnos semanales. El 
 
 Para incluir las pruebas mensuales, añadir `-Dmedishift.prueba-migracion-mensual=true` y `-Dmedishift.prueba-planes-mensuales=true` a la verificación completa. La cuenta de prueba debe poder crear esquemas y `btree_gist` debe existir. Las pruebas de API confirman y revierten transacciones reales dentro de esquemas privados que se eliminan al terminar.
 
-V001 se administra mediante `scripts/administrar_migracion_mensual.py`; Spring no ejecuta migraciones al arrancar. El planificador por áreas utiliza V002 y V003 y ya persiste asignaciones mensuales. Actividades, políticas configurables y aprobación mensual siguen pendientes.
+V001 se administra mediante `scripts/administrar_migracion_mensual.py`; Spring no ejecuta migraciones al arrancar. El planificador por áreas utiliza V002 y V003. V004 incorpora las políticas configurables y V006 completa la aprobación y reapertura mensual con conservación de citas. Las actividades adicionales del planificador quedan fuera de este incremento.
 
 ## Especialidades institucionales y compatibilidad por área
 
