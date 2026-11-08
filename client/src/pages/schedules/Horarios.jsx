@@ -13,6 +13,7 @@ import CalendarioMensual from './CalendarioMensual';
 import DialogoTurnoMensual from './DialogoTurnoMensual';
 import DialogoAreaConsultorio from './DialogoAreaConsultorio';
 import DialogoReporteMensual from './DialogoReporteMensual';
+import ControlAprobacionMensual from './ControlAprobacionMensual';
 
 export default function Horarios() {
   const { sesion } = useOutletContext();
@@ -93,6 +94,7 @@ export default function Horarios() {
         onChange={(evento) => cambiarMes(evento.target.value)} /></label>
       <button className="boton-icono" type="button" disabled={ocupado} aria-label="Mes siguiente" onClick={() => cambiarMes(desplazarMes(periodo, 1))}><ChevronRight size={18} /></button>
     </div><button className="boton boton--fantasma" type="button" disabled={ocupado} onClick={consulta.recargar}><RefreshCw size={15} /> Actualizar</button></div>
+    {datos && <ControlAprobacionMensual plan={plan} area={area} datos={datos} consulta={consulta} />}
     {cargando && <p className="planificador-aviso" role="status">Cargando el mes y sus consultorios…</p>}
     {consulta.errorCarga && <div className="planificador-error" role="alert"><p>{consulta.errorCarga}</p><button className="boton boton--secundario" type="button" onClick={consulta.recargar}>Volver a intentar</button></div>}
     {consulta.mensaje && <p className="planificador-exito" role="status">{consulta.mensaje}</p>}

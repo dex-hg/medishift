@@ -33,5 +33,6 @@ export function consultorioOcupado(formulario, ocupaciones, zonaHoraria, idActua
 
 export function rutaPermitida(sesion, ruta) {
   if (sesion.esAdministrador) return true;
-  return Boolean(sesion.esDoctor) && ['/horarios', '/mi-perfil', '/configuraciones'].includes(ruta);
+  return Boolean(sesion.esDoctor) && (['/horarios', '/mi-perfil', '/configuraciones', '/citas', '/pacientes', '/pacientes/nuevo'].includes(ruta)
+    || /^\/pacientes\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ruta));
 }

@@ -16,6 +16,9 @@ import FormularioConsultorio from './pages/consulting-rooms/FormularioConsultori
 import NoEncontrado from './pages/NoEncontrado';
 import MiPerfil from './pages/account/MiPerfil';
 import Configuraciones from './pages/account/Configuraciones';
+import Pacientes from './pages/patients/Pacientes';
+import FichaPaciente from './pages/patients/FichaPaciente';
+import AgendaCitas from './pages/appointments/AgendaCitas';
 
 function Aplicacion() {
   return (
@@ -27,6 +30,10 @@ function Aplicacion() {
         <Route path="panel" element={<Inicio />} />
         <Route path="mi-perfil" element={<MiPerfil />} />
         <Route path="configuraciones" element={<Configuraciones />} />
+        <Route path="pacientes" element={<Pacientes />} />
+        <Route path="pacientes/nuevo" element={<FichaPaciente />} />
+        <Route path="pacientes/:id" element={<FichaPaciente />} />
+        <Route path="citas" element={<AgendaCitas />} />
         <Route path="faltas" element={<Faltas />} />
         <Route path="horarios" element={<Horarios />} />
         <Route path="horarios/semanales" element={<HorariosSemanales />} />
