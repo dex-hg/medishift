@@ -190,6 +190,18 @@ La [versión Community v4](https://nagerholidays.com/api) ofrece los campos bás
 
 Las pruebas reales del proveedor se activan con `-Dmedishift.prueba-feriados=true` y solo transmiten país y año. Las pruebas PostgreSQL de sincronización y del SQL demostrativo se incluyen con `-Dmedishift.prueba-planes-mensuales=true`; usan esquemas y directorios privados. El SQL portable está en `db/datos_demostracion.sql`, con instrucciones y credenciales ficticias en `db/README-demostracion.md`.
 
+## Pacientes y citas
+
+La agenda presenta un calendario mensual, los turnos aprobados del día y sus intervalos libres u ocupados. El panel lateral conserva paciente y horas mientras se navega por el calendario. Si el DNI no está registrado, permite crear la ficha dentro de la agenda y continuar con la cita. La duración permanece libre; los botones de 15, 30, 45 y 60 minutos son accesos rápidos.
+
+La consulta de identidad se realiza en el backend mediante el [contrato oficial de ApisPerú](https://dniruc.apisperu.com/doc/swagger). Configura `MEDISHIFT_APISPERU_TOKEN` en `server/.env` y reinicia el backend. El token no se envía al navegador. El proveedor completa nombres y apellidos; la fecha de nacimiento se registra manualmente y es obligatoria. Correo y teléfono son opcionales. Si el proveedor no responde, no encuentra el DNI o rechaza la consulta, se permite completar los nombres manualmente.
+
+`POST /api/pacientes/consultar-dni` recibe únicamente `{"dni":"12345678"}` y devuelve `dni`, `nombres` y `apellidos`. Requiere sesión y rol vigentes de administrador o doctor. No registra una ficha por consultar el documento. Los errores del proveedor se convierten en mensajes públicos sin copiar su respuesta, la URL autenticada ni el token.
+
+`GET /api/citas/calendario?periodo=AAAA-MM` devuelve `periodo`, `zonaHoraria`, `turnos` y `citas`. El administrador consulta la institución y el doctor solo su agenda. La vista visual conserva los controles de turno aprobado, paciente activo, cruces, estados y revisión mediante `If-Match`. Las reservas concurrentes se comprueban otra vez al guardar, y el formulario conserva los datos cuando se produce un conflicto.
+
+Para probar este flujo en esquemas PostgreSQL privados, añade `-Dmedishift.prueba-atencion=true` a `verify`. Las pruebas del proveedor utilizan respuestas controladas, sin consumir consultas reales de DNI.
+
 ## Archivos de Git
 
 Versiona los fuentes, pruebas, `pom.xml`, README, `.env.example` y los wrappers `mvnw`, `mvnw.cmd` y `.mvn/wrapper/maven-wrapper.properties`. Las credenciales y `target` están excluidos de Git.
