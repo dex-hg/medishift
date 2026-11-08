@@ -67,8 +67,10 @@ function extraerCalendario(valor, periodo) {
   });
   const planes = lista(valor.planes, (plan) => {
     if (!esObjeto(plan) || !esId(plan.id) || !esId(plan.idUnidad) || plan.periodo !== periodo
-      || !['Borrador', 'Aprobado', 'Pendiente', 'Cancelado', 'Sustituido'].includes(plan.estado)) respuestaInvalida();
-    return { id: plan.id, idUnidad: plan.idUnidad, estado: plan.estado, periodo: plan.periodo, version: plan.version };
+      || !['Borrador', 'Aprobado', 'Pendiente', 'Cancelado', 'Sustituido'].includes(plan.estado)
+      || !Number.isInteger(plan.version) || plan.version < 1 || !REVISION.test(plan.revision) || plan.zonaHoraria !== valor.zonaHoraria) respuestaInvalida();
+    return { id: plan.id, idUnidad: plan.idUnidad, estado: plan.estado, periodo: plan.periodo, version: plan.version,
+      revision: plan.revision, zonaHoraria: plan.zonaHoraria };
   });
   const permisos = valor.permisos;
   if (!esObjeto(permisos) || typeof permisos.esAdministrador !== 'boolean' || typeof permisos.puedeProgramar !== 'boolean'

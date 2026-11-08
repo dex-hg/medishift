@@ -17,7 +17,7 @@ const calendario = () => ({ permisos: { esAdministrador: true, idProfesional: nu
   especialidades: [{ id: ID, nombre: 'Dermatología' }],
   consultorios: [{ id: OTRO, nombre: 'Consultorio 1', codigo: 'DER-01', idArea: ID, idEspecialidadArea: ID, estado: 'Activo', usoGeneral: false, especialidades: [{ id: ID, nombre: 'Dermatología' }] }],
   profesionales: [{ id: ID, nombre: 'Profesional de prueba', colegiatura: '001234', estado: 'Activo', especialidades: [{ id: ID, nombre: 'Dermatología' }] }],
-  planes: [{ id: OTRO, idUnidad: ID, periodo: '2026-10', estado: 'Borrador', version: 1 }], turnos: [turno()] });
+  planes: [{ id: OTRO, idUnidad: ID, periodo: '2026-10', estado: 'Borrador', version: 1, revision: REVISION, zonaHoraria: 'America/Lima' }], turnos: [turno()] });
 
 test('carga mensual conserva relaciones de carpetas y usa sesión sin caché', async () => {
   const resultado = await cargarPlanificador('2026-10', { ejecutarSolicitud: async (ruta, opciones) => {

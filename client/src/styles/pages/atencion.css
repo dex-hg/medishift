@@ -1,0 +1,44 @@
+.atencion-busqueda,
+.atencion-historial,
+.atencion-aprobacion { padding: 1.5rem; margin-bottom: 1.5rem; }
+.atencion-busqueda h2,
+.atencion-historial h2 { font-size: 1rem; }
+.atencion-busqueda p,
+.atencion-aprobacion p,
+.atencion-ayuda { color: var(--texto-secundario); font-size: .8rem; line-height: 1.6; }
+.atencion-filtros { display: flex; align-items: end; gap: 1rem; flex-wrap: wrap; }
+.atencion-filtros .campo-planificador { margin: 0; min-width: 0; }
+.atencion-filtros input { max-width: 100%; }
+.atencion-resultado,
+.atencion-aprobacion { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.atencion-resultado { padding-top: 1rem; }
+.atencion-resultado p,
+.atencion-aprobacion p { margin: .5rem 0 0; }
+.atencion-acciones { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.atencion-acciones .boton { min-height: 2.5rem; white-space: nowrap; }
+.atencion-paginacion { display: flex; align-items: center; justify-content: end; gap: 1rem; flex-wrap: wrap; padding: 1rem; color: var(--texto-secundario); font-size: .8rem; }
+.atencion-aviso { padding: 1.5rem; margin: 0; line-height: 1.6; }
+.atencion-error { color: var(--rojo); overflow-wrap: anywhere; font-size: .85rem; line-height: 1.6; }
+.atencion-campos { border: 0; padding: 0; margin: 0; min-width: 0; }
+.atencion-buscador-cita { margin: 0 1rem; padding: 1rem 0; border-bottom: 1px solid var(--borde); }
+.ventana-planificador > .atencion-error,
+.ventana-planificador > .atencion-paciente { margin-inline: 1rem; }
+.atencion-paciente { padding: 1rem 0; color: var(--turquesa); }
+.atencion-version { margin: 1rem 0; padding: 1rem 0; border-bottom: 1px solid var(--borde); }
+.atencion-version summary { cursor: pointer; line-height: 1.6; }
+.tabla-citas { min-width: 44rem; }
+.tabla-citas td { vertical-align: top; }
+.estado--programada { color: var(--azul); background: rgb(56 189 248 / 10%); }
+.estado--atendida { color: var(--verde); background: rgb(74 222 128 / 10%); }
+.estado--cancelada,
+.estado--no-asistió { color: var(--rojo); background: rgb(251 113 133 / 10%); }
+@media (max-width: 767px) {
+  .atencion-busqueda,
+  .atencion-historial,
+  .atencion-aprobacion { padding: 1rem; }
+  .atencion-filtros { align-items: stretch; }
+  .atencion-filtros > label,
+  .atencion-filtros > button { width: 100%; }
+  .atencion-campos .rejilla-formulario { grid-template-columns: minmax(0, 1fr); }
+  .atencion-paginacion { justify-content: center; gap: .5rem; }
+}
