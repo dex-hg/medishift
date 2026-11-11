@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import com.dextre.medishift.sesion.AccesoNoAutorizadoException;
 import com.dextre.medishift.sesion.ServicioSesion;
+import com.dextre.medishift.sesion.SesionesHttp;
 
 @Component
 public class AccesoCatalogos {
@@ -33,7 +34,7 @@ public class AccesoCatalogos {
 
 	public UUID obtenerInstitucion(HttpServletRequest solicitud) {
 		HttpSession sesion = solicitud.getSession(false);
-		if (sesion == null) {
+		if (sesion == null || SesionesHttp.identificarPortal(sesion) != null) {
 			throw new AccesoNoAutorizadoException();
 		}
 		try {
@@ -65,7 +66,7 @@ public class AccesoCatalogos {
 		throw new AccesoNoAutorizadoException();
 	}
 
-	private void validarOrigen(HttpServletRequest solicitud) {
+	public void validarOrigen(HttpServletRequest solicitud) {
 		if (Set.of("GET", "HEAD", "OPTIONS").contains(solicitud.getMethod())) {
 			return;
 		}

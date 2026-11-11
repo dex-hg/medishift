@@ -41,6 +41,14 @@ public class CatalogoException extends RuntimeException {
 				"No tienes permiso para este cambio. El turno debe ser tuyo y la autoprogramación debe estar habilitada.", Map.of());
 	}
 
+	public static CatalogoException autenticacionFallida(String mensaje) {
+		return new CatalogoException(HttpStatus.UNAUTHORIZED, mensaje, Map.of());
+	}
+
+	public static CatalogoException limiteIntentos(String mensaje) {
+		return new CatalogoException(HttpStatus.TOO_MANY_REQUESTS, mensaje, Map.of());
+	}
+
 	public static CatalogoException noDisponible(String mensaje) {
 		return new CatalogoException(HttpStatus.SERVICE_UNAVAILABLE, mensaje, Map.of());
 	}

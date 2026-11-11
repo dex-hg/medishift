@@ -31,13 +31,7 @@ public class ControladorSesion {
 	public ResponseEntity<RespuestaSesion> iniciar(@RequestBody SolicitudSesion datos,
 			HttpServletRequest solicitudHttp) {
 		RespuestaSesion perfil = servicio.autenticar(datos);
-		HttpSession sesionAnterior = solicitudHttp.getSession(false);
-		if (sesionAnterior != null) {
-			sesionAnterior.invalidate();
-		}
-		HttpSession sesion = solicitudHttp.getSession(true);
-		solicitudHttp.changeSessionId();
-		sesion.setMaxInactiveInterval(30 * 60);
+		HttpSession sesion = SesionesHttp.renovar(solicitudHttp);
 		sesion.setAttribute(ATRIBUTO_ID_CUENTA, perfil.idCuenta());
 		sesion.setAttribute(ATRIBUTO_ID_INSTITUCION, perfil.idInstitucion());
 		return ResponseEntity.status(HttpStatus.OK).body(perfil);
@@ -46,7 +40,7 @@ public class ControladorSesion {
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RespuestaSesion> consultar(HttpServletRequest solicitudHttp) {
 		HttpSession sesion = solicitudHttp.getSession(false);
-		if (sesion == null) {
+		if (sesion == null || SesionesHttp.identificarPortal(sesion) != null) {
 			throw new AccesoNoAutorizadoException();
 		}
 		try {
@@ -68,13 +62,7 @@ public class ControladorSesion {
 	@DeleteMapping
 	public ResponseEntity<Void> cerrar(HttpServletRequest solicitudHttp) {
 		HttpSession sesion = solicitudHttp.getSession(false);
-		if (sesion != null) {
-			try {
-				sesion.invalidate();
-			} catch (IllegalStateException excepcion) {
-				// Cerrar una sesión ya invalidada también cumple el contrato.
-			}
-		}
+		if (SesionesHttp.identificarPortal(sesion) == null) SesionesHttp.invalidar(sesion);
 		return ResponseEntity.noContent().build();
 	}
 
