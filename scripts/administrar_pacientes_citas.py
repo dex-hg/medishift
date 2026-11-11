@@ -15,9 +15,12 @@ TABLAS = {"paciente", "paciente_profesional", "cita", "historial_plan_mensual"}
 
 
 class AdministradorPacientesCitas(AdministradorMigracion):
+    archivo_migracion = MIGRACION
+    version_migracion = "006"
+
     def __init__(self):
         super().__init__()
-        contenido = MIGRACION.read_bytes()
+        contenido = self.archivo_migracion.read_bytes()
         self.archivo_sql = contenido.decode("utf-8-sig")
         self.checksum = hashlib.sha256(contenido).hexdigest()
 
@@ -64,13 +67,20 @@ SET LOCAL lock_timeout = '10s';
 SET LOCAL statement_timeout = '120s';
 SELECT pg_advisory_xact_lock(723941650102);
 """ + f"LOCK TABLE {tablas},public.schema_migration IN ACCESS EXCLUSIVE MODE;\n"
-        sql += "DO $registro$ BEGIN IF EXISTS(SELECT 1 FROM public.schema_migration WHERE version='006' " \
-               "AND (checksum_sha256<>" + literal(self.checksum) + " OR name<>" + literal(MIGRACION.name) \
-               + ")) THEN RAISE EXCEPTION 'Archivo de V006 diferente'; END IF; END $registro$;\n"
-        sql += "SELECT NOT EXISTS(SELECT 1 FROM public.schema_migration WHERE version='006') AS pendiente \\gset\n\\if :pendiente\n"
+        version = literal(self.version_migracion)
+        nombre = literal(self.archivo_migracion.name)
+        checksum = literal(self.checksum)
+        sql += f"""DO $registro$ BEGIN
+IF EXISTS (SELECT 1 FROM public.schema_migration WHERE version={version}
+    AND (checksum_sha256<>{checksum} OR name<>{nombre})) THEN
+    RAISE EXCEPTION 'Archivo de migración diferente';
+END IF;
+END $registro$;
+SELECT NOT EXISTS(SELECT 1 FROM public.schema_migration WHERE version={version}) AS pendiente \\gset
+\\if :pendiente
+"""
         sql += self.guardas_datos(inventario) + self.archivo_sql + "\n"
-        sql += "INSERT INTO public.schema_migration(version,name,checksum_sha256) VALUES ('006'," \
-               + literal(MIGRACION.name) + "," + literal(self.checksum) + ");\n"
+        sql += f"INSERT INTO public.schema_migration(version,name,checksum_sha256) VALUES ({version},{nombre},{checksum});\n"
         sql += self.guardas_datos(inventario) + "\\endif\n"
         self.ejecutar("psql", ["--dbname", base, "-X", "-qAt", "-v", "ON_ERROR_STOP=1",
                                "--single-transaction", "--file=-"], sql)

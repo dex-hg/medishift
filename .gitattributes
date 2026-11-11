@@ -1,2 +1,2 @@
-# V005 se registra con SHA-256 de sus bytes: conservar LF también en Windows.
-/db/migraciones/V005__autoprogramacion_medica.sql text eol=lf
+# Las migraciones registran el SHA-256 de sus bytes. Conservar LF también en Windows.
+/db/migraciones/*.sql text eol=lf
