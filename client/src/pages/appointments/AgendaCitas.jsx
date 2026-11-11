@@ -1,10 +1,11 @@
 import { useCallback, useRef, useState } from 'react';
 import { useLocation, useOutletContext } from 'react-router-dom';
-import { Plus, RefreshCw } from 'lucide-react';
+import { FileDown, Plus, RefreshCw } from 'lucide-react';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import VentanaPlanificador from '../schedules/VentanaPlanificador';
 import TablaCitas from './TablaCitas';
 import CalendarioCitas from './CalendarioCitas';
+import DialogoReporteCitas from './DialogoReporteCitas';
 import HorariosDiaCitas from './HorariosDiaCitas';
 import PanelReservaCita from './PanelReservaCita';
 import { useConsultaAtencion, useOperacionAtencion } from '../../hooks/useAtencion';
@@ -22,6 +23,7 @@ export default function AgendaCitas() {
   const [reserva, cambiarReserva] = useState(() => reservaVacia(ubicacion.state?.paciente || null));
   const [profesional, cambiarProfesional] = useState('');
   const [detalle, cambiarDetalle] = useState(null);
+  const [reporteAbierto, cambiarReporteAbierto] = useState(false);
   const panel = useRef(null);
   const [confirmacion, cambiarConfirmacion] = useState(null);
   const [mensaje, cambiarMensaje] = useState('');
@@ -70,7 +72,10 @@ export default function AgendaCitas() {
   return <>
     <EncabezadoPagina ruta={[{ etiqueta: 'Citas' }]} titulo={sesion.esAdministrador ? 'Agenda de citas' : 'Mi agenda de citas'}
       descripcion="Elige el día, revisa sus espacios libres y registra la cita sin salir del calendario."
-      acciones={<button className="boton boton--primario" disabled={operacion.guardando} onClick={() => { nueva(); enfocarPanel(); }}><Plus size={18} /> Nueva cita</button>} />
+      acciones={<>
+        <button className="boton boton--secundario" disabled={!consulta.datos || consulta.datos.periodo !== periodo || consulta.cargando || operacion.guardando}
+          onClick={() => cambiarReporteAbierto(true)}><FileDown size={18} aria-hidden="true" /> Exportar citas</button>
+        <button className="boton boton--primario" disabled={operacion.guardando} onClick={() => { nueva(); enfocarPanel(); }}><Plus size={18} /> Nueva cita</button></>} />
     <div className="agenda-herramientas">
       {sesion.esAdministrador && <label className="campo-planificador"><span>Médico</span><select value={profesional} disabled={operacion.guardando}
         onChange={(evento) => { cambiarProfesional(evento.target.value); cambiarReserva((anterior) => ({ ...anterior, idTurno: '', horaInicio: '', horaFin: '' })); }}>
@@ -92,6 +97,8 @@ export default function AgendaCitas() {
       turnos={dia.turnos} citas={consulta.datos?.citas || []} zonaHoraria={zona} ocupado={operacion.guardando} cargando={consulta.cargando || Boolean(consulta.error)}
       error={operacion.error} errores={operacion.errores} guardar={guardar} nueva={nueva} />
     </div>
+    {reporteAbierto && consulta.datos?.periodo === periodo && <DialogoReporteCitas datos={consulta.datos}
+      institucion={sesion.nombreInstitucion} idProfesional={profesional} cerrar={() => cambiarReporteAbierto(false)} />}
     {detalle && <VentanaPlanificador titulo="Detalle de la cita" descripcion={detalle.paciente} cerrar={() => cambiarDetalle(null)}>
       <p>{detalle.profesional} · {detalle.consultorio}</p><p>{partesLocales(detalle.inicio, zona).hora} a {partesLocales(detalle.fin, zona).hora} · {etiquetasEstadoCita[detalle.estado]}</p>
     </VentanaPlanificador>}

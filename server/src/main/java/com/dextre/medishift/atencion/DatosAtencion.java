@@ -22,7 +22,7 @@ public final class DatosAtencion {
             String consultorio, String especialidad, Instant inicio, Instant fin) { }
     public record Cita(UUID id, UUID idPaciente, String paciente, String codigoPaciente, UUID idTurno,
             UUID idProfesional, String profesional, UUID idConsultorio, String consultorio,
-            Instant inicio, Instant fin, String estado, String revision) { }
+            UUID idArea, String area, Instant inicio, Instant fin, String estado, String revision) { }
     public record Agenda(LocalDate fecha, String zonaHoraria, List<TurnoAgenda> turnos, List<Cita> citas) { }
     public record CalendarioAgenda(String periodo, String zonaHoraria, List<TurnoAgenda> turnos, List<Cita> citas) { }
     public record IdentidadDni(String dni, String nombres, String apellidos) { }

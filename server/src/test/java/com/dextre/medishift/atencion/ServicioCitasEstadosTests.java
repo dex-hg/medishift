@@ -26,7 +26,7 @@ class ServicioCitasEstadosTests {
                 mock(RepositorioEspecialidades.class), mock(RepositorioProgramacion.class), mock(RepositorioRestriccionesProgramacion.class));
     }
     private Cita cita(Instant inicio, Instant fin, String estado) {
-        return new Cita(id, UUID.randomUUID(), "Paciente", "PAC-ENSAYO", UUID.randomUUID(), UUID.randomUUID(), "Doctor", UUID.randomUUID(), "Sala", inicio, fin, estado, "revision");
+        return new Cita(id, UUID.randomUUID(), "Paciente", "PAC-ENSAYO", UUID.randomUUID(), UUID.randomUUID(), "Doctor", UUID.randomUUID(), "Sala", null, "Sin área", inicio, fin, estado, "revision");
     }
     @Test
     void permiteAtendidaAlComenzarYNoAsistioTrasFinalizar() {

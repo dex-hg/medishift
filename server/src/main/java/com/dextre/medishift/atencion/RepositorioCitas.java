@@ -20,10 +20,16 @@ public class RepositorioCitas {
     private static final String CONSULTA = """
             SELECT c.*, p.nombres || ' ' || p.apellidos AS paciente,p.codigo,
             m.first_name_professional || ' ' || m.last_name_professional AS profesional,
-            r.code_room || ' · ' || r.name_room AS consultorio FROM cita c
+            r.code_room || ' · ' || r.name_room AS consultorio,
+            a.id_planning_unit AS id_area, COALESCE(a.name_planning_unit, 'Sin área') AS area
+            FROM cita c
             JOIN paciente p ON p.id_institucion=c.id_institucion AND p.id=c.id_paciente
             JOIN professional m ON m.id_institution=c.id_institucion AND m.id_professional=c.id_profesional
             JOIN room r ON r.id_institution=c.id_institucion AND r.id_room=c.id_consultorio
+            JOIN shift t ON t.id_institution=c.id_institucion AND t.id_shift=c.id_turno
+            JOIN schedule h ON h.id_institution=t.id_institution AND h.id_schedule=t.id_schedule
+            LEFT JOIN planning_unit a ON a.id_institution=c.id_institucion
+                AND a.id_planning_unit=COALESCE(h.id_planning_unit,r.id_planning_unit)
             WHERE c.id_institucion=?
             """;
     private static final String TURNOS = """
@@ -109,7 +115,8 @@ public class RepositorioCitas {
         UUID id = fila.getObject("id", UUID.class);
         return new Cita(id, fila.getObject("id_paciente", UUID.class), fila.getString("paciente"), fila.getString("codigo"),
                 fila.getObject("id_turno", UUID.class), fila.getObject("id_profesional", UUID.class), fila.getString("profesional"),
-                fila.getObject("id_consultorio", UUID.class), fila.getString("consultorio"), fila.getTimestamp("inicio").toInstant(),
+                fila.getObject("id_consultorio", UUID.class), fila.getString("consultorio"),
+                fila.getObject("id_area", UUID.class), fila.getString("area"), fila.getTimestamp("inicio").toInstant(),
                 fila.getTimestamp("fin").toInstant(), fila.getString("estado"), RevisionesProgramacion.resumir(id, fila.getLong("version")));
     }
 

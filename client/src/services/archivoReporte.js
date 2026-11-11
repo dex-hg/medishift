@@ -13,8 +13,10 @@ export async function generarArchivoReporte(reporte, formato) {
 }
 
 /** Debe invocarse directamente en el clic, antes de cargar librerías o generar el contenido. */
-export async function guardarArchivoReporte(reporte, formato, { entorno = globalThis, generar = generarArchivoReporte, descargar = false } = {}) {
-  const nombre = nombreArchivoReporte(reporte, formato);
+export async function guardarArchivoReporte(reporte, formato, {
+  entorno = globalThis, generar = generarArchivoReporte, nombrar = nombreArchivoReporte, descargar = false,
+} = {}) {
+  const nombre = nombrar(reporte, formato);
   let destino;
   let escritura;
   try {
