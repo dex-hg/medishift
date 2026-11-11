@@ -116,7 +116,7 @@ El inicio reemplaza cualquier sesión anterior y rota su identificador. La sesi�
 
 La sesión caduca tras 30 minutos de inactividad. Viaja solo por cookie `HttpOnly` y `SameSite=Strict`; no se admite el identificador en la URL. `MEDISHIFT_COOKIE_SEGURA=false` permite probar en `localhost` por HTTP. Configura `MEDISHIFT_COOKIE_SEGURA=true` al servir mediante HTTPS para marcar la cookie como `Secure`. El cliente debe enviar la cookie en las solicitudes a `/api`; no debe guardar el identificador ni la contraseña en almacenamiento del navegador. Los endpoints de profesionales, consultorios y especialidades comprueban la sesión y el estado activo de la cuenta e institución. La institución se toma de la sesión y limita cada operación de gestión.
 
-Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Antes de publicar el servicio, debe incorporarse una política de limitación de intentos de autenticación. Profesionales, consultorios y horarios usan PostgreSQL. El encargado asigna los turnos directamente, sin registrar disponibilidades previamente. Los horarios semanales se crean como borrador y se aprueban por semana, con validación completa y reemplazo transaccional de versiones. Los límites iniciales por profesional son 6 horas diarias y 36 semanales; un administrador puede modificarlos en el menú de usuario, Configuraciones. Se aplican al calendario mensual y semanal.
+Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Las cuentas institucionales requieren una política de limitación de intentos de autenticación antes de publicar el servicio. Profesionales, consultorios y horarios usan PostgreSQL. El encargado asigna los turnos directamente, sin registrar disponibilidades previamente. Los horarios semanales se crean como borrador y se aprueban por semana, con validación completa y reemplazo transaccional de versiones. Los límites iniciales por profesional son 6 horas diarias y 36 semanales; un administrador puede modificarlos en el menú de usuario, Configuraciones. Se aplican al calendario mensual y semanal.
 
 ### Perfil y configuraciones
 
@@ -219,3 +219,20 @@ En Profesionales, el botón «Acceso del doctor» permite crear una cuenta vincu
 Las rutas de catálogos y programación semanal anterior requieren administrador. La autoprogramación se realiza en el calendario mensual. Las operaciones de áreas, consultorios, faltas y sincronización de feriados siguen siendo administrativas.
 
 Sobre una base existente con V004, ejecuta `python -B scripts/administrar_autoprogramacion.py aplicar` desde la raíz. V005 añade únicamente `institution_settings.medical_self_scheduling`, con valor inicial falso. El procedimiento respalda, restaura y ensaya una copia, comprueba las huellas de los datos anteriores y registra la migración. No ejecutes la línea base sobre datos existentes. El 3 de noviembre de 2026 quedó aplicada en PostgreSQL local, con los valores anteriores conservados.
+
+## Exportación de citas
+
+En «Agenda de citas», el botón «Exportar citas» usa el mes visible y permite combinar filtros de área, consultorio y médico. El administrador exporta las citas de su institución y el doctor exporta las propias. El archivo Excel o PDF incluye fecha, horas, nombre del paciente, área, consultorio, médico y estado.
+
+## Portal del paciente
+
+Aplica [V007](../db/migraciones/README.md) para habilitar el portal. El administrador abre una ficha activa, verifica el DNI y genera el código desde «Acceso al portal del paciente». El código vence en 24 horas, se muestra al emitirlo y cualquier emisión posterior reemplaza al anterior. El paciente abre «Acceso para pacientes», elige «Es mi primer ingreso» y crea su contraseña. Luego ingresa con DNI y contraseña.
+
+El portal consulta las fichas activas con el mismo DNI en hospitales activos. Cada cita muestra el hospital, el consultorio, su ubicación y el médico. Los días y horas se interpretan en la zona horaria del hospital de la cita. La sesión del paciente tiene acceso de lectura al calendario; la agenda operativa utiliza la sesión institucional del personal.
+
+- `GET` y `POST /api/pacientes/{id}/acceso-portal` consultan el estado y emiten un código. La emisión exige `If-Match` con la revisión de la ficha.
+- `POST /api/portal-paciente/activacion` recibe `dni`, `codigo` y `contrasena`. Crea la cuenta, consume el código y abre la sesión.
+- `POST /api/portal-paciente/sesion` recibe `dni` y `contrasena`. `DELETE` en la misma ruta cierra la sesión.
+- `GET /api/portal-paciente/calendario?periodo=AAAA-MM` toma la cuenta de la sesión y devuelve los hospitales y las citas del mes.
+
+El servidor almacena huellas de los códigos y contraseñas derivadas con PBKDF2. El ingreso del paciente aplica un límite por DNI en la instancia del backend. Las pruebas de activación, permisos, concurrencia y calendario se ejecutan con `-Dmedishift.prueba-atencion=true`.

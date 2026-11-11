@@ -1,6 +1,6 @@
 # MediShift
 
-Aplicación web para organizar los turnos médicos y las citas de una institución de salud. Incluye espacios para administradores y doctores.
+Aplicación web para organizar los turnos médicos y las citas de una institución de salud. Incluye espacios para administradores, doctores y pacientes.
 
 ## Funciones
 
@@ -10,10 +10,12 @@ Aplicación web para organizar los turnos médicos y las citas de una instituci�
 - Registro de pacientes con consulta de DNI en ApisPerú y ficha administrativa.
 - Calendario mensual de citas con espacios libres y registro de pacientes sin salir de la agenda.
 - Reprogramación, estados y prevención de reservas simultáneas dentro de turnos aprobados.
-- Registro de faltas del personal, feriados y exportación de horarios a Excel y PDF.
+- Exportación de horarios y citas a Excel y PDF, con filtros de área, consultorio y médico para las citas.
+- Portal del paciente con ingreso por DNI y calendario de citas de los hospitales donde tiene una ficha activa.
+- Registro de faltas del personal y feriados.
 - Perfil de cuenta y configuración institucional con permisos por rol.
 
-Los pacientes no tienen cuenta de acceso. La ficha conserva datos administrativos e historial de citas; no incluye historia clínica.
+Para activar su acceso, el paciente usa el código que le entrega el hospital después de verificar su DNI y crea su contraseña.
 
 ## Tecnologías
 
