@@ -83,6 +83,7 @@ function Portada() {
                 Crear una cuenta
               </Link>
             </div>
+            <p><Link className="inicio-sesion__enlace" to="/acceso-paciente">Consultar mis citas como paciente</Link></p>
             <div className="portada-hero__ventajas" aria-label="Ventajas principales">
               <span><CheckCircle2 size={15} /> Calendario mensual</span>
               <span><CheckCircle2 size={15} /> Control de consultorios</span>

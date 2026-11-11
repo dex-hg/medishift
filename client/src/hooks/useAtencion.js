@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export function useConsultaAtencion(cargar) {
+export function useConsultaAtencion(cargar, { rutaSesion = '/iniciar-sesion', mantenerDatos = false } = {}) {
   const navegar = useNavigate();
   const [datos, cambiarDatos] = useState(null);
   const [cargando, cambiarCargando] = useState(true);
@@ -9,16 +9,20 @@ export function useConsultaAtencion(cargar) {
   const [intento, cambiarIntento] = useState(0);
   useEffect(() => {
     const controlador = new AbortController();
-    cambiarCargando(true); cambiarError(''); cambiarDatos(null);
+    cambiarCargando(true); cambiarError('');
+    if (!mantenerDatos) cambiarDatos(null);
     Promise.resolve().then(() => cargar({ senal: controlador.signal })).then((resultado) => {
       if (!controlador.signal.aborted) cambiarDatos(resultado);
     }).catch((fallo) => {
       if (controlador.signal.aborted) return;
-      if (fallo.estado === 401) navegar('/iniciar-sesion', { replace: true });
+      if (fallo.estado === 401) {
+        cambiarDatos(null);
+        navegar(rutaSesion, { replace: true });
+      }
       cambiarError(fallo.message);
     }).finally(() => { if (!controlador.signal.aborted) cambiarCargando(false); });
     return () => controlador.abort();
-  }, [cargar, intento, navegar]);
+  }, [cargar, intento, navegar, rutaSesion, mantenerDatos]);
   return { datos, cargando, error, recargar: useCallback(() => cambiarIntento((valor) => valor + 1), []) };
 }
 

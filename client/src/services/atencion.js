@@ -45,8 +45,8 @@ const extraerListado = (valor) => {
   return valor;
 };
 
-export async function solicitarAtencion(ruta, metodo, convertir, { datos, revision, senal, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000 } = {}) {
-  if (!/^\/api\/(?:pacientes|citas|planes-mensuales)(?:\/|\?|$)/.test(ruta) || typeof ejecutarSolicitud !== 'function'
+export async function solicitarAtencion(ruta, metodo, convertir, { datos, revision, senal, estadoEsperado, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000 } = {}) {
+  if (!/^\/api\/(?:pacientes|citas|planes-mensuales|portal-paciente)(?:\/|\?|$)/.test(ruta) || typeof ejecutarSolicitud !== 'function'
     || !Number.isFinite(tiempoEspera) || tiempoEspera <= 0 || (senal !== undefined && !(senal instanceof AbortSignal))) throw new ErrorAtencion('No se pudo iniciar la solicitud.');
   if (revision !== undefined && !REVISION.test(revision)) throw new ErrorAtencion('Recarga el registro antes de guardar.', { estado: 428 });
   const controlador = new AbortController();
@@ -63,9 +63,11 @@ export async function solicitarAtencion(ruta, metodo, convertir, { datos, revisi
       const respuesta = await ejecutarSolicitud(ruta, { method: metodo, credentials: 'same-origin', cache: 'no-store',
         signal: controlador.signal, headers: { Accept: 'application/json', ...(datos ? { 'Content-Type': 'application/json' } : {}),
           ...(revision ? { 'If-Match': `"${revision}"` } : {}) }, ...(datos ? { body: JSON.stringify(datos) } : {}) });
-      let contenido;
-      try { contenido = await respuesta.json(); } catch { contenido = null; }
-      const esperado = metodo === 'POST' && ['/api/pacientes', '/api/citas'].includes(ruta) ? 201 : 200;
+      let contenido = null;
+      if (respuesta.status !== 204) {
+        try { contenido = await respuesta.json(); } catch { /* La respuesta de error puede llegar sin JSON. */ }
+      }
+      const esperado = estadoEsperado ?? (metodo === 'POST' && ['/api/pacientes', '/api/citas'].includes(ruta) ? 201 : 200);
       if (respuesta.status !== esperado) throw new ErrorAtencion(texto(contenido?.mensaje) ? contenido.mensaje : 'No se pudo completar la solicitud.',
         { estado: respuesta.status, errores: objeto(contenido?.errores) ? Object.fromEntries(Object.entries(contenido.errores).filter(([, mensaje]) => typeof mensaje === 'string')) : {} });
       return convertir(contenido);

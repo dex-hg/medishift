@@ -1,0 +1,35 @@
+.portal-paciente {
+  width: min(100% - 2.5rem, 76rem);
+  margin-inline: auto;
+  padding-bottom: 3rem;
+}
+
+.portal-paciente > main { padding-block: clamp(1rem, 4vw, 3rem); }
+.portal-paciente > header { width: 100%; gap: .75rem; }
+.portal-paciente > header > .boton { flex-shrink: 0; }
+.portal-hospitales { padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+.portal-hospitales h2, .portal-citas h2 { margin: 0; font-size: 1rem; }
+.portal-hospitales h2 { display: flex; align-items: center; gap: .5rem; }
+.portal-hospitales h2 svg { color: var(--turquesa); flex-shrink: 0; }
+.portal-hospitales ul { padding-inline-start: 1.25rem; }
+.portal-hospitales ul, .portal-hospitales p { margin: .55rem 0 0; color: var(--texto-secundario); line-height: 1.65; font-size: .875rem; }
+.portal-hospitales li { overflow-wrap: anywhere; }
+.portal-calendario .agenda-calendario__dia--con-citas small { color: var(--turquesa); font-weight: 650; }
+
+.portal-citas { min-width: 0; overflow: hidden; }
+.portal-citas__cabecera { display: flex; justify-content: space-between; gap: .5rem; align-items: center; flex-wrap: wrap; padding: 1rem 1.25rem .5rem; }
+.portal-citas__zona { margin: 0; padding: .35rem 1.25rem 1rem; color: var(--texto-secundario); font-size: .8rem; line-height: 1.5; }
+.portal-citas ul { list-style: none; padding: 0; margin: 0; }
+.portal-cita { padding: 1rem 1.25rem; border-top: 1px solid var(--borde-suave); overflow-wrap: anywhere; }
+.portal-cita__cabecera { display: flex; align-items: start; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
+.portal-cita h3 { margin: 0 0 .25rem; font-size: .93rem; }
+.portal-cita p { margin: 0; color: var(--turquesa); font-size: .88rem; font-variant-numeric: tabular-nums; }
+.portal-cita dl { display: grid; gap: .6rem; margin: .85rem 0 0; }
+.portal-cita dt, .portal-cita small { color: var(--texto-secundario); font-size: .75rem; }
+.portal-cita dd { margin: .13rem 0 0; font-size: .85rem; line-height: 1.5; }
+.portal-cita small { display: block; }
+.portal-cita .estado { flex-shrink: 0; }
+
+@media (max-width: 540px) {
+  .portal-paciente { width: calc(100% - 1.5rem); }
+}

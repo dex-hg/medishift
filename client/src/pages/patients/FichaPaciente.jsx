@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import FormularioPaciente from './FormularioPaciente';
+import PanelAccesoPaciente from './PanelAccesoPaciente';
 import TablaCitas from '../appointments/TablaCitas';
 import { useConsultaAtencion } from '../../hooks/useAtencion';
 import { obtenerPaciente, obtenerHistorialCitas } from '../../services/atencion';
@@ -22,7 +23,7 @@ function HistorialPaciente({ id }) {
 
 function FichaExistente({ id }) {
   const consulta = useConsultaAtencion(useCallback((opciones) => obtenerPaciente(id, opciones), [id]));
-  const { configuracion } = useOutletContext();
+  const { configuracion, sesion } = useOutletContext();
   return <>
     <EncabezadoPagina ruta={[{ etiqueta: 'Pacientes', destino: '/pacientes' }, { etiqueta: 'Ficha' }]} titulo={consulta.datos ? `${consulta.datos.nombres} ${consulta.datos.apellidos}` : 'Ficha del paciente'}
       descripcion={consulta.datos?.codigo || 'Datos administrativos del paciente.'}
@@ -30,6 +31,8 @@ function FichaExistente({ id }) {
     {consulta.cargando && <p role="status">Cargando ficha…</p>}
     {consulta.error && <div className="panel atencion-aviso" role="alert"><p>{consulta.error}</p><button className="boton boton--secundario" onClick={consulta.recargar}>Reintentar</button></div>}
     {consulta.datos && <><FormularioPaciente key={consulta.datos.revision} paciente={consulta.datos} zonaHoraria={configuracion.zonaHoraria} guardado={consulta.recargar} recargar={consulta.recargar} />
+      {sesion.esAdministrador && consulta.datos.activo && <PanelAccesoPaciente key={consulta.datos.revision}
+        paciente={consulta.datos} zonaHoraria={configuracion.zonaHoraria} />}
       <HistorialPaciente id={id} /></>}
   </>;
 }

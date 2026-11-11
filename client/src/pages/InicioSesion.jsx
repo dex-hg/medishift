@@ -176,6 +176,10 @@ function InicioSesion() {
             <p className="registro-formulario__alcance" role={enviando ? 'status' : undefined}>
               {enviando ? 'Estamos verificando tus datos.' : 'Accede con los datos vinculados a tu institución.'}
             </p>
+            <p className="inicio-sesion__registro">
+              <Link className="inicio-sesion__enlace" to="/acceso-paciente" onClick={evitarSalidaEnCurso}
+                aria-disabled={enviando || undefined} tabIndex={enviando ? -1 : undefined}>Acceso para pacientes</Link>
+            </p>
             <p className="inicio-sesion__registro">¿Tu institución aún no está registrada?{' '}
               <Link className="inicio-sesion__enlace" to="/registro" onClick={evitarSalidaEnCurso}
                 aria-disabled={enviando || undefined} tabIndex={enviando ? -1 : undefined}>

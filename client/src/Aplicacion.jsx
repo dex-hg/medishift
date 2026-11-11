@@ -3,6 +3,8 @@ import RutaProtegida from './components/RutaProtegida';
 import Portada from './pages/Portada';
 import Registro from './pages/Registro';
 import InicioSesion from './pages/InicioSesion';
+import InicioSesionPaciente from './pages/patients/InicioSesionPaciente';
+import MisCitas from './pages/patients/MisCitas';
 import Inicio from './pages/Inicio';
 import Faltas from './pages/attendance/Faltas';
 import Horarios from './pages/schedules/Horarios';
@@ -26,6 +28,8 @@ function Aplicacion() {
       <Route path="/" element={<Portada />} />
       <Route path="/registro" element={<Registro />} />
       <Route path="/iniciar-sesion" element={<InicioSesion />} />
+      <Route path="/acceso-paciente" element={<InicioSesionPaciente />} />
+      <Route path="/mis-citas" element={<MisCitas />} />
       <Route element={<RutaProtegida />}>
         <Route path="panel" element={<Inicio />} />
         <Route path="mi-perfil" element={<MiPerfil />} />
