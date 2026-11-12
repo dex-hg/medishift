@@ -26,7 +26,7 @@ export function useConsultaAtencion(cargar, { rutaSesion = '/iniciar-sesion', ma
   return { datos, cargando, error, recargar: useCallback(() => cambiarIntento((valor) => valor + 1), []) };
 }
 
-export function useOperacionAtencion() {
+export function useOperacionAtencion({ rutaSesion = '/iniciar-sesion' } = {}) {
   const navegar = useNavigate();
   const bloqueo = useRef(false);
   const vigente = useRef(true);
@@ -43,7 +43,7 @@ export function useOperacionAtencion() {
       return vigente.current ? resultado : null;
     } catch (fallo) {
       if (vigente.current) {
-        if (fallo.estado === 401) navegar('/iniciar-sesion', { replace: true });
+        if (fallo.estado === 401) navegar(rutaSesion, { replace: true });
         cambiarError(fallo.message); cambiarErrores(fallo.errores || {});
       }
       return null;

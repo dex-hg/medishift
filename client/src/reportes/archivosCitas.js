@@ -1,4 +1,6 @@
+import { nombreMes } from '../utils/calendarioMensual.js';
 import { columnasReporteCitas, datosReporteCita } from '../utils/reportesCitas.js';
+import { etiquetasEstadoCita } from '../utils/validacionesAtencion.js';
 
 const ETIQUETAS = columnasReporteCitas.map(({ etiqueta }) => etiqueta);
 const MARGEN = 12;
@@ -22,13 +24,38 @@ export async function generarArchivoCitas(reporte, formato) {
   throw new Error('Selecciona PDF o Excel.');
 }
 
-async function crearPdfCitas(reporte) {
+function crearPdfCitas(reporte) {
+  const filas = reporte.citas.map((cita) =>
+    [mostrarFecha(cita.fecha), cita.horaInicio, mostrarFin(cita), ...datosReporteCita(cita)]);
+  return crearPdfTablaCitas({ autor: reporte.institucion, textos: metadatos(reporte), etiquetas: ETIQUETAS, filas });
+}
+
+export function crearPdfCitasPaciente({ periodo, citas }) {
+  const etiquetas = ['Fecha', 'Horario local', 'Hospital', 'Consultorio y ubicación', 'Médico', 'Estado'];
+  const textos = [
+    'MediShift · Portal del paciente',
+    'Mis citas · ' + nombreMes(periodo),
+    'Horarios en la hora local de cada hospital.',
+    citas.length + (citas.length === 1 ? ' cita' : ' citas'),
+  ];
+  const filas = citas.map((cita) => [
+    mostrarFecha(cita.fecha),
+    cita.horaInicio + ' a ' + mostrarFin(cita),
+    cita.hospital.nombre,
+    cita.consultorio + '\n' + cita.ubicacion,
+    cita.profesional,
+    etiquetasEstadoCita[cita.estado],
+  ]);
+  return crearPdfTablaCitas({ autor: 'MediShift', textos, etiquetas, filas });
+}
+
+async function crearPdfTablaCitas({ autor, textos, etiquetas, filas }) {
   const [{ jsPDF: DocumentoPdf }, { autoTable: dibujarTabla }] = await Promise.all([
     import('jspdf'), import('jspdf-autotable'),
   ]);
   const documento = new DocumentoPdf({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-  documento.setProperties({ title: 'Citas del mes · ' + reporte.mes, author: reporte.institucion, creator: 'MediShift' });
-  const cabecera = metadatos(reporte).map((texto, indice) => {
+  documento.setProperties({ title: textos[1], author: autor, creator: 'MediShift' });
+  const cabecera = textos.map((texto, indice) => {
     const tamano = indice === 1 ? 16 : 9;
     const fuente = indice === 1 ? 'bold' : 'normal';
     documento.setFont('helvetica', fuente);
@@ -41,9 +68,8 @@ async function crearPdfCitas(reporte) {
     startY: limite,
     margin: { top: limite, bottom: 17, left: MARGEN, right: MARGEN },
     theme: 'grid',
-    head: [ETIQUETAS],
-    body: reporte.citas.map((cita) => [mostrarFecha(cita.fecha), cita.horaInicio,
-      cita.fecha === cita.fechaFin ? cita.horaFin : mostrarFecha(cita.fechaFin) + ' ' + cita.horaFin, ...datosReporteCita(cita)]),
+    head: [etiquetas],
+    body: filas,
     styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
     headStyles: { fillColor: [232, 240, 239], textColor: [24, 42, 40] },
     rowPageBreak: 'avoid',
@@ -68,6 +94,7 @@ async function crearPdfCitas(reporte) {
 }
 
 const mostrarFecha = (fecha) => fecha.split('-').reverse().join('/');
+const mostrarFin = (cita) => cita.fecha === cita.fechaFin ? cita.horaFin : mostrarFecha(cita.fechaFin) + ' ' + cita.horaFin;
 const horaExcel = (hora) => (Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3))) / 1440;
 
 async function crearExcelCitas(reporte) {

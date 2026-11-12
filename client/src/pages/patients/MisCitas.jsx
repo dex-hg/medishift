@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, LogOut, Sparkles } from 'lucide-react';
+import { Building2, FileDown, Info, LogOut, Sparkles } from 'lucide-react';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import Estado from '../../components/Estado';
 import { CalendarioMensualCitas } from '../appointments/CalendarioCitas';
-import { useConsultaAtencion } from '../../hooks/useAtencion';
+import { useConsultaAtencion, useOperacionAtencion } from '../../hooks/useAtencion';
+import { guardarArchivoReporte } from '../../services/archivoReporte';
 import { cerrarSesionPaciente, obtenerCalendarioPaciente } from '../../services/portalPaciente';
 import { etiquetasEstadoCita, partesLocales } from '../../utils/validacionesAtencion';
 import { fechaActual, mostrarFecha } from '../../utils/validacionesProgramacion';
@@ -47,6 +48,8 @@ export default function MisCitas() {
   const [fecha, cambiarFecha] = useState('');
   const [cerrando, cambiarCerrando] = useState(false);
   const [errorSesion, cambiarErrorSesion] = useState('');
+  const [mensajePdf, cambiarMensajePdf] = useState('');
+  const descarga = useOperacionAtencion({ rutaSesion: '/acceso-paciente' });
   const consulta = useConsultaAtencion(useCallback((opciones) => obtenerCalendarioPaciente(periodo, opciones), [periodo]), {
     rutaSesion: '/acceso-paciente', mantenerDatos: true,
   });
@@ -58,6 +61,30 @@ export default function MisCitas() {
     return dias;
   }, [citas]);
   const visibles = fecha ? citas.filter((cita) => cita.fecha === fecha) : citas;
+
+  const descargarPdf = async () => {
+    cambiarMensajePdf('');
+    const resultado = await descarga.ejecutar(async () => {
+      const mesVigente = await obtenerCalendarioPaciente(periodo);
+      if (!mesVigente.citas.length) {
+        consulta.recargar();
+        throw new Error('No hay citas para exportar en este mes.');
+      }
+      return guardarArchivoReporte({ periodo, citas: ordenarCitas(mesVigente) }, 'pdf', {
+        descargar: true,
+        nombrar: (reporte) => 'mis-citas-' + reporte.periodo + '.pdf',
+        generar: async (reporte) => (await import('../../reportes/archivosCitas.js')).crearPdfCitasPaciente(reporte),
+      });
+    });
+    if (resultado) cambiarMensajePdf('La descarga del PDF comenzó.');
+  };
+
+  const cambiarMes = (mes) => {
+    cambiarFecha('');
+    cambiarPeriodo(mes);
+    cambiarMensajePdf('');
+    descarga.limpiar();
+  };
 
   const cerrar = async () => {
     cambiarCerrando(true);
@@ -77,13 +104,19 @@ export default function MisCitas() {
         <span className="portada-marca__simbolo"><Sparkles size={20} aria-hidden="true" /></span>
         <strong>MediShift</strong>
       </Link>
-      {consulta.datos && <button className="boton boton--fantasma" type="button" disabled={cerrando} onClick={cerrar}>
+      {consulta.datos && <button className="boton boton--fantasma" type="button" disabled={cerrando || descarga.guardando} onClick={cerrar}>
         <LogOut size={17} aria-hidden="true" /> {cerrando ? 'Cerrando…' : 'Cerrar sesión'}
       </button>}
     </header>
     <main>
-      <EncabezadoPagina titulo="Mis citas" descripcion="Revisa las fechas y el lugar de atención de tus citas." />
+      <EncabezadoPagina titulo="Mis citas" descripcion="Revisa las fechas y el lugar de atención de tus citas."
+        acciones={consulta.datos && <button className="boton boton--secundario" type="button"
+          disabled={!datos?.citas.length || Boolean(consulta.error) || cerrando || descarga.guardando} onClick={descargarPdf}>
+          <FileDown size={17} aria-hidden="true" /> {descarga.guardando ? 'Preparando PDF…' : 'Descargar PDF del mes'}
+        </button>} />
       {errorSesion && <p className="atencion-error" role="alert">{errorSesion}</p>}
+      {descarga.error && <p className="atencion-error" role="alert">{descarga.error}</p>}
+      {mensajePdf && <p className="atencion-ayuda" role="status">{mensajePdf}</p>}
       {consulta.error && <div className="atencion-aviso" role="alert"><p>{consulta.error}</p>
         <button className="boton boton--secundario" type="button" onClick={consulta.recargar}>Reintentar</button>
       </div>}
@@ -91,14 +124,18 @@ export default function MisCitas() {
       {consulta.datos && <>
         <section className="panel portal-hospitales">
           <h2><Building2 size={18} aria-hidden="true" /> Hospitales donde estás registrado</h2>
-          {consulta.datos.hospitales.length ? <ul>{consulta.datos.hospitales.map((hospital) => <li key={hospital.codigo}>{hospital.nombre}</li>)}</ul>
-            : <p>No tienes fichas activas en los hospitales de MediShift.</p>}
+          <ul>{consulta.datos.hospitales.map((hospital) => <li key={hospital.codigo}>{hospital.nombre}</li>)}</ul>
+          <p className="portal-aviso"><Info size={16} aria-hidden="true" />
+            <span>Si una cita no aparece, puede que el DNI o la fecha de nacimiento de tu ficha no coincidan.
+              Pide al hospital que revise esos datos.</span>
+          </p>
         </section>
         <div className="agenda-distribucion portal-calendario">
           <CalendarioMensualCitas periodo={periodo} fecha={fecha} hoy={hoy} cargando={!datos && !consulta.error}
+            ocupado={descarga.guardando}
             resumirDia={(dia) => ({ citas: citasPorDia.get(dia) || 0 })}
             seleccionar={(dia) => cambiarFecha(dia === fecha ? '' : dia)}
-            cambiarMes={(mes) => { cambiarFecha(''); cambiarPeriodo(mes); }} />
+            cambiarMes={cambiarMes} />
           <section className="panel portal-citas" aria-labelledby="titulo-citas-portal">
             <div className="portal-citas__cabecera">
               <h2 id="titulo-citas-portal" aria-live="polite">{fecha ? mostrarFecha(fecha) : 'Citas del mes'}</h2>
