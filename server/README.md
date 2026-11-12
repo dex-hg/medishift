@@ -226,13 +226,11 @@ En «Agenda de citas», el botón «Exportar citas» usa el mes visible y permit
 
 ## Portal del paciente
 
-Aplica [V007](../db/migraciones/README.md) para habilitar el portal. El administrador abre una ficha activa, verifica el DNI y genera el código desde «Acceso al portal del paciente». El código vence en 24 horas, se muestra al emitirlo y cualquier emisión posterior reemplaza al anterior. El paciente abre «Acceso para pacientes», elige «Es mi primer ingreso» y crea su contraseña. Luego ingresa con DNI y contraseña.
+En «Acceso para pacientes», ingresa el DNI y la fecha de nacimiento registrados en el hospital. El calendario muestra únicamente las citas de fichas activas que coincidan en ambos datos. Cada cita muestra el hospital, el consultorio, su ubicación, el médico y los horarios en la zona local del hospital. Si falta una cita, el portal indica que el paciente puede pedir al hospital que revise los datos de su ficha.
 
-El portal consulta las fichas activas con el mismo DNI en hospitales activos. Cada cita muestra el hospital, el consultorio, su ubicación y el médico. Los días y horas se interpretan en la zona horaria del hospital de la cita. La sesión del paciente tiene acceso de lectura al calendario; la agenda operativa utiliza la sesión institucional del personal.
+«Descargar PDF del mes» consulta de nuevo el mes visible y genera un archivo con sus citas. El PDF usa la fecha, el horario local, el hospital, el consultorio, el médico y el estado de cada cita.
 
-- `GET` y `POST /api/pacientes/{id}/acceso-portal` consultan el estado y emiten un código. La emisión exige `If-Match` con la revisión de la ficha.
-- `POST /api/portal-paciente/activacion` recibe `dni`, `codigo` y `contrasena`. Crea la cuenta, consume el código y abre la sesión.
-- `POST /api/portal-paciente/sesion` recibe `dni` y `contrasena`. `DELETE` en la misma ruta cierra la sesión.
-- `GET /api/portal-paciente/calendario?periodo=AAAA-MM` toma la cuenta de la sesión y devuelve los hospitales y las citas del mes.
+- `POST /api/portal-paciente/sesion` recibe `dni` y `fechaNacimiento` como texto. La fecha utiliza el formato `AAAA-MM-DD`. Una coincidencia válida abre una sesión de consulta y devuelve 204. Una coincidencia fallida devuelve 401 con el mismo mensaje para ambos campos. `DELETE` en la misma ruta cierra la sesión.
+- `GET /api/portal-paciente/calendario?periodo=AAAA-MM` vuelve a verificar las fichas con los datos de la sesión. Devuelve únicamente los hospitales y las citas autorizadas del mes.
 
-El servidor almacena huellas de los códigos y contraseñas derivadas con PBKDF2. El ingreso del paciente aplica un límite por DNI en la instancia del backend. Las pruebas de activación, permisos, concurrencia y calendario se ejecutan con `-Dmedishift.prueba-atencion=true`.
+La consulta limita los intentos fallidos por DNI y dirección de conexión en cada instancia del servidor. Cualquier persona que conozca ambos datos puede acceder a las citas asociadas. Las pruebas de coincidencia de fichas, aislamiento de sesiones y límite de intentos se ejecutan con `-Dmedishift.prueba-atencion=true`.

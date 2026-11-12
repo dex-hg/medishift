@@ -11,11 +11,9 @@ Aplicación web para organizar los turnos médicos y las citas de una instituci�
 - Calendario mensual de citas con espacios libres y registro de pacientes sin salir de la agenda.
 - Reprogramación, estados y prevención de reservas simultáneas dentro de turnos aprobados.
 - Exportación de horarios y citas a Excel y PDF, con filtros de área, consultorio y médico para las citas.
-- Portal del paciente con ingreso por DNI y calendario de citas de los hospitales donde tiene una ficha activa.
+- Consulta de citas por DNI y fecha de nacimiento, con calendario de solo lectura y descarga mensual en PDF.
 - Registro de faltas del personal y feriados.
 - Perfil de cuenta y configuración institucional con permisos por rol.
-
-Para activar su acceso, el paciente usa el código que le entrega el hospital después de verificar su DNI y crea su contraseña.
 
 ## Tecnologías
 

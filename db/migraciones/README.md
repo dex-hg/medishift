@@ -1,6 +1,6 @@
 # Migraciones del núcleo mensual
 
-Para una instalación vacía, crea la base y ejecuta una vez `db/medishift_postgresql.sql`; después aplica las migraciones con las herramientas siguientes, en orden. La línea base conserva compatibilidad con las pruebas y las instalaciones anteriores; V006 incorpora las fichas y citas, y V007 añade el acceso al portal.
+Para una instalación vacía, crea la base y ejecuta una vez `db/medishift_postgresql.sql`; después aplica las migraciones con las herramientas siguientes, en orden. La línea base conserva compatibilidad con las pruebas y las instalaciones anteriores; V006 incorpora las fichas y citas. V007 añade el índice por DNI para consultar fichas activas.
 
 V001 añade unidades y cabeceras de mes completo conservando los horarios anteriores. La línea base `db/medishift_postgresql.sql` no se vuelve a ejecutar sobre una base existente. Spring no aplica migraciones al arrancar.
 
@@ -20,4 +20,4 @@ V005 añade `institution_settings.medical_self_scheduling`, de tipo booleano, ob
 
 V006 incorpora pacientes administrativos, vínculos con doctores, citas e historial de reapertura mensual. Requiere V005 y se administra con `python -B scripts/administrar_pacientes_citas.py estado|ensayar|aplicar`. El procedimiento respalda, restaura una copia, verifica que las filas existentes no cambien y registra la migración con su SHA-256. Las exclusiones de PostgreSQL protegen las reservas concurrentes; los triggers impiden dejar citas afectadas al cambiar turnos o cancelar horarios. Consulta [el flujo y la API](../../server/README.md#pacientes-y-citas).
 
-V007 añade las cuentas globales por DNI, los códigos de activación de un solo uso y el índice para consultar las fichas activas. Requiere V006. Desde la raíz, usa `python -B scripts/administrar_portal_pacientes.py estado|ensayar|aplicar`. El comando `aplicar` respalda la base local, restaura y valida una copia temporal, compara las huellas de las filas anteriores y registra el SHA-256. Aplica V007 antes de iniciar el backend con el portal.
+V007 incorpora el índice de DNI para fichas activas y la estructura de la primera versión del portal con cuentas y códigos. Requiere V006. Desde la raíz, usa `python -B scripts/administrar_portal_pacientes.py estado|ensayar|aplicar`. El comando `aplicar` respalda la base local, restaura y valida una copia temporal, compara las huellas de las filas anteriores y registra el SHA-256. El portal vigente verifica el DNI y la fecha de nacimiento de las fichas institucionales de V006. La aplicación puede aprovechar el índice de V007.
