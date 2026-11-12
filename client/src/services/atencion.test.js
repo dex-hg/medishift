@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { guardarPaciente, buscarPacienteDni, obtenerAgenda, guardarCita, cambiarEstadoCita, solicitarAtencion, consultarIdentidadDni, obtenerCalendarioCitas } from './atencion.js';
 
+import { iniciarSesionPaciente } from './portalPaciente.js';
+
 const id = '11111111-1111-4111-8111-111111111111';
 const otro = '22222222-2222-4222-8222-222222222222';
 const revision = 'a'.repeat(64);
@@ -10,6 +12,20 @@ const cita = { id: otro, idPaciente: id, paciente: 'Ana Pérez', codigoPaciente:
   profesional: 'Doctor', idConsultorio: otro, consultorio: 'Sala', inicio: '2032-11-02T13:00:00Z', fin: '2032-11-02T13:17:00Z', estado: 'programada', revision };
 const datosCita = { idPaciente: id, idTurno: otro, fecha: '2032-11-02', horaInicio: '08:00', horaFin: '08:17' };
 const responder = (contenido, estado = 200) => async () => new Response(JSON.stringify(contenido), { status: estado, headers: { 'Content-Type': 'application/json' } });
+
+test('el portal verifica solo DNI y nacimiento mediante POST', async () => {
+  const datos = { dni: '00123456', fechaNacimiento: '2000-02-29' };
+  const resultado = await iniciarSesionPaciente({ ...datos, contrasena: 'omitida', idPaciente: id }, {
+    ejecutarSolicitud: async (ruta, opciones) => {
+      assert.equal(ruta, '/api/portal-paciente/sesion');
+      assert.equal(opciones.method, 'POST');
+      assert.equal(opciones.credentials, 'same-origin');
+      assert.deepEqual(JSON.parse(opciones.body), datos);
+      return new Response(null, { status: 204 });
+    },
+  });
+  assert.equal(resultado, true);
+});
 
 test('consulta DNI por backend sin enviar token y omite campos adicionales de la respuesta', async () => {
   const resultado = await consultarIdentidadDni('00123456', { ejecutarSolicitud: async (ruta, opciones) => {

@@ -26,7 +26,6 @@ import com.dextre.medishift.sesion.AccesoNoAutorizadoException;
 		com.dextre.medishift.programacion.mensual.ControladorPlanificador.class,
 		com.dextre.medishift.atencion.ControladorPacientes.class,
 		com.dextre.medishift.atencion.ControladorCitas.class,
-		com.dextre.medishift.portalpaciente.ControladorAccesoPaciente.class,
 		com.dextre.medishift.portalpaciente.ControladorPortalPaciente.class,
 		com.dextre.medishift.programacion.mensual.ControladorAprobacionMensual.class })
 public class ManejadorErroresCatalogos {

@@ -2,28 +2,20 @@ import { useId, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CalendarDays, Sparkles } from 'lucide-react';
 import CampoRegistro from '../../components/CampoRegistro';
-import { activarAccesoPaciente, iniciarSesionPaciente } from '../../services/portalPaciente';
+import { iniciarSesionPaciente } from '../../services/portalPaciente';
+import { fechaActual, fechaValida } from '../../utils/validacionesProgramacion';
 
-const FORMULARIO_VACIO = { dni: '', codigo: '', contrasena: '', confirmacion: '' };
+const FORMULARIO_VACIO = { dni: '', fechaNacimiento: '' };
 
 export default function InicioSesionPaciente() {
   const identificador = useId();
   const navegar = useNavigate();
-  const [activar, cambiarActivar] = useState(false);
   const [datos, cambiarDatos] = useState(FORMULARIO_VACIO);
   const [errores, cambiarErrores] = useState({});
   const [mensaje, cambiarMensaje] = useState('');
   const [enviando, cambiarEnviando] = useState(false);
   const bloqueo = useRef(false);
-  const titulo = useRef(null);
-
-  const cambiarModo = () => {
-    cambiarActivar(!activar);
-    cambiarDatos({ ...FORMULARIO_VACIO, dni: datos.dni });
-    cambiarErrores({});
-    cambiarMensaje('');
-    titulo.current?.focus();
-  };
+  const hoy = fechaActual();
 
   const actualizar = (evento) => {
     const { name: campo, value: valor } = evento.target;
@@ -42,15 +34,11 @@ export default function InicioSesionPaciente() {
     evento.preventDefault();
     if (bloqueo.current) return;
     const dni = datos.dni.trim();
-    const codigo = datos.codigo.trim();
-    const contrasena = datos.contrasena;
+    const { fechaNacimiento } = datos;
     const fallos = {};
     if (!/^[0-9]{8}$/.test(dni)) fallos.dni = 'Ingresa un DNI de 8 dígitos.';
-    if (!contrasena.trim() || contrasena.length > 128) fallos.contrasena = 'Ingresa tu contraseña.';
-    if (activar) {
-      if (!/^[A-Za-z0-9_-]{22}$/.test(codigo)) fallos.codigo = 'Ingresa el código de 22 caracteres.';
-      if ([...contrasena].length < 12) fallos.contrasena = 'Usa al menos 12 caracteres.';
-      if (contrasena !== datos.confirmacion) fallos.confirmacion = 'Las contraseñas deben coincidir.';
+    if (!fechaValida(fechaNacimiento) || fechaNacimiento > hoy) {
+      fallos.fechaNacimiento = 'Ingresa una fecha de nacimiento válida.';
     }
     mostrarErrores(fallos);
     cambiarMensaje('');
@@ -58,8 +46,7 @@ export default function InicioSesionPaciente() {
     bloqueo.current = true;
     cambiarEnviando(true);
     try {
-      if (activar) await activarAccesoPaciente({ dni, codigo, contrasena });
-      else await iniciarSesionPaciente({ dni, contrasena });
+      await iniciarSesionPaciente({ dni, fechaNacimiento });
       navegar('/mis-citas', { replace: true });
     } catch (fallo) {
       mostrarErrores(fallo.errores || {});
@@ -71,13 +58,8 @@ export default function InicioSesionPaciente() {
   };
 
   const campos = [
-    { nombre: 'dni', etiqueta: 'DNI', autoComplete: 'username', inputMode: 'numeric', maxLength: 8 },
-    ...(activar ? [{ nombre: 'codigo', etiqueta: 'Código de activación', autoComplete: 'one-time-code', maxLength: 22,
-      spellCheck: false, autoCapitalize: 'none' }] : []),
-    { nombre: 'contrasena', etiqueta: activar ? 'Crea tu contraseña' : 'Contraseña', tipo: 'password',
-      ayuda: activar ? 'Usa al menos 12 caracteres.' : undefined, autoComplete: activar ? 'new-password' : 'current-password', maxLength: 128 },
-    ...(activar ? [{ nombre: 'confirmacion', etiqueta: 'Confirma tu contraseña', tipo: 'password',
-      autoComplete: 'new-password', maxLength: 128 }] : []),
+    { nombre: 'dni', etiqueta: 'DNI', autoComplete: 'off', inputMode: 'numeric', maxLength: 8 },
+    { nombre: 'fechaNacimiento', etiqueta: 'Fecha de nacimiento', tipo: 'date', autoComplete: 'off', min: '0001-01-01', max: hoy },
   ];
 
   return <div className="registro inicio-sesion">
@@ -100,8 +82,8 @@ export default function InicioSesionPaciente() {
         <form className="registro-formulario" noValidate onSubmit={enviar}>
           <div className="registro-formulario__titulo">
             <div>
-              <h2 ref={titulo} tabIndex={-1} id={identificador + '-titulo'}>{activar ? 'Activa tu acceso' : 'Ingresa con tu DNI'}</h2>
-              {activar && <p>Pide tu código de un solo uso en el hospital donde verificaron tu DNI.</p>}
+              <h2 id={identificador + '-titulo'}>Consulta tus citas</h2>
+              <p>Ingresa el DNI y la fecha de nacimiento que registraste en el hospital.</p>
             </div>
           </div>
           <div className="registro-formulario__campos">
@@ -112,10 +94,7 @@ export default function InicioSesionPaciente() {
           {mensaje && <div className="registro-resultado registro-resultado--error" role="alert"><p>{mensaje}</p></div>}
           <div className="registro-formulario__acciones">
             <button className="boton boton--primario" type="submit" disabled={enviando}>
-              {enviando ? 'Verificando…' : activar ? 'Activar e ingresar' : 'Iniciar sesión'} <ArrowRight size={18} aria-hidden="true" />
-            </button>
-            <button className="boton boton--fantasma" type="button" disabled={enviando} onClick={cambiarModo}>
-              {activar ? 'Ya tengo contraseña' : 'Es mi primer ingreso'}
+              {enviando ? 'Verificando…' : 'Ver mis citas'} <ArrowRight size={18} aria-hidden="true" />
             </button>
           </div>
         </form>

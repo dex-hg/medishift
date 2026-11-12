@@ -2,6 +2,7 @@ package com.dextre.medishift.atencion;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -15,8 +16,11 @@ import com.dextre.medishift.atencion.DatosAtencion.SolicitudCita;
 import com.dextre.medishift.atencion.DatosAtencion.SolicitudPaciente;
 import com.dextre.medishift.catalogos.CatalogoException;
 import com.dextre.medishift.catalogos.ValidadorCatalogos;
+import com.dextre.medishift.sesion.IdentidadPortalPaciente;
 
 public final class ValidadorAtencion {
+    private static final ZoneId ZONA_DNI = ZoneId.of("America/Lima");
+
     private ValidadorAtencion() { }
 
     public static SolicitudPaciente paciente(Map<String, Object> datos) {
@@ -87,6 +91,19 @@ public final class ValidadorAtencion {
             throw new CatalogoException(HttpStatus.BAD_REQUEST, "Revisa el DNI.", Map.of("dni", "Ingresa 8 dígitos."));
         }
         return valor;
+    }
+
+    public static IdentidadPortalPaciente ingresoPaciente(Map<String, Object> datos) {
+        var errores = iniciar(datos, Set.of("dni", "fechaNacimiento"));
+        String documento = texto(datos, "dni", 8, true, errores);
+        String nacimiento = texto(datos, "fechaNacimiento", 10, true, errores);
+        if (!documento.matches("[0-9]{8}")) errores.put("dni", "Ingresa un DNI de 8 dígitos.");
+        LocalDate fecha = convertirFecha(nacimiento, "fechaNacimiento", errores);
+        if (fecha != null && fecha.isAfter(LocalDate.now(ZONA_DNI))) {
+            errores.put("fechaNacimiento", "La fecha de nacimiento no puede ser futura.");
+        }
+        exigir(errores);
+        return new IdentidadPortalPaciente(documento, fecha);
     }
 
     public static String consultaDni(Map<String, Object> datos) {

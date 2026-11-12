@@ -1,22 +1,21 @@
 package com.dextre.medishift.sesion;
 
-import java.util.UUID;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 public final class SesionesHttp {
-    private static final String ATRIBUTO_CUENTA_PORTAL = "medishift.idCuentaPortalPaciente";
+    private static final String ATRIBUTO_IDENTIDAD_PORTAL = "medishift.identidadPortalPaciente";
 
     private SesionesHttp() { }
 
-    public static void abrirPortal(HttpServletRequest solicitud, UUID cuenta) {
-        renovar(solicitud).setAttribute(ATRIBUTO_CUENTA_PORTAL, cuenta);
+    public static void abrirPortal(HttpServletRequest solicitud, IdentidadPortalPaciente identidad) {
+        renovar(solicitud).setAttribute(ATRIBUTO_IDENTIDAD_PORTAL, identidad);
     }
 
-    public static UUID identificarPortal(HttpSession sesion) {
+    public static IdentidadPortalPaciente identificarPortal(HttpSession sesion) {
         try {
-            return sesion != null && sesion.getAttribute(ATRIBUTO_CUENTA_PORTAL) instanceof UUID cuenta ? cuenta : null;
+            return sesion != null && sesion.getAttribute(ATRIBUTO_IDENTIDAD_PORTAL) instanceof IdentidadPortalPaciente identidad
+                    ? identidad : null;
         } catch (IllegalStateException fallo) {
             return null;
         }
