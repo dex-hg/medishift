@@ -15,12 +15,14 @@ import com.dextre.medishift.catalogos.DatosCatalogos.Profesional;
 public class RepositorioProfesionales {
 
 	private static final String CONSULTA = """
-			SELECT p.*, COALESCE((SELECT s.name_specialty FROM professional_specialty ps
-			    JOIN specialty s ON s.id_specialty = ps.id_specialty
-			    WHERE ps.id_professional = p.id_professional
-			    ORDER BY ps.is_primary_professional_specialty DESC, lower(s.name_specialty), s.id_specialty
-			    LIMIT 1), '') AS especialidad
-			FROM professional p WHERE p.id_institution = ?
+			SELECT p.*, etiquetas.* FROM professional p
+			LEFT JOIN LATERAL (
+			    SELECT array_agg(s.id_specialty ORDER BY ps.is_primary_professional_specialty DESC,lower(s.name_specialty),s.id_specialty) AS ids_etiquetas,
+			           array_agg(s.name_specialty ORDER BY ps.is_primary_professional_specialty DESC,lower(s.name_specialty),s.id_specialty) AS nombres_etiquetas
+			    FROM professional_specialty ps JOIN specialty s USING (id_specialty)
+			    WHERE ps.id_professional=p.id_professional AND ps.activo AND s.activa
+				    AND (s.id_institution IS NULL OR s.id_institution=p.id_institution)
+			) etiquetas ON true WHERE p.id_institution=?
 			""";
 	private final JdbcTemplate consultas;
 
@@ -98,8 +100,24 @@ public class RepositorioProfesionales {
 		consultas.update("""
 				INSERT INTO professional_specialty (id_professional, id_specialty, is_primary_professional_specialty)
 				SELECT id_professional, ?, true FROM professional WHERE id_institution = ? AND id_professional = ?
-				ON CONFLICT (id_professional, id_specialty) DO UPDATE SET is_primary_professional_specialty = true
+				ON CONFLICT (id_professional, id_specialty) DO UPDATE SET is_primary_professional_specialty=true,activo=true
 				""", especialidad, institucion, identificador);
+	}
+
+	public void guardarEtiquetas(UUID institucion, UUID profesional, List<UUID> etiquetas) {
+		consultas.update("""
+				UPDATE professional_specialty ps SET activo=false,is_primary_professional_specialty=false
+				FROM professional p WHERE ps.id_professional=p.id_professional
+				AND p.id_institution=? AND p.id_professional=? AND ps.activo
+				""", institucion, profesional);
+		if (etiquetas.isEmpty()) return;
+		UUID principal = etiquetas.getFirst();
+		consultas.batchUpdate("""
+				INSERT INTO professional_specialty(id_professional,id_specialty,is_primary_professional_specialty,activo)
+				SELECT p.id_professional,?,?,true FROM professional p WHERE p.id_institution=? AND p.id_professional=?
+				ON CONFLICT (id_professional,id_specialty) DO UPDATE
+				    SET activo=true,is_primary_professional_specialty=EXCLUDED.is_primary_professional_specialty
+				""", etiquetas.stream().map(id -> new Object[] { id, id.equals(principal), institucion, profesional }).toList());
 	}
 
 	public void eliminar(UUID institucion, UUID identificador) {
@@ -125,12 +143,13 @@ public class RepositorioProfesionales {
 
 	private Profesional leer(ResultSet fila) throws SQLException {
 		String telefono = fila.getString("phone_professional");
+		var etiquetas = RepositorioEspecialidades.leerReferencias(fila);
 		return new Profesional(fila.getObject("id_professional", UUID.class),
 				fila.getString("first_name_professional"), fila.getString("last_name_professional"),
 				fila.getString("license_number_professional"), fila.getString("email_professional"),
 				telefono == null ? "" : telefono, fila.getString("category_professional"),
 				"active".equals(fila.getString("status_professional")) ? "Activo" : "Inactivo",
-				fila.getString("especialidad"));
+				etiquetas.isEmpty() ? "" : etiquetas.getFirst().nombre(), etiquetas);
 	}
 
 	private String traducirEstado(String estado) {

@@ -6,6 +6,8 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public final class DatosProgramacion {
 
 	private DatosProgramacion() { }
@@ -25,7 +27,10 @@ public final class DatosProgramacion {
 	public record TurnoVista(UUID id, UUID idProfesional, String profesional, UUID idConsultorio,
 			String consultorio, UUID idEspecialidad, String especialidad, LocalDate fecha,
 			String horaInicio, String horaFin, String estado, String observacion, String revision,
-			String zonaHoraria) { }
+			String zonaHoraria) {
+		@JsonProperty("idEtiqueta") public UUID idEtiqueta() { return idEspecialidad; }
+		@JsonProperty("etiqueta") public String etiqueta() { return especialidad; }
+	}
 
 	public record SemanaVista(LocalDate fechaInicio, LocalDate fechaFin, String zonaHoraria,
 			UUID idHorario, int version, String estado, String revision, List<TurnoVista> turnos,
@@ -34,10 +39,14 @@ public final class DatosProgramacion {
 	public record EspecialidadRecurso(UUID id, String nombre) { }
 
 	public record ProfesionalRecurso(UUID id, String nombre, String colegiatura, String estado,
-			List<EspecialidadRecurso> especialidades) { }
+			List<EspecialidadRecurso> especialidades) {
+		@JsonProperty("etiquetas") public List<EspecialidadRecurso> etiquetas() { return especialidades; }
+	}
 
 	public record ConsultorioRecurso(UUID id, String codigo, String nombre, String estado,
-			boolean usoGeneral, List<EspecialidadRecurso> especialidades) { }
+			boolean usoGeneral, List<EspecialidadRecurso> especialidades, UUID idArea) {
+		@JsonProperty("etiquetas") public List<EspecialidadRecurso> etiquetas() { return especialidades; }
+	}
 
 	public record Recursos(String zonaHoraria, List<ProfesionalRecurso> profesionales,
 			List<ConsultorioRecurso> consultorios) { }

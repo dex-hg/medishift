@@ -57,11 +57,6 @@ public class ReglasProgramacion {
 		}
 	}
 
-	/** Protege turnos futuros después de actualizar catálogos; una excepción revierte toda la edición. */
-	public void validarCatalogosFuturos(UUID institucion) {
-		for (Turno turno : horarios.futuros(institucion, null)) { recursos.validar(institucion, turno); }
-	}
-
 	private void validarIntervalo(Turno turno, ZoneId zona) {
 		LocalDate fecha = turno.inicio().atZone(zona).toLocalDate();
 		LocalTime inicio = turno.inicio().atZone(zona).toLocalTime();

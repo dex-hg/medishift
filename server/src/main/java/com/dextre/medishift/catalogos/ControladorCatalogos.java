@@ -15,12 +15,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dextre.medishift.catalogos.DatosCatalogos.Consultorio;
 import com.dextre.medishift.catalogos.DatosCatalogos.Especialidad;
+import com.dextre.medishift.catalogos.DatosCatalogos.Etiqueta;
 import com.dextre.medishift.catalogos.DatosCatalogos.Profesional;
+import com.dextre.medishift.programacion.RevisionesProgramacion;
 
 @RestController
 @RequestMapping(value = "/api", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -48,16 +51,26 @@ public class ControladorCatalogos {
 	public ResponseEntity<Profesional> crearProfesional(@RequestBody Map<String, Object> datos,
 			HttpServletRequest solicitud) {
 		UUID institucion = acceso.obtenerInstitucion(solicitud);
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(servicio.crearProfesional(institucion, ValidadorCatalogos.validarProfesional(datos)));
+		Profesional formulario = ValidadorCatalogos.validarProfesional(datos);
+		Profesional creado = datos.containsKey("idsEtiquetas")
+				? servicio.guardarProfesional(institucion, acceso.obtenerCuenta(solicitud), null, formulario,
+						ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")), null)
+				: servicio.crearProfesional(institucion, formulario);
+		return ResponseEntity.status(HttpStatus.CREATED).body(creado);
 	}
 
 	@PutMapping(value = "/profesionales/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public Profesional actualizarProfesional(@PathVariable String id, @RequestBody Map<String, Object> datos,
+			@RequestHeader(value = "If-Match", required = false) String revision,
 			HttpServletRequest solicitud) {
 		UUID institucion = acceso.obtenerInstitucion(solicitud);
-		return servicio.actualizarProfesional(institucion, ValidadorCatalogos.validarId(id),
-				ValidadorCatalogos.validarProfesional(datos));
+		UUID profesional = ValidadorCatalogos.validarId(id);
+		Profesional formulario = ValidadorCatalogos.validarProfesional(datos);
+		if (datos.containsKey("idsEtiquetas")) {
+			return servicio.guardarProfesional(institucion, acceso.obtenerCuenta(solicitud), profesional, formulario,
+					ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")), RevisionesProgramacion.leerCondicion(revision));
+		}
+		return servicio.actualizarProfesional(institucion, profesional, formulario);
 	}
 
 	@DeleteMapping("/profesionales/{id}")
@@ -80,16 +93,26 @@ public class ControladorCatalogos {
 	public ResponseEntity<Consultorio> crearConsultorio(@RequestBody Map<String, Object> datos,
 			HttpServletRequest solicitud) {
 		UUID institucion = acceso.obtenerInstitucion(solicitud);
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(servicio.crearConsultorio(institucion, ValidadorCatalogos.validarConsultorio(datos)));
+		Consultorio formulario = ValidadorCatalogos.validarConsultorio(datos);
+		Consultorio creado = datos.containsKey("idsEtiquetas")
+				? servicio.guardarConsultorio(institucion, acceso.obtenerCuenta(solicitud), null, formulario,
+						ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")), null)
+				: servicio.crearConsultorio(institucion, formulario);
+		return ResponseEntity.status(HttpStatus.CREATED).body(creado);
 	}
 
 	@PutMapping(value = "/consultorios/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public Consultorio actualizarConsultorio(@PathVariable String id, @RequestBody Map<String, Object> datos,
+			@RequestHeader(value = "If-Match", required = false) String revision,
 			HttpServletRequest solicitud) {
 		UUID institucion = acceso.obtenerInstitucion(solicitud);
-		return servicio.actualizarConsultorio(institucion, ValidadorCatalogos.validarId(id),
-				ValidadorCatalogos.validarConsultorio(datos));
+		UUID consultorio = ValidadorCatalogos.validarId(id);
+		Consultorio formulario = ValidadorCatalogos.validarConsultorio(datos);
+		if (datos.containsKey("idsEtiquetas")) {
+			return servicio.guardarConsultorio(institucion, acceso.obtenerCuenta(solicitud), consultorio, formulario,
+					ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")), RevisionesProgramacion.leerCondicion(revision));
+		}
+		return servicio.actualizarConsultorio(institucion, consultorio, formulario);
 	}
 
 	@DeleteMapping("/consultorios/{id}")
@@ -108,6 +131,27 @@ public class ControladorCatalogos {
 		UUID institucion = acceso.obtenerInstitucion(solicitud);
 		return ResponseEntity.status(HttpStatus.CREATED).body(servicio.crearEspecialidad(institucion,
 				ValidadorCatalogos.validarEspecialidad(datos)));
+	}
+
+	@GetMapping("/etiquetas")
+	public List<Etiqueta> listarEtiquetas(HttpServletRequest solicitud) {
+		return servicio.listarEtiquetas(acceso.obtenerInstitucion(solicitud));
+	}
+
+	@PostMapping(value = "/etiquetas", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Etiqueta> crearEtiqueta(@RequestBody Map<String, Object> datos, HttpServletRequest solicitud) {
+		Etiqueta etiqueta = servicio.crearEtiqueta(acceso.obtenerInstitucion(solicitud), acceso.obtenerCuenta(solicitud),
+				ValidadorCatalogos.validarEspecialidad(datos));
+		return ResponseEntity.status(HttpStatus.CREATED).eTag(etiqueta.revision()).body(etiqueta);
+	}
+
+	@PutMapping(value = "/etiquetas/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Etiqueta> actualizarEtiqueta(@PathVariable String id, @RequestBody Map<String, Object> datos,
+			@RequestHeader(value = "If-Match", required = false) String revision, HttpServletRequest solicitud) {
+		Etiqueta etiqueta = servicio.actualizarEtiqueta(acceso.obtenerInstitucion(solicitud), acceso.obtenerCuenta(solicitud),
+				ValidadorCatalogos.validarId(id), RevisionesProgramacion.leerCondicion(revision),
+				ValidadorCatalogos.validarCambioEtiqueta(datos));
+		return ResponseEntity.ok().eTag(etiqueta.revision()).body(etiqueta);
 	}
 
 }

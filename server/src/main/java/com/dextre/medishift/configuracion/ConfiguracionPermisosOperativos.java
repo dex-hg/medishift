@@ -31,6 +31,7 @@ public class ConfiguracionPermisosOperativos implements WebMvcConfigurer {
 				return true;
 			}
 		}).addPathPatterns("/api/horarios", "/api/horarios/**", "/api/profesionales", "/api/profesionales/**",
-				"/api/configuracion", "/api/consultorios", "/api/consultorios/**", "/api/especialidades", "/api/especialidades/**");
+				"/api/configuracion", "/api/consultorios", "/api/consultorios/**", "/api/especialidades", "/api/especialidades/**",
+				"/api/etiquetas", "/api/etiquetas/**");
 	}
 }
