@@ -4,7 +4,7 @@ Aplicación web para organizar los turnos médicos y las citas de una instituci�
 
 ## Funciones
 
-- Gestión de profesionales, especialidades, áreas y consultorios.
+- Profesionales con varias etiquetas y programación por áreas, subáreas y consultorios.
 - Calendario mensual con aprobación, reapertura e historial de versiones.
 - Autoprogramación médica habilitada por el administrador y control de cruces y carga horaria.
 - Registro de pacientes con consulta de DNI en ApisPerú y ficha administrativa.
@@ -44,6 +44,6 @@ Abrir [localhost:5173](http://localhost:5173). Vite dirige las solicitudes `/api
 
 Desde `server`, ejecutar `.\mvnw.cmd verify`. Desde `client`, ejecutar `pnpm test` y `pnpm build`.
 
-Consulta la [documentación del backend](server/README.md), el [flujo de pacientes y citas](server/README.md#pacientes-y-citas) y los [datos de demostración](db/README-demostracion.md).
+Consulta la [documentación del backend](server/README.md) y los [datos de demostración](db/README-demostracion.md#clínicas-con-horarios-y-citas).
 
 Licencia [MIT](LICENSE).
