@@ -1,6 +1,7 @@
 package com.dextre.medishift.programacion.mensual;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -19,13 +20,33 @@ public final class ValidadorPlanificador {
 	private ValidadorPlanificador() { }
 
 	public static SolicitudArea areaNueva(Map<String, Object> datos) {
-		comprobarCampos(datos, Set.of("codigo", "nombre", "idEspecialidad"));
-		UUID especialidad = ValidadorPlanesMensuales.identificador(datos.get("idEspecialidad"), "idEspecialidad");
+		comprobarCampos(datos, Set.of("codigo", "nombre", "idEspecialidad", "idsEtiquetas", "idAreaPadre"));
+		if (datos.containsKey("idEspecialidad") && datos.containsKey("idsEtiquetas")) {
+			throw invalido(Map.of("idsEtiquetas", "Envía las etiquetas como lista de identificadores."));
+		}
+		List<UUID> etiquetas = datos.containsKey("idsEtiquetas") ? ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas"))
+				: List.of(ValidadorPlanesMensuales.identificador(datos.get("idEspecialidad"), "idEspecialidad"));
 		Map<String, String> errores = new LinkedHashMap<>();
 		String codigo = texto(datos, "codigo", 32, true, errores);
 		String nombre = texto(datos, "nombre", 140, true, errores);
 		if (!errores.isEmpty()) { throw invalido(errores); }
-		return new SolicitudArea(codigo, nombre, especialidad);
+		return new SolicitudArea(codigo, nombre, padre(datos), etiquetas, "Activo");
+	}
+
+	public static SolicitudArea actualizarArea(Map<String, Object> datos) {
+		comprobarCampos(datos, Set.of("nombre", "idsEtiquetas", "idAreaPadre", "estado"));
+		Map<String, String> errores = new LinkedHashMap<>();
+		String nombre = texto(datos, "nombre", 140, true, errores);
+		String estado = texto(datos, "estado", 16, true, errores);
+		if (!Set.of("Activo", "Inactivo").contains(estado)) errores.put("estado", "Selecciona un estado válido.");
+		if (!datos.containsKey("idAreaPadre")) errores.put("idAreaPadre", "Indica el área padre o envía null.");
+		if (!errores.isEmpty()) throw invalido(errores);
+		return new SolicitudArea(null, nombre, padre(datos), ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")), estado);
+	}
+
+	private static UUID padre(Map<String, Object> datos) {
+		Object padre = datos.get("idAreaPadre");
+		return padre == null ? null : ValidadorPlanesMensuales.identificador(padre, "idAreaPadre");
 	}
 
 	public static UUID especialidadArea(Map<String, Object> datos) {
@@ -64,14 +85,15 @@ public final class ValidadorPlanificador {
 	}
 
 	public static SolicitudConsultorio consultorio(Map<String, Object> datos) {
-		comprobarCampos(datos, Set.of("idArea", "codigo", "nombre", "ubicacion"));
+		comprobarCampos(datos, Set.of("idArea", "codigo", "nombre", "ubicacion", "idsEtiquetas"));
 		UUID area = ValidadorPlanesMensuales.identificador(datos.get("idArea"), "idArea");
 		Map<String, String> errores = new LinkedHashMap<>();
 		String codigo = texto(datos, "codigo", 20, true, errores);
 		String nombre = texto(datos, "nombre", 100, true, errores);
 		String ubicacion = texto(datos, "ubicacion", 100, true, errores);
 		if (!errores.isEmpty()) { throw invalido(errores); }
-		return new SolicitudConsultorio(area, codigo, nombre, ubicacion);
+		return new SolicitudConsultorio(area, codigo, nombre, ubicacion, datos.containsKey("idsEtiquetas")
+				? ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")) : List.of());
 	}
 
 	private static void comprobarCampos(Map<String, Object> datos, Set<String> permitidos) {

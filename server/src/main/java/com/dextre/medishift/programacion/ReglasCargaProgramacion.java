@@ -105,7 +105,7 @@ public class ReglasCargaProgramacion {
 						.map(Turno::profesional).distinct().count();
 				if (cantidad < requisito.cantidad()) {
 					throw CatalogoException.conflicto("cobertura", "El horario no cubre la cantidad requerida de profesionales"
-							+ " para una especialidad durante todo su intervalo.");
+							+ " para una etiqueta durante todo su intervalo.");
 				}
 			}
 		}

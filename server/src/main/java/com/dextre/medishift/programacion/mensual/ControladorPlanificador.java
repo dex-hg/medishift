@@ -75,6 +75,15 @@ public class ControladorPlanificador {
 				ValidadorPlanificador.especialidadArea(datos));
 	}
 
+	@PutMapping(value = "/areas/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Area> actualizarArea(@PathVariable String id, @RequestBody Map<String, Object> datos,
+			@RequestHeader(value = "If-Match", required = false) String revision, HttpServletRequest solicitud) {
+		Contexto contexto = autorizar(solicitud);
+		Area area = servicio.actualizarArea(contexto.institucion(), contexto.actor(), ValidadorPlanesMensuales.identificador(id, "id"),
+				RevisionesProgramacion.leerCondicion(revision), ValidadorPlanificador.actualizarArea(datos));
+		return ResponseEntity.ok().eTag(area.revision()).body(area);
+	}
+
 	@PostMapping(value = "/consultorios", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<ConsultorioArea> crearConsultorio(@RequestBody Map<String, Object> datos, HttpServletRequest solicitud) {
 		Contexto contexto = autorizar(solicitud);

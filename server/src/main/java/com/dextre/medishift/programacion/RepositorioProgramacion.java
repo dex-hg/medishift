@@ -30,7 +30,8 @@ public class RepositorioProgramacion {
 			""".formatted(FILTRO_SEMANAL);
 	private static final String CONSULTA_TURNOS = """
 			SELECT t.*, p.first_name_professional || ' ' || p.last_name_professional AS profesional,
-			       r.code_room || ' · ' || r.name_room AS consultorio, e.name_specialty AS especialidad
+			       r.code_room || ' · ' || r.name_room AS consultorio,
+			       COALESCE(to_jsonb(t)->>'nombre_etiqueta',e.name_specialty) AS especialidad
 			FROM shift t JOIN professional p ON p.id_professional = t.id_professional
 			JOIN room r ON r.id_room = t.id_room JOIN specialty e ON e.id_specialty = t.id_specialty
 			WHERE t.id_institution = ?

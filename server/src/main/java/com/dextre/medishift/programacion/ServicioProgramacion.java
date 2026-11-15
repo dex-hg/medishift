@@ -87,6 +87,7 @@ public class ServicioProgramacion {
 		propuestos.removeIf(turno -> turno.id().equals(identificador));
 		propuestos.add(nuevo);
 		reglas.validar(institucion, horario, propuestos, false);
+		if (!actual.especialidad().equals(nuevo.especialidad())) citas.exigirRetiroPermitido(institucion, identificador);
 		citas.exigirCambioPermitido(institucion, identificador, nuevo.profesional(), nuevo.consultorio(), nuevo.inicio(), nuevo.fin());
 		horarios.actualizarTurno(institucion, nuevo);
 		return buscarTurno(institucion, identificador);

@@ -33,7 +33,15 @@ public class RepositorioAprobacionMensual {
     }
 
     public List<VersionArchivada> historial(UUID institucion, UUID plan) {
-        return consultas.query("SELECT version,archivado_en,id_actor,contenido::text FROM historial_plan_mensual WHERE id_institucion=? AND id_plan=? ORDER BY version DESC",
+        return consultas.query("""
+                SELECT version,archivado_en,id_actor,jsonb_set(contenido,'{turnos}',COALESCE((
+                    SELECT jsonb_agg(CASE WHEN jsonb_exists(turno,'nombre_etiqueta') THEN turno ELSE
+                        turno || jsonb_build_object('nombre_etiqueta',e.name_specialty) END ORDER BY orden)
+                    FROM jsonb_array_elements(contenido->'turnos') WITH ORDINALITY AS archivo(turno,orden)
+                    LEFT JOIN specialty e ON e.id_specialty=(turno->>'id_specialty')::uuid
+                ),'[]'::jsonb))::text AS contenido
+                FROM historial_plan_mensual WHERE id_institucion=? AND id_plan=? ORDER BY version DESC
+                """,
                 (fila, numero) -> new VersionArchivada(fila.getInt("version"), fila.getTimestamp("archivado_en").toInstant(),
                         fila.getObject("id_actor", UUID.class), fila.getString("contenido")), institucion, plan);
     }

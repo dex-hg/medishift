@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,11 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dextre.medishift.acceso.ServicioAccesoMensual;
 import com.dextre.medishift.feriados.ServicioFeriados;
 import com.dextre.medishift.catalogos.CatalogoException;
+import com.dextre.medishift.catalogos.DatosCatalogos.Etiqueta;
+import com.dextre.medishift.catalogos.RepositorioConsultorios;
 import com.dextre.medishift.catalogos.RepositorioEspecialidades;
 import com.dextre.medishift.programacion.DatosProgramacion.Turno;
 import com.dextre.medishift.programacion.ReglasCargaProgramacion;
 import com.dextre.medishift.programacion.RepositorioProgramacion;
 import com.dextre.medishift.programacion.RepositorioRecursosProgramacion;
+import com.dextre.medishift.programacion.RepositorioRecursosProgramacion.Alcance;
 import com.dextre.medishift.programacion.RepositorioRestriccionesProgramacion;
 import com.dextre.medishift.programacion.RevisionesProgramacion;
 import com.dextre.medishift.programacion.TiempoProgramacion;
@@ -40,6 +44,8 @@ public class ServicioPlanificador {
 	private final ServicioAccesoMensual acceso;
 	private final RepositorioPlanesMensuales planes;
 	private final RepositorioPlanificador calendario;
+	private final RepositorioAreasPlanificacion unidades;
+	private final RepositorioConsultorios consultorios;
 	private final RepositorioProgramacion horarios;
 	private final RepositorioRecursosProgramacion recursos;
 	private final RepositorioRestriccionesProgramacion restricciones;
@@ -49,13 +55,16 @@ public class ServicioPlanificador {
 	private final com.dextre.medishift.atencion.RepositorioProteccionCitas citas;
 
 	public ServicioPlanificador(ServicioAccesoMensual acceso, RepositorioPlanesMensuales planes,
-			RepositorioPlanificador calendario, RepositorioProgramacion horarios, RepositorioRecursosProgramacion recursos,
+			RepositorioPlanificador calendario, RepositorioAreasPlanificacion unidades, RepositorioConsultorios consultorios,
+			RepositorioProgramacion horarios, RepositorioRecursosProgramacion recursos,
 			RepositorioRestriccionesProgramacion restricciones, RepositorioEspecialidades exclusiones,
 			ReglasCargaProgramacion carga, ServicioFeriados feriados,
 			com.dextre.medishift.atencion.RepositorioProteccionCitas citas) {
 		this.acceso = acceso;
 		this.planes = planes;
 		this.calendario = calendario;
+		this.unidades = unidades;
+		this.consultorios = consultorios;
 		this.horarios = horarios;
 		this.recursos = recursos;
 		this.restricciones = restricciones;
@@ -71,16 +80,16 @@ public class ServicioPlanificador {
 		planes.verificarEsquema();
 		calendario.verificarEsquema();
 		ZoneId zona = horarios.zona(institucion);
-		List<Area> areas = calendario.areas(institucion);
+		List<Area> areas = unidades.listar(institucion);
 		List<PlanMensual> cabeceras = areas.stream().flatMap(area -> planes.planes(institucion, area.id(), periodo).stream()).toList();
 		return new CalendarioMensual(zona.getId(), areas, calendario.consultorios(institucion),
-				recursos.listar(institucion).profesionales().stream()
+				recursos.profesionales(institucion).stream()
 						.filter(persona -> permisos.esAdministrador() || persona.id().equals(permisos.idProfesional())).toList(), cabeceras,
 				calendario.turnos(institucion, periodo).stream()
 						.filter(registro -> permisos.esAdministrador() || registro.turno().profesional().equals(permisos.idProfesional()))
 						.map(registro -> vista(registro, zona)).toList(),
-				exclusiones.listar(institucion).stream().map(especialidad -> new com.dextre.medishift.programacion.DatosProgramacion.EspecialidadRecurso(
-						especialidad.id(), especialidad.nombre())).toList(), feriados.consultar(institucion, zona.getId(), periodo),
+				exclusiones.listarEtiquetas(institucion).stream().filter(Etiqueta::activa).toList(),
+				feriados.consultar(institucion, zona.getId(), periodo),
 				carga.politica(institucion), permisos, calendario.ocupaciones(institucion,
 						periodo.inicio().atStartOfDay(zona).toInstant(), periodo.inicio().plusMonths(1).atStartOfDay(zona).toInstant()));
 	}
@@ -88,43 +97,73 @@ public class ServicioPlanificador {
 	@Transactional
 	public Area crearArea(UUID institucion, UUID actor, SolicitudArea solicitud) {
 		preparar(institucion, actor, true);
-		exclusiones.buscar(institucion, solicitud.idEspecialidad());
+		exclusiones.exigirActivas(institucion, solicitud.idsEtiquetas());
 		var unidad = planes.crearUnidad(institucion, new SolicitudUnidad(solicitud.codigo(), solicitud.nombre(), "Servicio"));
-		calendario.configurarArea(institucion, unidad.id(), solicitud.idEspecialidad());
-		planes.registrarCreacion(institucion, actor, unidad.id(), true);
-		return calendario.buscarArea(institucion, unidad.id());
+		unidades.guardar(institucion, unidad.id(), solicitud);
+		unidades.auditar(institucion, actor, unidad.id(), null);
+		return unidades.buscar(institucion, unidad.id());
 	}
 
 	@Transactional
 	public Area configurarArea(UUID institucion, UUID actor, UUID identificador, UUID especialidad) {
 		preparar(institucion, actor, true);
-		validarArea(institucion, identificador);
+		Area anterior = validarArea(institucion, identificador);
+		if (anterior.etiquetas().size() > 1) {
+			throw CatalogoException.conflicto("idEspecialidad", "Edita el conjunto de etiquetas desde la configuración del área.");
+		}
 		exclusiones.buscar(institucion, especialidad);
-		String antes = calendario.capturaArea(institucion, identificador);
-		calendario.configurarArea(institucion, identificador, especialidad);
-		calendario.auditarArea(institucion, actor, identificador, antes);
-		return calendario.buscarArea(institucion, identificador);
+		return guardarArea(institucion, actor, anterior,
+				new SolicitudArea(null, anterior.nombre(), anterior.idAreaPadre(), List.of(especialidad), anterior.estado()),
+				"idEspecialidad");
+	}
+
+	@Transactional
+	public Area actualizarArea(UUID institucion, UUID actor, UUID identificador, String revision, SolicitudArea solicitud) {
+		preparar(institucion, actor, true);
+		Area anterior = unidades.buscar(institucion, identificador);
+		RevisionesProgramacion.comprobar(revision, anterior.revision());
+		exclusiones.exigirActivas(institucion, solicitud.idsEtiquetas());
+		return guardarArea(institucion, actor, anterior, solicitud, "idsEtiquetas");
+	}
+
+	private Area guardarArea(UUID institucion, UUID actor, Area anterior, SolicitudArea solicitud, String campo) {
+		UUID area = anterior.id();
+		String antes = unidades.captura(institucion, area);
+		unidades.guardar(institucion, area, solicitud);
+		if (!new HashSet<>(anterior.idsEtiquetas()).equals(new HashSet<>(solicitud.idsEtiquetas()))
+				|| !anterior.estado().equals(solicitud.estado())) {
+			recursos.exigirTurnosCompatibles(institucion, Alcance.AREA, area,
+					anterior.estado().equals(solicitud.estado()) ? campo : "estado");
+			if (!solicitud.idsEtiquetas().isEmpty()) recursos.exigirConsultoriosDelAreaCompatibles(institucion, area, campo);
+		}
+		unidades.auditar(institucion, actor, area, antes);
+		return unidades.buscar(institucion, area);
 	}
 
 	@Transactional
 	public ConsultorioArea crearConsultorio(UUID institucion, UUID actor, SolicitudConsultorio solicitud) {
 		preparar(institucion, actor, true);
-		validarArea(institucion, solicitud.idArea());
-		exigirEspecialidadArea(institucion, solicitud.idArea());
-		ConsultorioArea consultorio = calendario.crearConsultorio(institucion, solicitud);
-		calendario.auditar(institucion, actor, consultorio.id(), true, "create", null,
-				calendario.captura(institucion, consultorio.id(), true));
-		return consultorio;
+		Area area = exigirEtiquetasArea(institucion, solicitud.idArea());
+		exclusiones.exigirActivas(institucion, solicitud.idsEtiquetas());
+		if (!area.idsEtiquetas().containsAll(solicitud.idsEtiquetas())) {
+			throw CatalogoException.conflicto("idsEtiquetas", "Selecciona etiquetas admitidas por esta unidad.");
+		}
+		UUID consultorio = calendario.crearConsultorio(institucion, solicitud);
+		consultorios.guardarEtiquetas(institucion, consultorio, solicitud.idsEtiquetas());
+		calendario.auditar(institucion, actor, consultorio, true, "create", null,
+				calendario.captura(institucion, consultorio, true));
+		return calendario.buscarConsultorio(institucion, consultorio);
 	}
 
 	@Transactional
 	public ConsultorioArea vincularConsultorio(UUID institucion, UUID actor, UUID identificador, UUID area) {
 		preparar(institucion, actor, true);
-		validarArea(institucion, area);
-		exigirEspecialidadArea(institucion, area);
+		exigirEtiquetasArea(institucion, area);
 		calendario.buscarConsultorio(institucion, identificador);
 		String antes = calendario.captura(institucion, identificador, true);
 		calendario.vincularConsultorio(institucion, identificador, area);
+		recursos.exigirTurnosCompatibles(institucion, Alcance.CONSULTORIO, identificador, "idConsultorio");
+		recursos.exigirConsultorioCompatible(institucion, identificador, "idConsultorio");
 		calendario.auditar(institucion, actor, identificador, true, "update", antes,
 				calendario.captura(institucion, identificador, true));
 		return calendario.buscarConsultorio(institucion, identificador);
@@ -156,6 +195,7 @@ public class ServicioPlanificador {
 		Turno nuevo = construir(identificador, destino.id(), solicitud, zona);
 		validar(institucion, solicitud.idArea(), nuevo, zona);
 		String antes = calendario.captura(institucion, identificador, false);
+		if (!actual.turno().especialidad().equals(nuevo.especialidad())) citas.exigirRetiroPermitido(institucion, identificador);
 		citas.exigirCambioPermitido(institucion, identificador, nuevo.profesional(), nuevo.consultorio(), nuevo.inicio(), nuevo.fin());
 		calendario.actualizar(institucion, nuevo);
 		calendario.auditar(institucion, actor, identificador, false, "update", antes,
@@ -193,10 +233,12 @@ public class ServicioPlanificador {
 		calendario.verificarEsquema();
 	}
 
-	private void validarArea(UUID institucion, UUID area) {
-		if (!"Activo".equals(planes.buscarUnidad(institucion, area).estado())) {
+	private Area validarArea(UUID institucion, UUID area) {
+		Area unidad = unidades.buscar(institucion, area);
+		if (!"Activo".equals(unidad.estado())) {
 			throw CatalogoException.conflicto("idArea", "El área está inactiva. Selecciona otra área.");
 		}
+		return unidad;
 	}
 
 	private PlanMensual borrador(UUID institucion, UUID actor, UUID area, LocalDate fecha) {
@@ -231,11 +273,7 @@ public class ServicioPlanificador {
 				TiempoProgramacion.resolver(turno.fecha(), turno.horaFin(), zona), "draft", turno.observacion(), "", "", "");
 	}
 
-	private void validar(UUID institucion, UUID area, Turno turno, ZoneId zona) {
-		validar(institucion, area, turno, zona, true);
-	}
-
-	/** La reaprobación también valida los turnos históricos sin exigir que vuelvan a ser futuros. */
+	/** La reaprobación conserva las asignaciones ejecutadas y vuelve a validar las pendientes. */
 	void validarAprobacion(UUID institucion, PlanMensual plan) {
 		validarArea(institucion, plan.idUnidad());
 		var registros = calendario.turnos(institucion, new PeriodoMensual(plan.fechaInicio().getYear(), plan.fechaInicio().getMonthValue()))
@@ -243,22 +281,26 @@ public class ServicioPlanificador {
 				.filter(registro -> !List.of("cancelled", "superseded").contains(registro.turno().estado())).toList();
 		if (registros.isEmpty()) throw CatalogoException.conflicto("turnos", "Añade al menos un turno antes de aprobar el mes.");
 		ZoneId zona = horarios.zona(institucion);
-		for (var registro : registros) validar(institucion, plan.idUnidad(), registro.turno(), zona, false);
+		Instant ahora = Instant.now();
+		for (var registro : registros) {
+			if (registro.turno().fin().isAfter(ahora)) validarAsignacion(institucion, plan.idUnidad(), registro.turno(), zona);
+		}
 		carga.validarCobertura(registros.stream().map(RegistroTurno::turno).toList(), horarios.requisitos(plan.id()));
 	}
 
-	private void validar(UUID institucion, UUID area, Turno turno, ZoneId zona, boolean exigirFuturo) {
-		Area seleccionada = exigirEspecialidadArea(institucion, area);
-		if (!seleccionada.idEspecialidad().equals(turno.especialidad())) {
-			throw CatalogoException.conflicto("idEspecialidad", "Esta área solo admite " + seleccionada.especialidad() + ". Selecciona un profesional de esa especialidad.");
-		}
-		recursos.validar(institucion, turno);
-		if (!area.equals(calendario.buscarConsultorio(institucion, turno.consultorio()).idArea())) {
-			throw CatalogoException.conflicto("idConsultorio", "El consultorio debe pertenecer al área seleccionada.");
-		}
-		if (exigirFuturo && !turno.inicio().isAfter(Instant.now())) {
+	private void validar(UUID institucion, UUID area, Turno turno, ZoneId zona) {
+		if (!turno.inicio().isAfter(Instant.now())) {
 			throw CatalogoException.conflicto("fecha", "Selecciona un turno que todavía no haya comenzado.");
 		}
+		validarAsignacion(institucion, area, turno, zona);
+	}
+
+	private void validarAsignacion(UUID institucion, UUID area, Turno turno, ZoneId zona) {
+		Area seleccionada = exigirEtiquetasArea(institucion, area);
+		if (!seleccionada.idsEtiquetas().contains(turno.especialidad())) {
+			throw CatalogoException.conflicto("idEspecialidad", "El área o subárea no admite esa etiqueta.");
+		}
+		recursos.validar(institucion, turno, area);
 		if (restricciones.tieneAusenciaAprobada(turno.profesional(), turno.inicio(), turno.fin())) {
 			throw CatalogoException.conflicto("idProfesional", "El profesional tiene un permiso aprobado durante ese horario.");
 		}
@@ -283,10 +325,10 @@ public class ServicioPlanificador {
 		carga.validarHoras(institucion, List.of(turno), vecinos, lunes, zona);
 	}
 
-	private Area exigirEspecialidadArea(UUID institucion, UUID identificador) {
-		Area area = calendario.buscarArea(institucion, identificador);
-		if (area.idEspecialidad() == null) {
-			throw CatalogoException.conflicto("idArea", "Configura la especialidad del área antes de asignar turnos o consultorios.");
+	private Area exigirEtiquetasArea(UUID institucion, UUID identificador) {
+		Area area = validarArea(institucion, identificador);
+		if (area.etiquetas().isEmpty()) {
+			throw CatalogoException.conflicto("idArea", "Configura al menos una etiqueta para esta área o subárea.");
 		}
 		return area;
 	}

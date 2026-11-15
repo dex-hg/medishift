@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,7 +18,7 @@ import com.dextre.medishift.programacion.DatosProgramacion.SolicitudTurno;
 
 public final class ValidadorProgramacion {
 
-	private static final Set<String> CAMPOS_TURNO = Set.of("idProfesional", "idConsultorio", "idEspecialidad",
+	private static final Set<String> CAMPOS_TURNO = Set.of("idProfesional", "idConsultorio", "idEspecialidad", "idEtiqueta",
 			"fecha", "horaInicio", "horaFin", "observacion");
 	private static final Set<String> CAMPOS_SEMANA = Set.of("fechaInicio", "idHorario", "revision");
 
@@ -27,7 +28,12 @@ public final class ValidadorProgramacion {
 		Map<String, String> errores = iniciar(solicitud, CAMPOS_TURNO);
 		UUID profesional = identificador(solicitud, "idProfesional", errores);
 		UUID consultorio = identificador(solicitud, "idConsultorio", errores);
-		UUID especialidad = identificador(solicitud, "idEspecialidad", errores);
+		boolean usaEtiqueta = solicitud.containsKey("idEtiqueta");
+		UUID especialidad = identificador(solicitud, usaEtiqueta ? "idEtiqueta" : "idEspecialidad", errores);
+		if (usaEtiqueta && solicitud.containsKey("idEspecialidad")
+				&& !Objects.equals(especialidad, identificador(solicitud, "idEspecialidad", errores))) {
+			errores.put("idEtiqueta", "Usa el mismo identificador en ambos campos.");
+		}
 		LocalDate fecha = fecha(solicitud, "fecha", errores);
 		LocalTime inicio = hora(solicitud, "horaInicio", errores);
 		LocalTime fin = hora(solicitud, "horaFin", errores);

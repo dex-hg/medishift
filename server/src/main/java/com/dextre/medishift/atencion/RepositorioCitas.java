@@ -34,7 +34,8 @@ public class RepositorioCitas {
             """;
     private static final String TURNOS = """
             SELECT t.*, p.first_name_professional || ' ' || p.last_name_professional AS profesional,
-            r.code_room || ' · ' || r.name_room AS consultorio,e.name_specialty AS especialidad
+            r.code_room || ' · ' || r.name_room AS consultorio,
+            COALESCE(to_jsonb(t)->>'nombre_etiqueta',e.name_specialty) AS especialidad
             FROM shift t JOIN schedule h ON h.id_institution=t.id_institution AND h.id_schedule=t.id_schedule
             JOIN professional p ON p.id_institution=t.id_institution AND p.id_professional=t.id_professional
             JOIN room r ON r.id_institution=t.id_institution AND r.id_room=t.id_room
