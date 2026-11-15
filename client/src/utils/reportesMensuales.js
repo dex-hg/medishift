@@ -1,4 +1,4 @@
-import { diasDelMes, nombreMes } from './calendarioMensual.js';
+import { diasDelMes, nombreMes, nombreUnidad } from './calendarioMensual.js';
 import { duracionTurno, fechaValida, horaValida, UUID } from './validacionesProgramacion.js';
 import { minutosComputables } from './asistencia.js';
 import { buscarFeriado, crearAbonosFeriados, validarFeriados } from './feriados.js';
@@ -95,7 +95,7 @@ export function construirReporteMensual(datos, { periodo, alcance, idConsultorio
     throw new Error(alcance === 'profesional' ? 'Selecciona el profesional que deseas exportar.' : 'Selecciona un consultorio para exportar.');
   }
   const personas = new Map(datos.profesionales.map((registro) => [registro.id, registro]));
-  const areas = new Map(datos.areas.map((registro) => [registro.id, registro.nombre]));
+  const areas = new Map(datos.areas.map((registro) => [registro.id, nombreUnidad(registro, datos.areas)]));
   const salas = new Map(datos.consultorios.map((registro) => [registro.id, registro]));
   const turnos = datos.turnos.filter((turno) => ESTADOS_OPERATIVOS.includes(turno.estado)
     && (!profesional || turno.idProfesional === profesional.id) && (!consultorio || turno.idConsultorio === consultorio.id))

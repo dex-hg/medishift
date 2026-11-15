@@ -100,8 +100,8 @@ export function crearPdfMensual(reporte) {
     documento.setFontSize(11);
     documento.text('Detalle de turnos', MARGEN, inicio);
     const columnas = reporte.profesional
-      ? ['Fecha y día', 'Inicio', 'Fin', 'Duración', 'Área', 'Consultorio', 'Especialidad', 'Estado', 'Observación']
-      : ['Fecha y día', 'Profesional / colegiatura', 'Inicio', 'Fin', 'Duración', 'Área / consultorio', 'Especialidad', 'Estado', 'Observación'];
+      ? ['Fecha y día', 'Inicio', 'Fin', 'Duración', 'Área', 'Consultorio', 'Etiqueta', 'Estado', 'Observación']
+      : ['Fecha y día', 'Profesional / colegiatura', 'Inicio', 'Fin', 'Duración', 'Área / consultorio', 'Etiqueta', 'Estado', 'Observación'];
     const cuerpo = reporte.turnos.map((turno) => {
       const fecha = `${turno.fecha}\n${nombreDia(turno.fecha)}`;
       const estado = `${turno.estado}\n${turno.asistencia}${turno.esFeriado ? '\nFeriado' : ''}`;

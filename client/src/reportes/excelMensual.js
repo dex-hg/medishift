@@ -87,7 +87,7 @@ function crearMatriz(libro, reporte) {
 
 function crearDetalle(libro, reporte) {
   const hoja = prepararHoja(libro, 'Detalle de turnos', reporte, [13, 13, 30, 17, 11, 11, 13, 23, 30, 25, 16, 38, 16, 32]);
-  hoja.getRow(8).values = ['Fecha', 'Día', 'Profesional', 'Colegiatura', 'Inicio', 'Fin', 'Horas', 'Área', 'Consultorio', 'Especialidad', 'Estado', 'Observación', 'Asistencia', 'Feriado no laborable'];
+  hoja.getRow(8).values = ['Fecha', 'Día', 'Profesional', 'Colegiatura', 'Inicio', 'Fin', 'Horas', 'Área', 'Consultorio', 'Etiqueta de atención', 'Estado', 'Observación', 'Asistencia', 'Feriado no laborable'];
   hoja.getRow(8).height = 30;
   for (let indice = 0; indice < reporte.turnos.length; indice += 1) {
     const turno = reporte.turnos[indice];
