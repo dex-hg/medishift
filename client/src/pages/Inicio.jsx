@@ -13,7 +13,7 @@ function Inicio() {
 
   const { profesionales, consultorios, semana } = resumen;
   const accesos = [
-    { titulo: 'Profesionales', descripcion: 'Datos laborales, especialidad y estado del personal.',
+    { titulo: 'Profesionales', descripcion: 'Datos laborales, etiquetas y estado del personal.',
       cantidad: profesionales.length, destino: '/profesionales', icono: UsersRound, color: 'turquesa' },
     { titulo: 'Consultorios', descripcion: 'Ambientes registrados para la atención.',
       cantidad: consultorios.length, destino: '/consultorios', icono: Building2, color: 'azul' },

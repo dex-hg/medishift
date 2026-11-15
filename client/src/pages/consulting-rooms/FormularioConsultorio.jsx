@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { ArrowLeft, Building2, Settings2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
-import SelectorEspecialidad from '../../components/SelectorEspecialidad';
+import SelectorEtiquetas from '../../components/SelectorEtiquetas';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import FormularioBase from '../../components/FormularioBase';
 import { AvisoCatalogo } from '../../components/AvisoCatalogo';
@@ -11,13 +11,13 @@ import { actualizarConsultorio, crearConsultorio, obtenerConsultorio } from '../
 import { LIMITES_CONSULTORIO } from '../../utils/validacionesCatalogos';
 
 const DATOS_INICIALES = Object.freeze({
-  codigo: '', nombre: '', ubicacion: '', especialidad: '', estado: 'Activo',
+  codigo: '', nombre: '', ubicacion: '', idsEtiquetas: [], estado: 'Activo',
 });
 
 function FormularioConsultorio({ modo }) {
   const { id } = useParams();
   const identificador = useId();
-  const [creandoEspecialidad, setCreandoEspecialidad] = useState(false);
+  const [creandoEtiqueta, cambiarCreandoEtiqueta] = useState(false);
   const formulario = useFormularioCatalogo({
     modo, id, iniciales: DATOS_INICIALES, obtener: obtenerConsultorio,
     crear: crearConsultorio, actualizar: actualizarConsultorio,
@@ -44,7 +44,8 @@ function FormularioConsultorio({ modo }) {
           </Link></div>
         </section>
       ) : (
-        <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando || creandoEspecialidad}
+        <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando || creandoEtiqueta}
+          bloquearGuardado={formulario.cargandoEtiquetas || Boolean(formulario.errorEtiquetas)}
           error={formulario.error} errores={formulario.errores}
           accionesSecundarias={<Link className="boton boton--fantasma" to="/consultorios"
             onClick={formulario.evitarSalida} aria-disabled={formulario.guardando || undefined}>
@@ -65,10 +66,11 @@ function FormularioConsultorio({ modo }) {
               <CampoFormulario etiqueta="Piso o zona" requerido error={formulario.errores.ubicacion}>
                 <input {...campo('ubicacion')} type="text" placeholder="Ubicación del consultorio" required />
               </CampoFormulario>
-              <SelectorEspecialidad etiqueta="Uso principal" requerido={false} permitirGeneral value={formulario.datos.especialidad}
-                onChange={formulario.actualizarCampo} especialidades={formulario.especialidades} error={formulario.errores.especialidad}
-                disabled={formulario.guardando} alOcupar={setCreandoEspecialidad}
-                ayuda="El uso general admite las especialidades autorizadas por el área. Puedes restringirlo a una especialidad." />
+              <SelectorEtiquetas etiqueta="Restringir a estas etiquetas" opciones={formulario.etiquetas}
+                valor={formulario.datos.idsEtiquetas} cambiar={formulario.cambiarEtiquetas} error={formulario.errores.idsEtiquetas}
+                deshabilitado={formulario.cargandoEtiquetas || Boolean(formulario.errorEtiquetas)}
+                permitirAlta ancho alOcupar={cambiarCreandoEtiqueta}
+                ayuda="Si dejas la lista vacía y guardas, el consultorio será de uso general y admitirá las etiquetas de su área." />
             </div>
           </section>
           <section className="seccion-formulario">
@@ -81,7 +83,7 @@ function FormularioConsultorio({ modo }) {
               </CampoFormulario>
             </div>
           </section>
-          <AvisoCatalogo error={formulario.errorEspecialidades} reintentar={formulario.reintentarEspecialidades} />
+          <AvisoCatalogo error={formulario.errorEtiquetas} reintentar={formulario.reintentarEtiquetas} />
         </FormularioBase>
       )}
     </>

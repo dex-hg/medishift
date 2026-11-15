@@ -35,7 +35,7 @@ const gruposNavegacion = [
     titulo: 'Datos operativos',
     enlaces: [
       { destino: '/profesionales', etiqueta: 'Profesionales', icono: UsersRound },
-      { destino: '/especialidades', etiqueta: 'Especialidades', icono: Tags },
+      { destino: '/etiquetas', etiqueta: 'Etiquetas', icono: Tags },
       { destino: '/consultorios', etiqueta: 'Consultorios', icono: Building2 },
     ],
   },

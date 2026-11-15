@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { ArrowLeft, BriefcaseMedical, ContactRound } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
-import SelectorEspecialidad from '../../components/SelectorEspecialidad';
+import SelectorEtiquetas from '../../components/SelectorEtiquetas';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import FormularioBase from '../../components/FormularioBase';
 import { AvisoCatalogo } from '../../components/AvisoCatalogo';
@@ -12,13 +12,13 @@ import { LIMITES_PROFESIONAL } from '../../utils/validacionesCatalogos';
 
 const DATOS_INICIALES = Object.freeze({
   nombres: '', apellidos: '', colegiatura: '', correo: '', telefono: '',
-  categoria: '', estado: 'Activo', especialidad: '',
+  categoria: '', estado: 'Activo', idsEtiquetas: [],
 });
 
 function FormularioProfesional({ modo }) {
   const { id } = useParams();
   const identificador = useId();
-  const [creandoEspecialidad, setCreandoEspecialidad] = useState(false);
+  const [creandoEtiqueta, cambiarCreandoEtiqueta] = useState(false);
   const formulario = useFormularioCatalogo({
     modo, id, iniciales: DATOS_INICIALES, obtener: obtenerProfesional,
     crear: crearProfesional, actualizar: actualizarProfesional,
@@ -45,7 +45,8 @@ function FormularioProfesional({ modo }) {
           </Link></div>
         </section>
       ) : (
-        <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando || creandoEspecialidad}
+        <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando || creandoEtiqueta}
+          bloquearGuardado={formulario.cargandoEtiquetas || Boolean(formulario.errorEtiquetas)}
           error={formulario.error} errores={formulario.errores}
           accionesSecundarias={<Link className="boton boton--fantasma" to="/profesionales"
             onClick={formulario.evitarSalida} aria-disabled={formulario.guardando || undefined}>
@@ -73,26 +74,26 @@ function FormularioProfesional({ modo }) {
           </section>
           <section className="seccion-formulario">
             <div className="seccion-formulario__titulo"><BriefcaseMedical size={19} aria-hidden="true" /><div>
-              <h2>Datos laborales</h2><p>Identificación laboral y especialidad del profesional.</p>
+              <h2>Datos laborales</h2><p>Identificación y etiquetas que habilitan al profesional para recibir turnos.</p>
             </div></div>
             <div className="rejilla-formulario">
               <CampoFormulario etiqueta="Colegiatura" requerido ayuda="Ingresa el código de su colegio profesional."
                 error={formulario.errores.colegiatura}>
                 <input {...campo('colegiatura')} type="text" placeholder="Código de colegiatura" required />
               </CampoFormulario>
-              <SelectorEspecialidad value={formulario.datos.especialidad} onChange={formulario.actualizarCampo}
-                especialidades={formulario.especialidades} error={formulario.errores.especialidad}
-                disabled={formulario.guardando} alOcupar={setCreandoEspecialidad}
-                ayuda="Elige su especialidad. Si todavía no existe, créala aquí." />
               <CampoFormulario etiqueta="Categoría profesional" requerido error={formulario.errores.categoria}>
                 <input {...campo('categoria')} type="text" placeholder="Categoría del profesional" required />
               </CampoFormulario>
               <CampoFormulario etiqueta="Estado" requerido error={formulario.errores.estado}>
                 <select {...campo('estado')} required><option>Activo</option><option>Inactivo</option></select>
               </CampoFormulario>
+              <SelectorEtiquetas opciones={formulario.etiquetas} valor={formulario.datos.idsEtiquetas}
+                cambiar={formulario.cambiarEtiquetas} error={formulario.errores.idsEtiquetas}
+                deshabilitado={formulario.cargandoEtiquetas || Boolean(formulario.errorEtiquetas)} permitirAlta ancho
+                alOcupar={cambiarCreandoEtiqueta} ayuda="Elige todas las competencias del profesional. Puedes completarlas después." />
             </div>
           </section>
-          <AvisoCatalogo error={formulario.errorEspecialidades} reintentar={formulario.reintentarEspecialidades} />
+          <AvisoCatalogo error={formulario.errorEtiquetas} reintentar={formulario.reintentarEtiquetas} />
         </FormularioBase>
       )}
     </>

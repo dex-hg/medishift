@@ -15,7 +15,8 @@ function Consultorios() {
     const termino = busqueda.trim().toLocaleLowerCase('es');
     return listado.registros.filter((consultorio) => {
       const coincideTexto = [consultorio.codigo, consultorio.nombre, consultorio.ubicacion,
-        consultorio.especialidad || 'Uso general'].some((valor) => valor.toLocaleLowerCase('es').includes(termino));
+        ...(consultorio.usoGeneral ? ['Uso general'] : consultorio.etiquetas.map((etiqueta) => etiqueta.nombre))]
+        .some((valor) => valor.toLocaleLowerCase('es').includes(termino));
       return coincideTexto && (estado === 'Todos' || consultorio.estado === estado);
     });
   }, [listado.registros, busqueda, estado]);
@@ -32,7 +33,7 @@ function Consultorios() {
           <label className="buscador"><Search size={17} aria-hidden="true" />
             <span className="solo-lectores">Buscar consultorios</span>
             <input type="search" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)}
-              placeholder="Código, nombre, ubicación o especialidad" />
+              placeholder="Código, nombre, ubicación o etiqueta" />
           </label>
           <label className="selector-filtro"><span>Estado</span>
             <select value={estado} onChange={(evento) => setEstado(evento.target.value)}>
@@ -48,13 +49,15 @@ function Consultorios() {
           eliminando={listado.eliminando} confirmar={listado.confirmarEliminacion} cancelar={listado.cancelarEliminacion} />}
         {!listado.cargando && !listado.error && (consultoriosFiltrados.length ? (
           <div className="tabla-responsive"><table>
-            <thead><tr><th>Consultorio</th><th>Ubicación</th><th>Uso principal</th><th>Estado</th>
+            <thead><tr><th>Consultorio</th><th>Ubicación</th><th>Etiquetas admitidas</th><th>Estado</th>
               <th><span className="solo-lectores">Acciones</span></th></tr></thead>
             <tbody>{consultoriosFiltrados.map((consultorio) => <tr key={consultorio.id}>
               <td><div className="identidad"><span className="avatar avatar--edificio" aria-hidden="true"><Building2 size={18} /></span>
                 <span><strong>{consultorio.codigo}</strong><small>{consultorio.nombre}</small></span></div></td>
               <td><span className="dato-con-icono"><MapPin size={15} aria-hidden="true" /> {consultorio.ubicacion}</span></td>
-              <td>{consultorio.especialidad || 'Uso general'}</td><td><Estado valor={consultorio.estado} /></td>
+              <td>{consultorio.usoGeneral ? 'Uso general' : consultorio.etiquetas.length
+                ? <ul className="etiquetas-elegidas">{consultorio.etiquetas.map((etiqueta) => <li key={etiqueta.id}>{etiqueta.nombre}</li>)}</ul>
+                : 'Sin etiquetas activas'}</td><td><Estado valor={consultorio.estado} /></td>
               <td><div className="acciones-tabla">
                 <Link className="boton-icono" to={`/consultorios/${consultorio.id}/editar`}
                   aria-label={`Editar consultorio ${consultorio.codigo}`} aria-disabled={listado.eliminando || undefined}

@@ -1,3 +1,5 @@
+import { UUID } from './validacionesProgramacion.js';
+
 export const LIMITES_PROFESIONAL = Object.freeze({
   nombres: 80, apellidos: 100, colegiatura: 32, correo: 254,
   telefono: 20, categoria: 40, especialidad: 100,
@@ -26,19 +28,30 @@ export function normalizarProfesional(datos) {
   const normalizados = normalizarDatos(datos, CAMPOS_PROFESIONAL);
   normalizados.correo = normalizados.correo.toLowerCase();
   normalizados.colegiatura = normalizados.colegiatura.toUpperCase();
-  return normalizados;
+  return incluirEtiquetas(normalizados, datos);
 }
 
 export function normalizarConsultorio(datos) {
   const normalizados = normalizarDatos(datos, CAMPOS_CONSULTORIO);
   normalizados.codigo = normalizados.codigo.toUpperCase();
-  return normalizados;
+  return incluirEtiquetas(normalizados, datos);
+}
+
+function incluirEtiquetas(normalizados, datos) {
+  if (datos?.idsEtiquetas === undefined) return normalizados;
+  const { especialidad: anterior, ...resto } = normalizados;
+  return { ...resto, idsEtiquetas: datos.idsEtiquetas };
+}
+
+export function idsEtiquetasValidos(ids) {
+  return Array.isArray(ids) && ids.every((id) => typeof id === 'string' && UUID.test(id))
+    && new Set(ids.map((id) => id.toLowerCase())).size === ids.length;
 }
 
 function validarDatos(datos, limites, opcionales, originales) {
   const errores = {};
   for (const [campo, limite] of Object.entries(limites)) {
-    const valor = datos[campo];
+    const valor = datos[campo] ?? '';
     const original = originales?.[campo];
     if (original !== undefined && typeof original !== 'string') {
       errores[campo] = 'Este campo debe contener texto.';
@@ -63,7 +76,9 @@ function validarDatos(datos, limites, opcionales, originales) {
 
 export function validarProfesional(datos) {
   const normalizados = normalizarProfesional(datos);
-  const errores = validarDatos(normalizados, LIMITES_PROFESIONAL, ['telefono'], datos);
+  const usaEtiquetas = datos?.idsEtiquetas !== undefined;
+  const errores = validarDatos(normalizados, LIMITES_PROFESIONAL, usaEtiquetas ? ['telefono', 'especialidad'] : ['telefono'], datos);
+  if (usaEtiquetas && !idsEtiquetasValidos(normalizados.idsEtiquetas)) errores.idsEtiquetas = 'Selecciona etiquetas válidas.';
   const formatoCorreo = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
   if (normalizados.correo && !errores.correo && !formatoCorreo.test(normalizados.correo)) {
     errores.correo = 'Ingresa un correo válido.';
@@ -77,7 +92,9 @@ export function validarProfesional(datos) {
 }
 
 export function validarConsultorio(datos) {
-  return validarDatos(normalizarConsultorio(datos), LIMITES_CONSULTORIO, ['especialidad'], datos);
+  const errores = validarDatos(normalizarConsultorio(datos), LIMITES_CONSULTORIO, ['especialidad'], datos);
+  if (datos?.idsEtiquetas !== undefined && !idsEtiquetasValidos(datos.idsEtiquetas)) errores.idsEtiquetas = 'Selecciona etiquetas válidas.';
+  return errores;
 }
 
 export function normalizarEspecialidad(datos) {

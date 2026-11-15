@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { obtenerEspecialidades } from '../services/catalogos';
+import { obtenerEtiquetas } from '../services/catalogos';
 
 function useErroresCatalogo() {
   const navegar = useNavigate();
@@ -87,10 +87,11 @@ export function useFormularioCatalogo({ modo, id, iniciales, obtener, crear, act
   const [error, setError] = useState('');
   const [errores, setErrores] = useState({});
   const [guardando, setGuardando] = useState(false);
-  const [especialidades, setEspecialidades] = useState([]);
-  const [errorEspecialidades, setErrorEspecialidades] = useState('');
+  const [etiquetas, setEtiquetas] = useState([]);
+  const [cargandoEtiquetas, setCargandoEtiquetas] = useState(true);
+  const [errorEtiquetas, setErrorEtiquetas] = useState('');
   const [intento, setIntento] = useState(0);
-  const [intentoEspecialidades, setIntentoEspecialidades] = useState(0);
+  const [intentoEtiquetas, setIntentoEtiquetas] = useState(0);
   const bloqueo = useRef(false);
   const controladorGuardado = useRef(null);
   const vigente = useRef(true);
@@ -110,7 +111,7 @@ export function useFormularioCatalogo({ modo, id, iniciales, obtener, crear, act
     if (modo !== 'editar') { setCargando(false); return () => controlador.abort(); }
     setCargando(true);
     obtener(id, { senal: controlador.signal }).then((registro) => {
-      if (!controlador.signal.aborted) setDatos(registro);
+      if (!controlador.signal.aborted) setDatos({ ...registro, idsEtiquetas: registro.etiquetas?.map((etiqueta) => etiqueta.id) || [] });
     }).catch((fallo) => {
       if (controlador.signal.aborted || manejarSesion(fallo)) return;
       setNoEncontrado(fallo.estado === 404);
@@ -123,16 +124,17 @@ export function useFormularioCatalogo({ modo, id, iniciales, obtener, crear, act
 
   useEffect(() => {
     const controlador = new AbortController();
-    setErrorEspecialidades('');
-    obtenerEspecialidades({ senal: controlador.signal }).then((registros) => {
-      if (!controlador.signal.aborted) setEspecialidades(registros);
+    setErrorEtiquetas('');
+    setCargandoEtiquetas(true);
+    obtenerEtiquetas({ senal: controlador.signal }).then((registros) => {
+      if (!controlador.signal.aborted) setEtiquetas(registros.filter((etiqueta) => etiqueta.activa));
     }).catch((fallo) => {
       if (!controlador.signal.aborted && !manejarSesion(fallo)) {
-        setErrorEspecialidades('No se pudo cargar el catálogo de especialidades. Reintenta para poder seleccionarlas.');
+        setErrorEtiquetas(fallo.message || 'No se pudo cargar el catálogo de etiquetas.');
       }
-    });
+    }).finally(() => { if (!controlador.signal.aborted) setCargandoEtiquetas(false); });
     return () => controlador.abort();
-  }, [intentoEspecialidades, manejarSesion]);
+  }, [intentoEtiquetas, manejarSesion]);
 
   const actualizarCampo = (evento) => {
     if (bloqueo.current) return;
@@ -152,7 +154,7 @@ export function useFormularioCatalogo({ modo, id, iniciales, obtener, crear, act
     setErrores({});
     let confirmado = false;
     try {
-      if (modo === 'editar') await actualizar(id, datos, { senal: controlador.signal });
+      if (modo === 'editar') await actualizar(id, datos, { senal: controlador.signal, revision: datos.revision });
       else await crear(datos, { senal: controlador.signal });
       confirmado = true;
       if (vigente.current) navegar(destino, { replace: true, state: {
@@ -170,10 +172,11 @@ export function useFormularioCatalogo({ modo, id, iniciales, obtener, crear, act
   };
 
   return {
-    datos, cargando, errorCarga, noEncontrado, error, errores, guardando, especialidades,
-    errorEspecialidades, actualizarCampo, guardar,
+    datos, cargando, errorCarga, noEncontrado, error, errores, guardando, etiquetas, cargandoEtiquetas,
+    errorEtiquetas, actualizarCampo, guardar,
+    cambiarEtiquetas: (valor) => actualizarCampo({ target: { name: 'idsEtiquetas', value: valor } }),
     reintentar: () => setIntento((valor) => valor + 1),
-    reintentarEspecialidades: () => setIntentoEspecialidades((valor) => valor + 1),
+    reintentarEtiquetas: () => setIntentoEtiquetas((valor) => valor + 1),
     evitarSalida: (evento) => { if (bloqueo.current) evento.preventDefault(); },
   };
 }

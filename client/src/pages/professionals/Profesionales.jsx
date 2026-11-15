@@ -18,7 +18,7 @@ function Profesionales() {
     return listado.registros.filter((profesional) => {
       const coincideTexto = [profesional.nombres, profesional.apellidos,
         `${profesional.nombres} ${profesional.apellidos}`, profesional.colegiatura,
-        profesional.especialidad, profesional.categoria, profesional.correo]
+        ...profesional.etiquetas.map((etiqueta) => etiqueta.nombre), profesional.categoria, profesional.correo]
         .some((valor) => valor.toLocaleLowerCase('es').includes(termino));
       return coincideTexto && (estado === 'Todos' || profesional.estado === estado);
     });
@@ -36,7 +36,7 @@ function Profesionales() {
           <label className="buscador"><Search size={17} aria-hidden="true" />
             <span className="solo-lectores">Buscar profesionales</span>
             <input type="search" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)}
-              placeholder="Nombre, colegiatura o especialidad" />
+              placeholder="Nombre, colegiatura o etiqueta" />
           </label>
           <label className="selector-filtro"><span>Estado</span>
             <select value={estado} onChange={(evento) => setEstado(evento.target.value)}>
@@ -52,7 +52,7 @@ function Profesionales() {
           eliminando={listado.eliminando} confirmar={listado.confirmarEliminacion} cancelar={listado.cancelarEliminacion} />}
         {!listado.cargando && !listado.error && (profesionalesFiltrados.length ? (
           <div className="tabla-responsive"><table>
-            <thead><tr><th>Profesional</th><th>Colegiatura</th><th>Especialidad</th><th>Contacto</th><th>Estado</th>
+            <thead><tr><th>Profesional</th><th>Colegiatura</th><th>Etiquetas</th><th>Contacto</th><th>Estado</th>
               <th><span className="solo-lectores">Acciones</span></th></tr></thead>
             <tbody>{profesionalesFiltrados.map((profesional) => {
               const nombreCompleto = `${profesional.nombres} ${profesional.apellidos}`;
@@ -61,7 +61,9 @@ function Profesionales() {
                 <td><div className="identidad"><span className="avatar avatar--turquesa" aria-hidden="true">{iniciales}</span>
                   <span><strong>{nombreCompleto}</strong><small>{profesional.categoria}</small></span>
                 </div></td>
-                <td>{profesional.colegiatura}</td><td>{profesional.especialidad}</td>
+                <td>{profesional.colegiatura}</td><td>{profesional.etiquetas.length
+                  ? <ul className="etiquetas-elegidas">{profesional.etiquetas.map((etiqueta) => <li key={etiqueta.id}>{etiqueta.nombre}</li>)}</ul>
+                  : 'Sin etiquetas'}</td>
                 <td><span className="dato-doble"><span>{profesional.correo}</span>
                   <small>{profesional.telefono || 'Sin teléfono'}</small></span></td>
                 <td><Estado valor={profesional.estado} /></td>
@@ -84,7 +86,7 @@ function Profesionales() {
         ) : (
           <div className="sin-resultados"><UserRoundSearch size={32} aria-hidden="true" />
             <strong>{listado.registros.length ? 'No encontramos coincidencias' : 'Aún no hay profesionales registrados'}</strong>
-            <p>{listado.registros.length ? 'Prueba con otro nombre, colegiatura, especialidad o estado.'
+            <p>{listado.registros.length ? 'Prueba con otro nombre, colegiatura, etiqueta o estado.'
               : 'Registra el primer profesional de tu institución.'}</p>
           </div>
         ))}

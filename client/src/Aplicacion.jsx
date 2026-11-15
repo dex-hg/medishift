@@ -13,7 +13,7 @@ import FormularioTurno from './pages/schedules/FormularioTurno';
 import Profesionales from './pages/professionals/Profesionales';
 import FormularioProfesional from './pages/professionals/FormularioProfesional';
 import Consultorios from './pages/consulting-rooms/Consultorios';
-import Especialidades from './pages/specialties/Especialidades';
+import Etiquetas from './pages/specialties/Etiquetas';
 import FormularioConsultorio from './pages/consulting-rooms/FormularioConsultorio';
 import NoEncontrado from './pages/NoEncontrado';
 import MiPerfil from './pages/account/MiPerfil';
@@ -45,7 +45,8 @@ function Aplicacion() {
         <Route path="horarios/nuevo" element={<FormularioTurno modo="crear" />} />
         <Route path="horarios/:id/editar" element={<FormularioTurno modo="editar" />} />
         <Route path="profesionales" element={<Profesionales />} />
-        <Route path="especialidades" element={<Especialidades />} />
+        <Route path="etiquetas" element={<Etiquetas />} />
+        <Route path="especialidades" element={<Navigate to="/etiquetas" replace />} />
         <Route path="profesionales/nuevo" element={<FormularioProfesional modo="crear" />} />
         <Route path="profesionales/:id/editar" element={<FormularioProfesional modo="editar" />} />
         <Route path="consultorios" element={<Consultorios />} />

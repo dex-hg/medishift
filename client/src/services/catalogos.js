@@ -4,10 +4,12 @@ import {
 } from '../utils/validacionesCatalogos.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const REVISION = /^[a-f0-9]{64}$/;
 const CAMPOS = {
   profesionales: ['id', 'nombres', 'apellidos', 'colegiatura', 'correo', 'telefono', 'categoria', 'estado', 'especialidad'],
   consultorios: ['id', 'codigo', 'nombre', 'ubicacion', 'especialidad', 'estado'],
   especialidades: ['id', 'nombre'],
+  etiquetas: ['id', 'nombre'],
 };
 const MENSAJES = {
   400: 'Revisa los datos ingresados.',
@@ -41,14 +43,28 @@ function validarIdentificador(id) {
 
 function extraerRegistro(contenido, recurso) {
   const campos = CAMPOS[recurso];
-  const opcionales = recurso === 'profesionales' ? ['telefono']
+  const opcionales = recurso === 'profesionales' ? ['telefono', ...(Array.isArray(contenido?.etiquetas) ? ['especialidad'] : [])]
     : recurso === 'consultorios' ? ['especialidad'] : [];
   if (!esObjeto(contenido) || !UUID.test(contenido.id) || !campos.every((campo) =>
     typeof contenido[campo] === 'string' && (opcionales.includes(campo) || contenido[campo].trim()),
-  ) || (recurso !== 'especialidades' && !['Activo', 'Inactivo'].includes(contenido.estado))) {
+  ) || (['profesionales', 'consultorios'].includes(recurso) && !['Activo', 'Inactivo'].includes(contenido.estado))) {
     throw new ErrorCatalogo('El servicio devolvió una respuesta inválida.', { tipo: 'respuesta' });
   }
-  return Object.fromEntries(campos.map((campo) => [campo, contenido[campo]]));
+  const registro = Object.fromEntries(campos.map((campo) => [campo, contenido[campo]]));
+  if (recurso === 'etiquetas') {
+    if (typeof contenido.activa !== 'boolean' || typeof contenido.compartida !== 'boolean' || !REVISION.test(contenido.revision)) {
+      throw new ErrorCatalogo('El servicio devolvió una etiqueta inválida.', { tipo: 'respuesta' });
+    }
+    return { ...registro, activa: contenido.activa, compartida: contenido.compartida, revision: contenido.revision };
+  }
+  if (contenido.etiquetas !== undefined && ['profesionales', 'consultorios'].includes(recurso)) {
+    if (!REVISION.test(contenido.revision) || (recurso === 'consultorios' && typeof contenido.usoGeneral !== 'boolean')) {
+      throw new ErrorCatalogo('El servicio devolvió un catálogo inválido.', { tipo: 'respuesta' });
+    }
+    return { ...registro, etiquetas: extraerContenido(contenido.etiquetas, 'especialidades', true), revision: contenido.revision,
+      ...(recurso === 'consultorios' ? { usoGeneral: contenido.usoGeneral } : {}) };
+  }
+  return registro;
 }
 
 function extraerContenido(contenido, recurso, listado) {
@@ -64,13 +80,16 @@ function extraerContenido(contenido, recurso, listado) {
 }
 
 async function solicitarCatalogo(recurso, metodo, {
-  id, datos, senal, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000,
+  id, datos, revision, senal, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000,
 } = {}) {
   if (typeof ejecutarSolicitud !== 'function' || !Number.isFinite(tiempoEspera) || tiempoEspera <= 0
     || (senal !== undefined && !(senal instanceof AbortSignal))) {
     throw new ErrorCatalogo('No se pudo iniciar la solicitud.', { tipo: 'configuracion' });
   }
   if (id !== undefined) validarIdentificador(id);
+  if (revision !== undefined && !REVISION.test(revision)) {
+    throw new ErrorCatalogo('Recarga el registro antes de editarlo.', { tipo: 'validacion', estado: 409 });
+  }
   const controlador = new AbortController();
   const cancelar = () => controlador.abort();
   let temporizador;
@@ -94,7 +113,8 @@ async function solicitarCatalogo(recurso, metodo, {
       if (controlador.signal.aborted) throw new ErrorCatalogo('La solicitud se canceló.', { tipo: 'cancelado' });
       const respuesta = await ejecutarSolicitud(`/api/${recurso}${id ? `/${id}` : ''}`, {
         method: metodo, credentials: 'same-origin', cache: 'no-store', signal: controlador.signal,
-        headers: { Accept: 'application/json', ...(datos ? { 'Content-Type': 'application/json' } : {}) },
+        headers: { Accept: 'application/json', ...(datos ? { 'Content-Type': 'application/json' } : {}),
+          ...(revision ? { 'If-Match': `"${revision}"` } : {}) },
         ...(datos ? { body: JSON.stringify(datos) } : {}),
       });
       let contenido = null;
@@ -103,7 +123,7 @@ async function solicitarCatalogo(recurso, metodo, {
       }
       const estadoEsperado = metodo === 'POST' ? 201 : metodo === 'DELETE' ? 204 : 200;
       if (respuesta.status !== estadoEsperado) {
-        const errores = esObjeto(contenido?.errores) ? Object.fromEntries(CAMPOS[recurso]
+        const errores = esObjeto(contenido?.errores) ? Object.fromEntries([...CAMPOS[recurso], 'idsEtiquetas', 'activa', 'revision']
           .filter((campo) => campo !== 'id' && typeof contenido.errores[campo] === 'string')
           .map((campo) => [campo, contenido.errores[campo]])) : {};
         const mensaje = respuesta.status === 401 ? MENSAJES[401]
@@ -146,6 +166,24 @@ export function crearEspecialidad(datos, opciones) {
   const errores = validarEspecialidad(datos);
   if (Object.keys(errores).length) return Promise.reject(new ErrorCatalogo('Revisa el nombre de la especialidad.', { errores, tipo: 'validacion' }));
   return solicitarCatalogo('especialidades', 'POST', { ...opciones, datos: normalizarEspecialidad(datos) });
+}
+export const obtenerEtiquetas = (opciones) => solicitarCatalogo('etiquetas', 'GET', opciones);
+
+export function crearEtiqueta(datos, opciones) {
+  return guardarEtiqueta('POST', datos, opciones);
+}
+
+export function actualizarEtiqueta(id, datos, opciones) {
+  return guardarEtiqueta('PUT', datos, { ...opciones, id: id ?? '' });
+}
+
+function guardarEtiqueta(metodo, datos, opciones) {
+  const errores = validarEspecialidad(datos);
+  if (metodo === 'PUT' && typeof datos?.activa !== 'boolean') errores.activa = 'Indica el estado de la etiqueta.';
+  if (Object.keys(errores).length) return Promise.reject(new ErrorCatalogo('Revisa la etiqueta.', { errores, tipo: 'validacion' }));
+  return solicitarCatalogo('etiquetas', metodo, { ...opciones, datos: {
+    ...normalizarEspecialidad(datos), ...(metodo === 'PUT' ? { activa: datos.activa } : {}),
+  } });
 }
 export const obtenerProfesional = (id, opciones) => solicitarCatalogo('profesionales', 'GET', { ...opciones, id: id ?? '' });
 export const obtenerConsultorio = (id, opciones) => solicitarCatalogo('consultorios', 'GET', { ...opciones, id: id ?? '' });
