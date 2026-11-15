@@ -3,12 +3,14 @@ import { periodoValido } from './planesMensuales.js';
 import { fechaValida, horaValida, normalizarTurno, REVISION, UUID, validarTurno } from '../utils/validacionesProgramacion.js';
 import { validarFeriados } from '../utils/feriados.js';
 import { esPolitica } from './configuracion.js';
+import { idsEtiquetasValidos } from '../utils/validacionesCatalogos.js';
 
 const esObjeto = (valor) => valor !== null && typeof valor === 'object' && !Array.isArray(valor);
 const esId = (valor) => typeof valor === 'string' && UUID.test(valor);
 const esTexto = (valor) => typeof valor === 'string' && Boolean(valor.trim());
 const camposError = ['idArea', 'idProfesional', 'idConsultorio', 'idEspecialidad', 'fecha', 'horaInicio',
-  'horaFin', 'observacion', 'revision', 'codigo', 'nombre', 'ubicacion', 'periodo', 'falta', 'estado'];
+  'horaFin', 'observacion', 'revision', 'codigo', 'nombre', 'ubicacion', 'periodo', 'falta', 'estado',
+  'idAreaPadre', 'idsEtiquetas', 'idEtiqueta'];
 
 function respuestaInvalida() {
   throw new ErrorProgramacion('El servicio devolvió un horario mensual inválido. Recarga para volver a intentarlo.', { tipo: 'respuesta' });
@@ -23,7 +25,8 @@ function lista(valor, convertir) {
 
 function especialidad(valor) {
   if (!esObjeto(valor) || !esId(valor.id) || !esTexto(valor.nombre)) respuestaInvalida();
-  return { id: valor.id, nombre: valor.nombre };
+  if (valor.compartida !== undefined && typeof valor.compartida !== 'boolean') respuestaInvalida();
+  return { id: valor.id, nombre: valor.nombre, ...(valor.compartida !== undefined ? { compartida: valor.compartida } : {}) };
 }
 
 function recurso(valor, consultorio = false) {
@@ -31,6 +34,7 @@ function recurso(valor, consultorio = false) {
     || !['Activo', 'Inactivo'].includes(valor.estado)) respuestaInvalida();
   const resultado = { id: valor.id, nombre: valor.nombre, estado: valor.estado,
     especialidades: lista(valor.especialidades, especialidad) };
+  if (valor.etiquetas !== undefined) resultado.etiquetas = lista(valor.etiquetas, especialidad);
   if (consultorio) {
     if (!esTexto(valor.codigo) || typeof valor.usoGeneral !== 'boolean'
       || (valor.idArea !== null && !esId(valor.idArea))
@@ -58,13 +62,7 @@ function extraerCalendario(valor, periodo) {
   if (!esObjeto(valor) || !esTexto(valor.zonaHoraria) || !validarFeriados(valor.feriados, periodo)
     || !esPolitica(valor.politica)) respuestaInvalida();
   try { new Intl.DateTimeFormat('es-PE', { timeZone: valor.zonaHoraria }); } catch { respuestaInvalida(); }
-  const areas = lista(valor.areas, (area) => {
-    if (!esObjeto(area) || !esId(area.id) || !esTexto(area.nombre) || !esTexto(area.codigo)
-      || !['Activo', 'Inactivo'].includes(area.estado) || (area.idEspecialidad !== null && !esId(area.idEspecialidad))
-      || typeof area.especialidad !== 'string' || (area.idEspecialidad !== null && !esTexto(area.especialidad))) respuestaInvalida();
-    return { id: area.id, nombre: area.nombre, codigo: area.codigo, estado: area.estado,
-      idEspecialidad: area.idEspecialidad, especialidad: area.especialidad };
-  });
+  const areas = lista(valor.areas, extraerArea);
   const planes = lista(valor.planes, (plan) => {
     if (!esObjeto(plan) || !esId(plan.id) || !esId(plan.idUnidad) || plan.periodo !== periodo
       || !['Borrador', 'Aprobado', 'Pendiente', 'Cancelado', 'Sustituido'].includes(plan.estado)
@@ -86,9 +84,21 @@ function extraerCalendario(valor, periodo) {
   const turnos = lista(valor.turnos, extraerTurno);
   if (!permisos.esAdministrador && turnos.some((turno) => turno.idProfesional !== permisos.idProfesional)) respuestaInvalida();
   if (turnos.some((turno) => !turno.fecha.startsWith(`${periodo}-`))) respuestaInvalida();
-  return { permisos, ocupaciones, zonaHoraria: valor.zonaHoraria, politica: valor.politica, feriados: valor.feriados, areas, planes, turnos, especialidades: lista(valor.especialidades, especialidad),
+  return { permisos, ocupaciones, zonaHoraria: valor.zonaHoraria, politica: valor.politica, feriados: valor.feriados, areas, planes, turnos,
+    especialidades: lista(valor.etiquetas ?? valor.especialidades, especialidad),
     consultorios: lista(valor.consultorios, (valor) => recurso(valor, true)),
     profesionales: lista(valor.profesionales, (valor) => recurso(valor)) };
+}
+
+function extraerArea(area) {
+  if (!esObjeto(area) || !esId(area.id) || !esTexto(area.nombre) || !esTexto(area.codigo)
+    || !['Activo', 'Inactivo'].includes(area.estado) || (area.idEspecialidad !== null && !esId(area.idEspecialidad))
+    || typeof area.especialidad !== 'string' || (area.idEspecialidad !== null && !esTexto(area.especialidad))) respuestaInvalida();
+  const resultado = { id: area.id, nombre: area.nombre, codigo: area.codigo, estado: area.estado,
+    idEspecialidad: area.idEspecialidad, especialidad: area.especialidad };
+  if (area.etiquetas === undefined) return resultado;
+  if ((area.idAreaPadre !== null && !esId(area.idAreaPadre)) || !REVISION.test(area.revision)) respuestaInvalida();
+  return { ...resultado, idAreaPadre: area.idAreaPadre, revision: area.revision, etiquetas: lista(area.etiquetas, especialidad) };
 }
 
 async function solicitar(ruta, metodo, { datos, revision, senal, estadoEsperado, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000 } = {}) {
@@ -119,6 +129,7 @@ async function solicitar(ruta, metodo, { datos, revision, senal, estadoEsperado,
       if (respuesta.status !== esperado) {
         const errores = esObjeto(contenido?.errores) ? Object.fromEntries(camposError.filter((campo) => esTexto(contenido.errores[campo]))
           .map((campo) => [campo, contenido.errores[campo]])) : {};
+        if (errores.idEtiqueta) errores.idEspecialidad ||= errores.idEtiqueta;
         throw new ErrorProgramacion(respuesta.status === 401 ? 'Tu sesión terminó. Inicia sesión nuevamente.'
           : respuesta.status === 403 ? 'No tienes permiso para este cambio. Comprueba si la autoprogramación sigue habilitada y si el turno es tuyo.'
             : esTexto(contenido?.mensaje) ? contenido.mensaje : 'No se pudo guardar el horario.', { estado: respuesta.status, errores });
@@ -150,8 +161,9 @@ export async function guardarTurnoMensual(datos, { id, revision, ...opciones } =
   if (!esId(datos?.idArea)) errores.idArea = 'Selecciona un área válida.';
   if (Object.keys(errores).length) throw new ErrorProgramacion('Revisa los campos del turno.', { errores, tipo: 'validacion' });
   if (id && (!esId(id) || !REVISION.test(revision))) throw new ErrorProgramacion('Recarga el turno antes de modificarlo.', { estado: 409 });
+  const { idEspecialidad: idEtiqueta, ...turno } = normalizarTurno(datos);
   return extraerTurno(await solicitar(`/api/planificador/turnos${id ? `/${id}` : ''}`, id ? 'PUT' : 'POST', {
-    ...opciones, revision, datos: { ...normalizarTurno(datos), idArea: datos.idArea } }));
+    ...opciones, revision, datos: { ...turno, idEtiqueta, idArea: datos.idArea } }));
 }
 
 export function eliminarTurnoMensual(id, { revision, ...opciones } = {}) {
@@ -189,4 +201,15 @@ export function crearAreaEspecializada(datos, opciones) {
 export function configurarEspecialidadArea(id, idEspecialidad, opciones) {
   if (!esId(id) || !esId(idEspecialidad)) return Promise.reject(new ErrorProgramacion('Selecciona un área y una especialidad válidas.'));
   return solicitar(`/api/planificador/areas/${id}/especialidad`, 'PUT', { ...opciones, datos: { idEspecialidad } });
+}
+
+export async function guardarArea(datos, { id, revision, ...opciones } = {}) {
+  if (!idsEtiquetasValidos(datos?.idsEtiquetas) || (datos.idAreaPadre && !esId(datos.idAreaPadre))) {
+    throw new ErrorProgramacion('Selecciona el área padre y las etiquetas del catálogo.');
+  }
+  if (id && (!esId(id) || !REVISION.test(revision))) throw new ErrorProgramacion('Recarga el área antes de editarla.');
+  return extraerArea(await solicitar(`/api/planificador/areas${id ? `/${id}` : ''}`, id ? 'PUT' : 'POST', {
+    ...opciones, revision, datos: { nombre: datos.nombre.trim(), idAreaPadre: datos.idAreaPadre || null,
+      idsEtiquetas: datos.idsEtiquetas, ...(id ? { estado: datos.estado } : { codigo: datos.codigo.trim() }) },
+  }));
 }

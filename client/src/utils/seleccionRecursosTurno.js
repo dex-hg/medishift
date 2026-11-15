@@ -1,14 +1,25 @@
-/** Opciones dependientes del formulario, sin alterar las validaciones del servidor. */
+export function etiquetasDelRecurso(recurso) {
+  return recurso?.etiquetas ?? recurso?.especialidades ?? [];
+}
+
+export function consultorioAdmiteEtiqueta(consultorio, idEtiqueta) {
+  if (!consultorio || !idEtiqueta) return false;
+  if (consultorio.idArea && !consultorio.etiquetas && 'idEspecialidadArea' in consultorio
+    && consultorio.idEspecialidadArea !== idEtiqueta) return false;
+  return consultorio.usoGeneral || etiquetasDelRecurso(consultorio).some((etiqueta) => etiqueta.id === idEtiqueta);
+}
+
+/** Opciones del formulario antes de validar la asignación en el servidor. */
 export function especialidadesProfesional(recursos, idProfesional) {
   const profesional = recursos?.profesionales?.find((registro) => registro.id === idProfesional
     && registro.estado === 'Activo');
-  return profesional?.especialidades || [];
+  return etiquetasDelRecurso(profesional);
 }
 
 export function consultoriosCompatibles(recursos, idEspecialidad) {
   if (!idEspecialidad) return [];
   return (recursos?.consultorios || []).filter((consultorio) => consultorio.estado === 'Activo'
-    && (consultorio.usoGeneral || consultorio.especialidades.some((especialidad) => especialidad.id === idEspecialidad)));
+    && consultorioAdmiteEtiqueta(consultorio, idEspecialidad));
 }
 
 function conservarConsultorio(recursos, idEspecialidad, idConsultorio) {

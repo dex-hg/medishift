@@ -1,3 +1,5 @@
+import { consultorioAdmiteEtiqueta, etiquetasDelRecurso } from './seleccionRecursosTurno.js';
+
 export const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 export const LIMITES_JORNADA = Object.freeze({ diarios: 360, semanales: 2160 });
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -88,13 +90,14 @@ export function validarTurno(datos, { recursos, turnos = [], idActual, aplicarLi
     const consultorio = recursos.consultorios.find((registro) => registro.id === normalizados.idConsultorio && registro.estado === 'Activo');
     if (!profesional) errores.idProfesional = 'Selecciona un profesional activo.';
     if (!consultorio) errores.idConsultorio = 'Selecciona un consultorio activo.';
-    if (profesional && !profesional.especialidades.some((registro) => registro.id === normalizados.idEspecialidad)) {
-      errores.idEspecialidad = 'Selecciona una especialidad del profesional.';
+    if (profesional && !etiquetasDelRecurso(profesional).some((registro) => registro.id === normalizados.idEspecialidad)) {
+      errores.idEspecialidad = 'Selecciona una etiqueta del profesional.';
     }
-    if (consultorio && !consultorio.usoGeneral && !consultorio.especialidades.some((registro) => registro.id === normalizados.idEspecialidad)) {
-      errores.idConsultorio = 'El consultorio no admite la especialidad seleccionada.';
+    if (consultorio && !consultorioAdmiteEtiqueta(consultorio, normalizados.idEspecialidad)) {
+      errores.idConsultorio = 'El consultorio no admite la etiqueta seleccionada.';
     }
-    if (consultorio?.idArea && consultorio.idEspecialidadArea !== normalizados.idEspecialidad) {
+    if (consultorio?.idArea && !consultorio.etiquetas && 'idEspecialidadArea' in consultorio
+      && consultorio.idEspecialidadArea !== normalizados.idEspecialidad) {
       errores.idEspecialidad = consultorio.idEspecialidadArea ? 'La especialidad no corresponde al área del consultorio.'
         : 'Configura la especialidad del área antes de asignar turnos.';
     }

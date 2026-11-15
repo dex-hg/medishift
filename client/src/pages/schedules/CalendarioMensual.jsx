@@ -1,11 +1,11 @@
 import { CalendarDays, GripVertical, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { celdasDelMes, leerArrastre, TIPO_ARRASTRE } from '../../utils/calendarioMensual';
+import { celdasDelMes, etiquetasDelArea, leerArrastre, TIPO_ARRASTRE } from '../../utils/calendarioMensual';
 import { DIAS_SEMANA, mostrarFecha } from '../../utils/validacionesProgramacion';
 import { buscarFeriado } from '../../utils/feriados';
 import { reservasDelDia } from '../../utils/autoprogramacion';
 
-export default function CalendarioMensual({ periodo, consultorio, area, turnos, ocupaciones = [], zonaHoraria, feriados, hoy, seleccionado, asignar, editar, soltar, ocupado, editable }) {
+export default function CalendarioMensual({ periodo, consultorio, area, nombreArea, turnos, ocupaciones = [], zonaHoraria, feriados, hoy, seleccionado, asignar, editar, soltar, ocupado, editable }) {
   const [destino, setDestino] = useState('');
   const recibir = (evento, fecha) => {
     evento.preventDefault();
@@ -16,12 +16,12 @@ export default function CalendarioMensual({ periodo, consultorio, area, turnos, 
   };
   return <section className="panel calendario-mensual" aria-label="Calendario mensual">
     <div className="calendario-mensual__titulo"><div><span className="planificador-paso">3</span><div>
-      <h2>{consultorio ? consultorio.nombre : 'Tu horario mensual'}</h2><p>{area ? `${area.nombre} · ${consultorio.codigo}${area.especialidad ? ` · ${area.especialidad}` : ''}` : 'Selecciona un consultorio en las carpetas de la izquierda'}</p>
+      <h2>{consultorio?.nombre || nombreArea || 'Calendario mensual'}</h2>
+      {area && <p>{consultorio && `${nombreArea} · ${consultorio.codigo} · `}{etiquetasDelArea(area).map((etiqueta) => etiqueta.nombre).join(', ')}</p>}
     </div></div><span className="calendario-mensual__estado">{editable ? 'Borrador mensual' : 'Solo lectura'}</span></div>
-    {!consultorio ? <div className="planificador-vacio calendario-mensual__inicio"><CalendarDays size={40} /><h3>Un mes completo, un solo lugar</h3>
-      <p>Selecciona un consultorio, elige un profesional y asígnalo al día que necesites.</p></div> : <>
-      <p className="calendario-mensual__instruccion" role="status">{!area?.idEspecialidad ? 'Configura la especialidad de esta área para asignar nuevos turnos.'
-        : !editable ? 'Este consultorio o su plan mensual no admite cambios.'
+    {!area ? <div className="planificador-vacio calendario-mensual__inicio"><CalendarDays size={40} /><p>Selecciona un área, subárea o consultorio.</p></div> : <>
+      <p className="calendario-mensual__instruccion" role="status">{!etiquetasDelArea(area).length ? 'Configura las etiquetas de esta unidad para programar turnos.'
+        : !editable ? 'La unidad o su plan mensual no admite cambios en esta vista.'
         : seleccionado ? 'Profesional seleccionado. Pulsa «Asignar» en un día o arrástralo hasta allí.'
           : 'Arrastra un profesional a un día. También puedes pulsar «Asignar» para elegirlo.'}</p>
       <div className="calendario-mensual__desplazamiento"><div className="calendario-mensual__rejilla">
@@ -55,9 +55,10 @@ export default function CalendarioMensual({ periodo, consultorio, area, turnos, 
               aria-label={`Ver turno de ${turno.profesional}, ${mostrarFecha(fecha)}, ${turno.horaInicio} a ${turno.horaFin}`}>
               <span><strong>{turno.horaInicio}–{turno.horaFin}</strong>{habilitado && <GripVertical size={12} aria-hidden="true" />}</span>
               <span>{turno.profesional}</span><small>{turno.especialidad}</small>
+              {!consultorio && <small>{turno.consultorio}</small>}
               {turno.asistencia === 'Falta' && <small className="turno-mensual__falta">Falta · 0 h</small>}
             </button>)}</div>
-            {reservasDelDia(ocupaciones, consultorio.id, fecha, zonaHoraria, turnos.map((turno) => turno.id)).map((reserva) => <p key={reserva.idTurno} className="planificador-ayuda" aria-label={'Consultorio ocupado de ' + reserva.horaInicio + ' a ' + reserva.horaFin}><strong>Ocupado</strong><br />{reserva.horaInicio} a {reserva.horaFin}</p>)}
+            {consultorio && reservasDelDia(ocupaciones, consultorio.id, fecha, zonaHoraria, delDia.map((turno) => turno.id)).map((reserva) => <p key={reserva.idTurno} className="planificador-ayuda" aria-label={'Consultorio ocupado de ' + reserva.horaInicio + ' a ' + reserva.horaFin}><strong>Ocupado</strong><br />{reserva.horaInicio} a {reserva.horaFin}</p>)}
             {habilitado && <button type="button" className="calendario-mensual__asignar" onClick={() => asignar(fecha)}
               aria-label={`Asignar profesional el ${mostrarFecha(fecha)}`}><Plus size={13} /> Asignar</button>}
           </div>;

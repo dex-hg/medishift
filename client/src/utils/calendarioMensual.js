@@ -1,5 +1,6 @@
 import { periodoValido } from '../services/planesMensuales.js';
 import { fechaValida, UUID } from './validacionesProgramacion.js';
+import { consultorioAdmiteEtiqueta, etiquetasDelRecurso } from './seleccionRecursosTurno.js';
 
 export const TIPO_ARRASTRE = 'application/x-medishift';
 
@@ -43,16 +44,40 @@ export function leerArrastre(contenido) {
 }
 
 export function especialidadesCompatibles(profesional, consultorio) {
-  return (profesional?.especialidades || []).filter((especialidad) => consultorio
-    && (!consultorio.idArea || consultorio.idEspecialidadArea === especialidad.id)
-    && (consultorio.usoGeneral || consultorio.especialidades.some((registro) => registro.id === especialidad.id)));
+  return etiquetasDelRecurso(profesional).filter((etiqueta) => consultorioAdmiteEtiqueta(consultorio, etiqueta.id));
 }
 
-export function turnoInicial({ profesional, consultorio, fecha, turno }, preferencias) {
-  const especialidades = especialidadesCompatibles(profesional, consultorio);
+export function etiquetasDelArea(area) {
+  return area?.etiquetas ?? (area?.idEspecialidad ? [{ id: area.idEspecialidad, nombre: area.especialidad }] : []);
+}
+
+export function nombreUnidad(area, areas) {
+  const padre = area.idAreaPadre && areas.find((registro) => registro.id === area.idAreaPadre);
+  return padre ? `${padre.nombre} › ${area.nombre}` : area.nombre;
+}
+
+export function profesionalAdmitido(profesional, area) {
+  const etiquetas = etiquetasDelArea(area);
+  return profesional?.estado === 'Activo' && etiquetasDelRecurso(profesional).some((etiqueta) =>
+    etiquetas.some((admitida) => admitida.id === etiqueta.id));
+}
+
+export function etiquetasDisponibles(profesional, area, consultorio) {
+  if (consultorio) return especialidadesCompatibles(profesional, consultorio);
+  const admitidas = etiquetasDelArea(area);
+  return etiquetasDelRecurso(profesional).filter((etiqueta) => admitidas.some((opcion) => opcion.id === etiqueta.id));
+}
+
+export function elegirEtiqueta(actual, opciones) {
+  if (opciones.some((etiqueta) => etiqueta.id === actual)) return actual;
+  return opciones.length === 1 ? opciones[0].id : '';
+}
+
+export function turnoInicial({ profesional, consultorio, area, fecha, turno }, preferencias) {
+  const compatibles = etiquetasDisponibles(profesional, area, consultorio);
   return { idProfesional: profesional?.id || '', idConsultorio: consultorio?.id || '',
-    idArea: consultorio?.idArea || '', fecha: fechaValida(fecha) ? fecha : '',
+    idArea: consultorio?.idArea || area?.id || '', fecha: fechaValida(fecha) ? fecha : '',
     horaInicio: turno?.horaInicio || preferencias?.horaInicio || '08:00', horaFin: turno?.horaFin || preferencias?.horaFin || '12:00',
-    idEspecialidad: especialidades.some((registro) => registro.id === turno?.idEspecialidad) ? turno.idEspecialidad
-      : especialidades.length === 1 ? especialidades[0].id : '', observacion: turno?.observacion || '' };
+    idEspecialidad: turno && turno.idConsultorio === consultorio?.id
+      ? turno.idEspecialidad : elegirEtiqueta(turno?.idEspecialidad, compatibles), observacion: turno?.observacion || '' };
 }

@@ -11,8 +11,9 @@ function HistorialMensual({ plan, cerrar }) {
     {consulta.error && <div role="alert"><p>{consulta.error}</p><button className="boton boton--secundario" onClick={consulta.recargar}>Reintentar</button></div>}
     {consulta.datos && (consulta.datos.length ? consulta.datos.map((version) => <details className="atencion-version" key={version.version}>
       <summary>Versión {version.version} · Archivada {mostrar(version.archivadoEn)} · {version.contenido.turnos.length} turnos</summary>
-      <div className="tabla-responsive"><table><thead><tr><th>Inicio</th><th>Fin</th><th>Estado</th></tr></thead>
-        <tbody>{version.contenido.turnos.map((turno) => <tr key={turno.id_shift}><td>{mostrar(turno.start_at_shift)}</td><td>{mostrar(turno.end_at_shift)}</td><td>{turno.status_shift === 'approved' ? 'Aprobado' : 'Cancelado'}</td></tr>)}</tbody></table></div>
+      <div className="tabla-responsive"><table><thead><tr><th>Inicio</th><th>Fin</th><th>Etiqueta</th><th>Estado</th></tr></thead>
+        <tbody>{version.contenido.turnos.map((turno) => <tr key={turno.id_shift}><td>{mostrar(turno.start_at_shift)}</td><td>{mostrar(turno.end_at_shift)}</td>
+          <td>{turno.nombre_etiqueta || '—'}</td><td>{turno.status_shift === 'approved' ? 'Aprobado' : 'Cancelado'}</td></tr>)}</tbody></table></div>
     </details>) : <p>El mes aún no tiene versiones archivadas por reapertura.</p>)}
   </VentanaPlanificador>;
 }
@@ -30,10 +31,10 @@ export default function ControlAprobacionMensual({ plan, area, datos, consulta }
   };
   return <>
     <div className="panel atencion-aprobacion"><div><strong>{area.nombre} · Versión {plan.version} · {plan.estado}</strong>
-      <p>La aprobación abarca todos los consultorios del área en este mes.</p></div>
+      <p>La aprobación abarca los consultorios de esta unidad durante el mes.</p></div>
       <div className="atencion-acciones"><button className="boton boton--secundario" disabled={consulta.cargando || consulta.guardando} onClick={() => cambiarHistorial(true)}>Ver versiones</button>
         {['Borrador', 'Aprobado'].includes(plan.estado) && <button className="boton boton--primario" disabled={consulta.cargando || consulta.guardando || (!reabrir && !turnos.length)}
-          onClick={() => { consulta.limpiarError(); cambiarConfirmar(true); }}>{reabrir ? 'Reabrir mes del área' : 'Aprobar mes del área'}</button>}</div>
+          onClick={() => { consulta.limpiarError(); cambiarConfirmar(true); }}>{reabrir ? 'Reabrir mes' : 'Aprobar mes'}</button>}</div>
     </div>
     {confirmar && <VentanaPlanificador titulo={reabrir ? 'Reabrir mes aprobado' : 'Aprobar programación mensual'} descripcion={`${area.nombre} · ${plan.periodo} · ${turnos.length} turnos`} ocupado={consulta.guardando} cerrar={() => cambiarConfirmar(false)}>
       <p>{reabrir ? 'Se archivará la versión aprobada. Los turnos y sus citas conservarán su identidad. No se podrán agendar nuevas citas hasta volver a aprobar el mes; cualquier cambio que afecte una cita deberá resolverse antes.'

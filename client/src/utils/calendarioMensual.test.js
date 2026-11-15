@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { celdasDelMes, diasDelMes, desplazarMes, especialidadesCompatibles, leerArrastre, turnoInicial } from './calendarioMensual.js';
+import { celdasDelMes, diasDelMes, desplazarMes, elegirEtiqueta, especialidadesCompatibles, etiquetasDisponibles, leerArrastre,
+  profesionalAdmitido, turnoInicial } from './calendarioMensual.js';
 
 const ID = '10000000-0000-0000-0000-000000000001';
 const OTRA = '10000000-0000-0000-0000-000000000002';
@@ -72,4 +73,21 @@ test('para un profesional con varias especialidades solo se ofrece la que corres
   const consultorio = { id: OTRA, idArea: ID, idEspecialidadArea: OTRA, usoGeneral: true, especialidades: [] };
   assert.deepEqual(especialidadesCompatibles(profesional, consultorio), [{ id: OTRA, nombre: 'Odontología' }]);
   assert.equal(turnoInicial({ profesional, consultorio, fecha: '2032-11-02' }).idEspecialidad, OTRA);
+});
+
+test('la subárea admite una coincidencia y su consultorio aplica su propia restricción', () => {
+  const dermatologia = { id: ID, nombre: 'Dermatología' };
+  const cirugia = { id: OTRA, nombre: 'Cirugía plástica' };
+  const unidad = { id: ID, etiquetas: [dermatologia, cirugia] };
+  const medica = { estado: 'Activo', etiquetas: [dermatologia, cirugia] };
+  const cirujano = { estado: 'Activo', etiquetas: [cirugia] };
+  assert.equal(profesionalAdmitido(cirujano, unidad), true);
+  assert.equal(profesionalAdmitido({ ...cirujano, estado: 'Inactivo' }, unidad), false);
+  const general = { idArea: ID, idEspecialidadArea: null, etiquetas: unidad.etiquetas, usoGeneral: false };
+  const restringido = { ...general, etiquetas: [cirugia] };
+  assert.deepEqual(etiquetasDisponibles(medica, unidad, general), [dermatologia, cirugia]);
+  assert.deepEqual(etiquetasDisponibles(medica, unidad, restringido), [cirugia]);
+  assert.equal(elegirEtiqueta(ID, etiquetasDisponibles(medica, unidad, general)), ID);
+  assert.equal(elegirEtiqueta(ID, etiquetasDisponibles(medica, unidad, restringido)), OTRA);
+  assert.equal(elegirEtiqueta('', unidad.etiquetas), '');
 });

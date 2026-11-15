@@ -44,15 +44,15 @@ function FormularioTurno({ modo }) {
   const consultorios = consultoriosCompatibles(formulario.recursos, formulario.datos.idEspecialidad);
   const consultoriosActivos = (formulario.recursos?.consultorios || []).some((item) => item.estado === 'Activo');
   const indicacionEspecialidad = !profesional ? 'Selecciona primero un profesional.'
-    : !especialidades.length ? 'El profesional no tiene especialidades disponibles.'
-      : especialidades.length === 1 ? 'Se seleccionó la única especialidad del profesional.'
-        : 'Selecciona la especialidad de atención para ver los consultorios compatibles.';
+    : !especialidades.length ? 'El profesional no tiene etiquetas disponibles.'
+      : especialidades.length === 1 ? 'Se seleccionó la única etiqueta del profesional.'
+        : 'Selecciona la etiqueta de atención para ver los consultorios compatibles.';
   const indicacionConsultorio = !formulario.datos.idProfesional ? 'Selecciona primero un profesional.'
-    : !formulario.datos.idEspecialidad ? 'Selecciona primero la especialidad de atención.'
+    : !formulario.datos.idEspecialidad ? 'Selecciona primero la etiqueta de atención.'
       : !consultorios.length ? consultoriosActivos
-        ? 'No hay consultorios activos compatibles con esta especialidad.'
+        ? 'No hay consultorios activos compatibles con esta etiqueta.'
         : 'No hay consultorios activos registrados.'
-        : 'Selecciona un consultorio activo compatible con la especialidad de atención.';
+        : 'Selecciona un consultorio activo compatible con la etiqueta de atención.';
   const cambiarProfesional = (evento) => {
     formulario.actualizarCampo(evento,
       seleccionarProfesionalTurno(formulario.datos, evento.target.value, formulario.recursos));
@@ -75,7 +75,7 @@ function FormularioTurno({ modo }) {
         : <FormularioBase onGuardar={formulario.guardar} guardando={formulario.guardando} bloquearGuardado={formulario.conflicto}
           error={formulario.error} errores={formulario.errores} accionesSecundarias={volver}>
           <section className="seccion-formulario"><div className="seccion-formulario__titulo"><CalendarClock size={19} /><div><h2>Asignación de atención</h2>
-            <p>Zona horaria: {formulario.recursos.zonaHoraria}. Los consultorios generales admiten cualquier especialidad del profesional.</p></div></div>
+            <p>Zona horaria: {formulario.recursos.zonaHoraria}. Si el consultorio pertenece a un área, se aplican sus etiquetas.</p></div></div>
           <div className="rejilla-formulario">
             <CampoFormulario etiqueta="Profesional" requerido error={formulario.errores.idProfesional}>
               <select {...campo('idProfesional')} onChange={cambiarProfesional} required><option value="">Seleccionar profesional</option>
@@ -83,15 +83,15 @@ function FormularioTurno({ modo }) {
                   .map((item) => <option key={item.id} value={item.id} disabled={item.estado !== 'Activo'}>{item.nombre}{item.estado !== 'Activo' ? ' (Inactivo)' : ''}</option>)}
               </select>
             </CampoFormulario>
-            <CampoFormulario etiqueta="Especialidad de atención" requerido ayuda={indicacionEspecialidad} error={formulario.errores.idEspecialidad}>
+            <CampoFormulario etiqueta="Etiqueta de atención" requerido ayuda={indicacionEspecialidad} error={formulario.errores.idEspecialidad}>
               <select {...campo('idEspecialidad')} onChange={cambiarEspecialidad} disabled={!especialidades.length} required>
-                <option value="">{profesional ? 'Seleccionar especialidad' : 'Selecciona primero un profesional'}</option>
+                <option value="">{profesional ? 'Seleccionar etiqueta' : 'Selecciona primero un profesional'}</option>
                 {especialidades.map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}
               </select>
             </CampoFormulario>
             <CampoFormulario etiqueta="Consultorio compatible" requerido ayuda={indicacionConsultorio} error={formulario.errores.idConsultorio}>
               <select {...campo('idConsultorio')} disabled={!formulario.datos.idEspecialidad || !consultorios.length} required>
-                <option value="">{formulario.datos.idEspecialidad ? 'Seleccionar consultorio' : 'Selecciona primero la especialidad'}</option>
+                <option value="">{formulario.datos.idEspecialidad ? 'Seleccionar consultorio' : 'Selecciona primero la etiqueta'}</option>
                 {consultorios.map((item) => <option key={item.id} value={item.id}>{item.codigo} · {item.nombre}{item.usoGeneral ? ' (General)' : ''}</option>)}
               </select>
             </CampoFormulario>
@@ -110,9 +110,9 @@ function FormularioTurno({ modo }) {
             <button className="boton boton--secundario" type="button" onClick={formulario.recargar}>Recargar conservando entradas</button>
             <Link className="boton boton--fantasma" to={semanaDestino}>Revisar semana</Link></div>}
           {profesional && !especialidades.length && <p className="nota-programacion">
-            Revisa la especialidad del profesional en <Link to="/profesionales">Profesionales</Link> antes de asignar un turno.</p>}
+            Revisa las etiquetas del profesional en <Link to="/profesionales">Profesionales</Link> antes de asignar un turno.</p>}
           {formulario.datos.idEspecialidad && !consultorios.length && <p className="nota-programacion">
-            {consultoriosActivos ? 'Revisa la especialidad o el estado de los consultorios.' : 'Registra o activa un consultorio antes de asignar el turno.'}
+            {consultoriosActivos ? 'Revisa las etiquetas o el estado de los consultorios.' : 'Registra o activa un consultorio antes de asignar el turno.'}
             {' '}<Link to="/consultorios">Revisar consultorios</Link>.</p>}
         </FormularioBase>}
   </>;

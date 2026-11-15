@@ -1,49 +1,103 @@
 import { useState } from 'react';
 import VentanaPlanificador from './VentanaPlanificador';
-import SelectorEspecialidad from '../../components/SelectorEspecialidad';
+import SelectorEtiquetas from '../../components/SelectorEtiquetas';
+import { etiquetasDelArea, nombreUnidad } from '../../utils/calendarioMensual';
+
+function Campo({ nombre, etiqueta, errores, children }) {
+  return <label className="campo-planificador"><span>{etiqueta}</span>{children}
+    {errores[nombre] && <small className="campo-planificador__error" role="alert">{errores[nombre]}</small>}
+  </label>;
+}
 
 export default function DialogoAreaConsultorio({ accion, datos, ocupado: ocupadoServidor, error, errores, guardar, cerrar, recargar }) {
-  const [formulario, setFormulario] = useState({ idArea: accion.idArea || '', idConsultorio: '', codigo: '', nombre: '', ubicacion: '',
-    idEspecialidad: datos.areas.find((area) => area.id === accion.idArea)?.idEspecialidad || '' });
-  const [creandoEspecialidad, setCreandoEspecialidad] = useState(false);
-  const ocupado = ocupadoServidor || creandoEspecialidad;
-  const area = accion.tipo === 'area';
-  const configurar = accion.tipo === 'especialidad-area';
-  const vincular = accion.tipo === 'vincular';
-  const cambiar = (evento) => setFormulario((anterior) => ({ ...anterior, [evento.target.name]: evento.target.value }));
-  const enviar = (evento) => { evento.preventDefault(); guardar(formulario); };
-  const pendientes = datos.consultorios.filter((registro) => !registro.idArea);
-  return <VentanaPlanificador titulo={configurar ? 'Especialidad del área' : area ? 'Nueva área o servicio' : vincular ? 'Organizar consultorios' : 'Nuevo consultorio'}
-    descripcion={configurar ? `Define qué especialidad admite ${datos.areas.find((registro) => registro.id === formulario.idArea)?.nombre}.`
-      : area ? 'Crea una carpeta para agrupar consultorios, como Dermatología u Odontología.'
-      : vincular ? 'Asocia un consultorio existente con su área.' : 'El consultorio quedará guardado dentro de esta área.'} ocupado={ocupado} cerrar={cerrar}>
+  const actual = datos.areas.find((area) => area.id === accion.idArea);
+  const editar = accion.tipo === 'editar-area';
+  const esArea = accion.tipo === 'area' || editar;
+  const vinculacion = accion.tipo === 'vincular';
+  const [creando, cambiarCreando] = useState(false);
+  const [formulario, cambiarFormulario] = useState(() => ({
+    idArea: accion.idArea || '', idAreaPadre: (editar ? actual?.idAreaPadre : accion.idAreaPadre) || '',
+    idConsultorio: '', codigo: editar ? actual?.codigo || '' : '', nombre: editar ? actual?.nombre || '' : '',
+    ubicacion: '', estado: editar ? actual?.estado || 'Activo' : 'Activo',
+    idsEtiquetas: editar ? etiquetasDelArea(actual).map((etiqueta) => etiqueta.id) : [], revision: actual?.revision,
+  }));
+  const ocupado = ocupadoServidor || creando;
+  const desactualizado = editar && (!actual || actual.revision !== formulario.revision);
+  const padre = datos.areas.find((area) => area.id === formulario.idAreaPadre);
+  const subareas = editar && datos.areas.some((area) => area.idAreaPadre === actual?.id);
+  const posiblesPadres = datos.areas.filter((area) => !area.idAreaPadre && area.id !== actual?.id
+    && (area.estado === 'Activo' || area.id === formulario.idAreaPadre));
+  const organiza = datos.areas.filter((area) => area.estado === 'Activo' && etiquetasDelArea(area).length);
+  const etiquetas = esArea ? datos.especialidades : etiquetasDelArea(actual && actual.id === formulario.idArea
+    ? actual : datos.areas.find((area) => area.id === formulario.idArea));
+  const titulo = editar ? 'Configurar área o subárea' : esArea ? (padre ? 'Nueva subárea' : 'Nueva área')
+    : vinculacion ? 'Vincular consultorio' : 'Nuevo consultorio';
+  const asignar = (campo, valor) => cambiarFormulario((anterior) => ({ ...anterior, [campo]: valor }));
+  const cambiar = (evento) => asignar(evento.target.name, evento.target.value);
+  const enviar = (evento) => {
+    evento.preventDefault();
+    if (!ocupado && !desactualizado) guardar(formulario);
+  };
+
+  return <VentanaPlanificador titulo={titulo} descripcion={editar ? actual?.nombre : padre?.nombre}
+    ocupado={ocupado} cerrar={cerrar}>
     <form onSubmit={enviar} className="formulario-planificador">
       {error && <div className="planificador-error" role="alert"><p>{error}</p>
-        <button className="boton boton--fantasma" type="button" disabled={ocupado} onClick={recargar}>Actualizar sin cerrar el formulario</button></div>}
+        <button className="boton boton--fantasma" type="button" disabled={ocupado} onClick={recargar}>Actualizar calendario</button></div>}
+      {desactualizado && <div className="planificador-error" role="alert"><p>La configuración del área cambió. Revisa tus entradas antes de guardarlas con la revisión actual.</p>
+        {actual && <button type="button" className="boton boton--fantasma" onClick={() => asignar('revision', actual.revision)}>Usar revisión actual</button>}</div>}
       <fieldset className="formulario-planificador__campos" disabled={ocupado}>
-        {!area && !configurar && <label className="campo-planificador"><span>Área o servicio</span><select name="idArea" required value={formulario.idArea} onChange={cambiar}>
-          <option value="">Selecciona un área</option>{datos.areas.filter((registro) => registro.estado === 'Activo' && registro.idEspecialidad).map((registro) => <option key={registro.id} value={registro.id}>{registro.nombre}</option>)}</select>
-          {errores.idArea && <small role="alert">{errores.idArea}</small>}</label>}
-        {configurar ? null : vincular ? <label className="campo-planificador"><span>Consultorio existente</span><select name="idConsultorio" required value={formulario.idConsultorio} onChange={cambiar}>
-          <option value="">Selecciona un consultorio</option>{pendientes.map((registro) => <option key={registro.id} value={registro.id}>{registro.nombre} · {registro.codigo}</option>)}</select>
-          {errores.idConsultorio && <small role="alert">{errores.idConsultorio}</small>}</label> : <>
-          <div className="formulario-planificador__fila"><label className="campo-planificador"><span>Código {area ? 'del área' : 'único del consultorio'}</span>
-            <input name="codigo" required maxLength={area ? 32 : 20} placeholder={area ? 'DER' : 'DER-01'} value={formulario.codigo} onChange={cambiar} />
-            {errores.codigo && <small role="alert">{errores.codigo}</small>}</label>
-          <label className="campo-planificador"><span>Nombre</span><input name="nombre" required maxLength={area ? 140 : 100}
-            placeholder={area ? 'Dermatología' : 'Consultorio 1'} value={formulario.nombre} onChange={cambiar} />
-            {errores.nombre && <small role="alert">{errores.nombre}</small>}</label></div>
-          {!area && <label className="campo-planificador"><span>Ubicación</span><input name="ubicacion" required maxLength={100}
-            placeholder="Primer piso, ala norte" value={formulario.ubicacion} onChange={cambiar} />{errores.ubicacion && <small role="alert">{errores.ubicacion}</small>}</label>}
-          {!area && <p className="planificador-ayuda">El consultorio solo admitirá la especialidad seleccionada para su área.</p>}
+        {!esArea && <Campo etiqueta="Área o subárea" nombre="idArea" errores={errores}>
+          <select name="idArea" required value={formulario.idArea} onChange={(evento) => {
+            cambiarFormulario((anterior) => ({ ...anterior, idArea: evento.target.value, idsEtiquetas: [] }));
+          }}>
+            <option value="">Selecciona una unidad</option>
+            {organiza.map((area) => <option key={area.id} value={area.id}>{nombreUnidad(area, datos.areas)}</option>)}
+          </select>
+        </Campo>}
+        {vinculacion ? <Campo etiqueta="Consultorio existente" nombre="idConsultorio" errores={errores}>
+          <select name="idConsultorio" required value={formulario.idConsultorio} onChange={cambiar}>
+            <option value="">Selecciona un consultorio</option>
+            {datos.consultorios.filter((sala) => !sala.idArea).map((sala) =>
+              <option key={sala.id} value={sala.id}>{sala.codigo} · {sala.nombre}</option>)}
+          </select>
+        </Campo> : <>
+          <div className="formulario-planificador__fila">
+            <Campo etiqueta="Código" nombre="codigo" errores={errores}><input name="codigo" required readOnly={editar}
+              maxLength={esArea ? 32 : 20} value={formulario.codigo} onChange={cambiar} /></Campo>
+            <Campo etiqueta="Nombre" nombre="nombre" errores={errores}><input name="nombre" required
+              maxLength={esArea ? 140 : 100} value={formulario.nombre} onChange={cambiar} /></Campo>
+          </div>
+          {esArea ? <div className="formulario-planificador__fila">
+            <Campo etiqueta="Área padre" nombre="idAreaPadre" errores={errores}>
+              <select name="idAreaPadre" value={formulario.idAreaPadre} disabled={subareas} onChange={cambiar}>
+                <option value="">Área principal</option>
+                {posiblesPadres.map((area) => <option key={area.id} value={area.id}>{area.nombre}</option>)}
+              </select>
+            </Campo>
+            {editar && <Campo etiqueta="Estado" nombre="estado" errores={errores}>
+              <select name="estado" value={formulario.estado} onChange={cambiar}><option>Activo</option><option>Inactivo</option></select>
+            </Campo>}
+          </div> : <Campo etiqueta="Ubicación" nombre="ubicacion" errores={errores}>
+            <input name="ubicacion" required maxLength={100} value={formulario.ubicacion} onChange={cambiar} />
+          </Campo>}
+          {esArea && !editar && padre && etiquetasDelArea(padre).length > 0 && <button className="boton boton--fantasma"
+            type="button" onClick={() => asignar('idsEtiquetas', [...new Set([...formulario.idsEtiquetas, ...etiquetasDelArea(padre).map((etiqueta) => etiqueta.id)])])}>
+            Copiar etiquetas de {padre.nombre}
+          </button>}
+          <SelectorEtiquetas etiqueta={esArea ? 'Etiquetas admitidas' : 'Restringir a estas etiquetas'} opciones={etiquetas}
+            valor={formulario.idsEtiquetas} cambiar={(valor) => asignar('idsEtiquetas', valor)} error={errores.idsEtiquetas}
+            permitirAlta={esArea} alOcupar={cambiarCreando}
+            ayuda={esArea ? 'El médico debe tener una etiqueta en común. Puedes dejar el área pendiente de configurar.'
+              : 'Si la lista queda vacía, el consultorio admite todas las etiquetas de su unidad.'} />
         </>}
-        {(area || configurar) && <SelectorEspecialidad etiqueta="Especialidad autorizada del área" name="idEspecialidad" usarId
-          value={formulario.idEspecialidad} onChange={cambiar} especialidades={datos.especialidades}
-          disabled={ocupadoServidor} error={errores.idEspecialidad} alOcupar={setCreandoEspecialidad}
-          ayuda="Solo los profesionales que tengan esta especialidad podrán recibir turnos en el área." />}
       </fieldset>
-      <div className="ventana-planificador__acciones"><button className="boton boton--fantasma" type="button" disabled={ocupado} onClick={cerrar}>Cancelar</button>
-        <button className="boton boton--primario" type="submit" disabled={ocupado}>{ocupado ? 'Guardando…' : configurar ? 'Guardar especialidad' : vincular ? 'Guardar asociación' : area ? 'Crear área' : 'Crear consultorio'}</button></div>
+      <div className="ventana-planificador__acciones">
+        <button className="boton boton--fantasma" type="button" disabled={ocupado} onClick={cerrar}>Cancelar</button>
+        <button className="boton boton--primario" type="submit" disabled={ocupado || desactualizado}>
+          {ocupado ? 'Guardando…' : editar ? 'Guardar área' : vinculacion ? 'Guardar asociación' : esArea ? 'Crear unidad' : 'Crear consultorio'}
+        </button>
+      </div>
     </form>
   </VentanaPlanificador>;
 }
