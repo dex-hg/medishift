@@ -1,22 +1,33 @@
-# Datos demostrativos para otra computadora
+# Datos demostrativos de MediShift
 
-Ejecuta `db/datos_demostracion.sql` en la base de MediShift desde el editor de consultas de pgAdmin o con `psql`. Utiliza PostgreSQL y el mismo esquema de esta versión de la aplicación. No necesita extensiones adicionales a las del esquema original.
+## Clínicas con horarios y citas
 
-En una base nueva, instala primero `db/medishift_postgresql.sql`. Después configura `server/.env` y utiliza las herramientas de `db/migraciones/README.md` para instalar V001, V002 y V003 en orden, conservando sus respaldos, ensayos y registro de checksum. En una base ya utilizada, sigue ese mismo procedimiento de migraciones; el esquema inicial se utiliza únicamente para una base nueva. El script demostrativo comprueba los campos requeridos antes de insertar registros.
+Esta carga crea dos clínicas ficticias con datos para mostrar Horarios, Profesionales, Pacientes, Agenda de citas y el portal del paciente.
 
-El archivo crea dos instituciones ficticias e independientes. Estas son sus credenciales públicas de demostración:
+| Institución                                   | Zona           | Administrador                   | Médica                          |
+| ---------------------------------------------- | -------------- | ------------------------------- | -------------------------------- |
+| DEMO-MEDISHIFT-PE · Clínica Los Sauces       | America/Lima   | admin.pe@medishift.example.test | doctor.pe@medishift.example.test |
+| DEMO-MEDISHIFT-CO · Centro Médico La Alameda | America/Bogota | admin.co@medishift.example.test | doctor.co@medishift.example.test |
 
-| Código de institución | Correo | Contraseña |
-| --- | --- | --- |
-| DEMO-FERIADOS-PE | admin.feriados.pe@example.test | FeriadosDemo2026! |
-| DEMO-FERIADOS-CO | admin.feriados.co@example.test | FeriadosDemo2026! |
+Con PostgreSQL iniciado y las migraciones V001 a V008 aplicadas, ejecuta el siguiente comando desde la raíz del repositorio.
 
-Cada institución tiene 9 especialistas, 3 especialidades, 3 áreas, 6 consultorios, 3 planes mensuales, 12 turnos en borrador y 2 faltas. Incluye un especialista sin turnos y dos turnos de Ana Torres en el mismo feriado, en distintos consultorios; uno de esos turnos tiene una falta. Los registros y sus auditorías están identificados como demostrativos.
+```powershell
+python -B scripts/cargar_demostracion_clinica.py
+```
 
-La carga utiliza diciembre del año de ejecución; si se ejecuta durante diciembre, utiliza enero del siguiente año. Los mensajes de resultado indican el mes exacto. En octubre de 2026 se genera `2026-12`. Selecciona ese mes en **Horarios** después de iniciar sesión. Las instituciones emplean `America/Lima` y `America/Bogota`: comparten un desfase horario, pero consultan calendarios nacionales distintos.
+El comando se conecta al PostgreSQL local de `server/.env`, o al indicado mediante las variables de entorno de MediShift, y utiliza `psql`. Si acabas de instalar MediShift, prepara primero el esquema y las migraciones siguiendo la [guía de instalación](migraciones/README.md). El comando imprime los meses creados y la ruta del archivo local de accesos. Para la base local predeterminada, las contraseñas nuevas están en `server/accesos-demostracion.local`, excluido de Git. Cada cuenta recibe una contraseña propia de esa instalación.
 
-Los feriados se obtienen desde la aplicación y se conservan en su copia local. El SQL carga los registros del sistema; no introduce un calendario nacional estático ni necesita claves de una API. La primera consulta del año en la nueva computadora requiere conexión a Internet para obtener los feriados. El botón **Actualizar feriados** permite reintentar la consulta.
+Cada clínica tiene **8 áreas principales, 1 subárea, 16 consultorios, 32 médicos y 240 pacientes ficticios**. Los turnos cubren días de atención a futuro y los tres meses completos siguientes. Las áreas atienden de lunes a viernes. Medicina general y Pediatría abren también algunos sábados. La agenda reserva citas en parte de los turnos aprobados y conserva espacios disponibles. Hay faltas registradas para mostrar su efecto en la asistencia.
 
-Para comprobar las reglas, revisa que Ana Torres reciba un único abono por cada feriado del mes, aunque tenga dos turnos en esa fecha y una falta. «Persona Sin turnos» debe tener cero horas por feriados. Luis Ramos tiene una falta en su turno ordinario. En el reporte individual, los abonos se suman al profesional; en el reporte por consultorio se muestran aparte como institucionales.
+En Horarios, abre **Cirugía plástica ambulatoria › Evaluación preoperatoria**. La subárea acepta Dermatología y Cirugía plástica. **PRE-01 · Evaluación clínica** admite ambas etiquetas. **PRE-02 · Evaluación quirúrgica** admite Cirugía plástica. La médica de demostración y otro profesional tienen las dos etiquetas. En el último mes, los planes de Dermatología, Cirugía plástica ambulatoria y Evaluación preoperatoria están en borrador para practicar el movimiento de turnos entre ellos.
 
-La carga completa está dentro de una transacción. Repetirla conserva las instituciones ya creadas, sus datos y las contraseñas actuales, sin duplicar registros. Si el código reservado pertenece a otro identificador, la ejecución se cancela y se revierte. No restablece las contraseñas de una demostración que ya fue modificada.
+Para la carga local de noviembre de 2026, usa **diciembre de 2026** para mostrar la agenda de citas y **febrero de 2027** para mover turnos entre borradores. La médica puede consultar sus citas y editar sus turnos futuros en borrador con su propia cuenta.
+
+| Portal del paciente | DNI ficticio | Fecha de nacimiento |
+| ------------------- | ------------ | ------------------- |
+| Perú               | 00090101     | 14/05/1990          |
+| Colombia            | 00091101     | 14/05/1990          |
+
+Cada ficha de referencia tiene al menos una cita en Dermatología por mes aprobado de la carga inicial. Ingresa por **Portal del paciente** y elige uno de esos meses. Los DNI y los nombres se generan localmente con fines de demostración. El script comprueba el rango de DNI contra las fichas existentes al crear cada clínica y no llama a servicios de identidad.
+
+La carga es transaccional. Al ejecutarla de nuevo en el mismo mes conserva las ediciones en planes ya preparados, sus citas y los accesos. En otro mes añade los periodos nuevos que falten y respeta los estados de planes existentes. Los meses ya preparados quedan registrados en auditoría para evitar su recreación. Si un código institucional coincide con una institución ajena o las políticas vigentes de la clínica producirían un conflicto, PostgreSQL revierte la carga. En Horarios, el calendario de feriados se consulta por separado a través de la aplicación.
