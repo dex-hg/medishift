@@ -5,7 +5,7 @@ import EncabezadoPagina from '../../components/EncabezadoPagina';
 import ResumenFeriados from '../../components/ResumenFeriados';
 import usePlanificadorMensual from '../../hooks/usePlanificadorMensual';
 import { crearConsultorioEnArea, eliminarTurnoMensual, guardarArea, guardarTurnoMensual, vincularConsultorio } from '../../services/planificador';
-import { desplazarMes, especialidadesCompatibles, etiquetasDelArea, nombreMes, nombreUnidad, profesionalAdmitido } from '../../utils/calendarioMensual';
+import { desplazarMes, especialidadesCompatibles, etiquetasDelArea, nombreMes, nombreUnidad } from '../../utils/calendarioMensual';
 import { fechaActual } from '../../utils/validacionesProgramacion';
 import ArbolAreas from './ArbolAreas';
 import BancoProfesionales from './BancoProfesionales';
@@ -20,7 +20,7 @@ export default function Horarios() {
   const consulta = usePlanificadorMensual();
   const [seleccion, cambiarSeleccion] = useState({ area: '', consultorio: '' });
   const idConsultorio = seleccion.consultorio;
-  const [idProfesional, setIdProfesional] = useState('');
+  const [profesionalElegido, elegirProfesional] = useState('');
   const [editor, setEditor] = useState(null);
   const [accion, setAccion] = useState(null);
   const [reporteAbierto, setReporteAbierto] = useState(false);
@@ -38,8 +38,15 @@ export default function Horarios() {
   const plan = datos?.planes.find((registro) => registro.idUnidad === area?.id && ['Borrador', 'Pendiente', 'Aprobado'].includes(registro.estado));
   const salasArea = consultoriosVisibles.filter((sala) => sala.idArea === area?.id && sala.estado === 'Activo'
     && (esAdministrador ? sala.especialidades.length : especialidadesCompatibles(profesionalPropio, sala).length));
+  const salasAsignables = consultorio ? salasArea.filter((sala) => sala.id === consultorio.id) : salasArea;
   const editable = datos?.permisos.puedeProgramar && area?.estado === 'Activo' && (!plan || plan.estado === 'Borrador')
-    && (consultorio ? salasArea.some((sala) => sala.id === consultorio.id) : salasArea.length > 0);
+    && salasAsignables.length > 0;
+  const profesionalesActivos = esAdministrador && datos ? datos.profesionales.filter((persona) => persona.estado === 'Activo') : [];
+  const profesionalesCompatibles = profesionalesActivos.filter((persona) => salasAsignables.some((sala) =>
+    especialidadesCompatibles(persona, sala).length > 0));
+  const idProfesional = esAdministrador
+    ? profesionalesCompatibles.find((persona) => persona.id === profesionalElegido)?.id || ''
+    : datos?.permisos.idProfesional || '';
   const turnosVisibles = datos?.turnos.filter((turno) => idConsultorio ? turno.idConsultorio === idConsultorio : turno.idArea === area?.id) || [];
   const hoy = fechaActual(datos?.zonaHoraria);
 
@@ -57,14 +64,8 @@ export default function Horarios() {
   }, [datos]);
 
   useEffect(() => {
-    if (!datos) return;
-    const sala = datos.consultorios.find((registro) => registro.id === idConsultorio);
-    if (!datos.permisos.esAdministrador) { setIdProfesional(datos.permisos.idProfesional); return; }
-    setIdProfesional((anterior) => {
-      const persona = datos.profesionales.find((registro) => registro.id === anterior);
-      return (sala ? especialidadesCompatibles(persona, sala).length : profesionalAdmitido(persona, area)) ? anterior : '';
-    });
-  }, [datos, idConsultorio, area]);
+    if (datos && esAdministrador && profesionalElegido && !idProfesional) elegirProfesional('');
+  }, [datos, esAdministrador, profesionalElegido, idProfesional]);
 
   const cambiarMes = (valor) => { if (!ocupado && valor) { setEditor(null); consulta.cambiarPeriodo(valor); } };
   const abrir = (fecha, turno, profesional) => {
@@ -75,7 +76,7 @@ export default function Horarios() {
   };
   const soltar = (contenido, fecha) => {
     if (contenido.tipo === 'profesional') {
-      const profesional = datos.profesionales.find((registro) => registro.id === contenido.id && registro.estado === 'Activo');
+      const profesional = profesionalesCompatibles.find((registro) => registro.id === contenido.id);
       if (profesional) abrir(fecha, null, profesional);
     } else {
       const turno = datos.turnos.find((registro) => registro.id === contenido.id && registro.estado === 'Borrador');
@@ -131,8 +132,9 @@ export default function Horarios() {
         seleccionar={(id) => cambiarSeleccion({ area: datos.consultorios.find((sala) => sala.id === id).idArea, consultorio: id })}
         seleccionarArea={(id) => cambiarSeleccion({ area: id, consultorio: '' })} ocupado={ocupado}
         agregar={esAdministrador ? (valor) => { consulta.limpiarError(); setAccion(valor); } : undefined} />
-        {esAdministrador ? <BancoProfesionales profesionales={datos.profesionales} turnos={datos.turnos} feriados={datos.feriados} consultorio={consultorio} area={area}
-          seleccionado={idProfesional} seleccionar={setIdProfesional} ocupado={ocupado || !editable} />
+        {esAdministrador ? <BancoProfesionales profesionales={profesionalesCompatibles} hayActivos={profesionalesActivos.length > 0}
+          turnos={datos.turnos} feriados={datos.feriados} idConsultorio={idConsultorio} idArea={area?.id}
+          seleccionado={idProfesional} seleccionar={elegirProfesional} ocupado={ocupado} editable={editable} />
           : <section className="panel planificador-arbol"><h2>{profesionalPropio?.nombre}</h2><p>Solo puedes modificar tus propios turnos. Los bloques ocupados de otros profesionales se muestran para elegir tus horas.</p>
             {!datos.permisos.puedeProgramar && <p className="planificador-aviso" role="status">La autoprogramación está desactivada. Puedes consultar tus horarios. Solicita los cambios al administrador.</p>}
             {!consultoriosVisibles.length && <p role="status">No hay consultorios disponibles para tus etiquetas. Solicita al administrador que revise tu perfil.</p>}</section>}</aside>

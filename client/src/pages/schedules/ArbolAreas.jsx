@@ -57,9 +57,11 @@ export default function ArbolAreas({ areas, consultorios, seleccionado, idArea, 
   return <section className="panel planificador-arbol" aria-label="Áreas, subáreas y consultorios">
     <div className="planificador-titulo"><div><span className="planificador-paso">1</span><h2>Áreas y consultorios</h2></div></div>
     {!areas.length && <p className="planificador-ayuda">{agregar ? 'Crea un área para organizar sus consultorios y turnos.' : 'No hay áreas disponibles.'}</p>}
-    <ul className="arbol-areas">{areas.filter((area) => !area.idAreaPadre).map(mostrarArea)}</ul>
-    {sinArea.length > 0 && agregar && <div className="arbol-areas__pendientes"><strong>{sinArea.length} consultorios sin área</strong>
-      <button className="boton boton--fantasma" type="button" disabled={ocupado || !areas.some((area) => area.estado === 'Activo' && etiquetasDelArea(area).length)}
-        onClick={() => agregar({ tipo: 'vincular', idArea })}>Vincular consultorios</button></div>}
+    <div className="planificador-arbol__contenido">
+      <ul className="arbol-areas">{areas.filter((area) => !area.idAreaPadre).map(mostrarArea)}</ul>
+      {sinArea.length > 0 && agregar && <div className="arbol-areas__pendientes"><strong>{sinArea.length} consultorios sin área</strong>
+        <button className="boton boton--fantasma" type="button" disabled={ocupado || !areas.some((area) => area.estado === 'Activo' && etiquetasDelArea(area).length)}
+          onClick={() => agregar({ tipo: 'vincular', idArea })}>Vincular consultorios</button></div>}
+    </div>
   </section>;
 }
