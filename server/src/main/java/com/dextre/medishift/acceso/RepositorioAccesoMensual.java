@@ -71,7 +71,7 @@ public class RepositorioAccesoMensual {
 
 	/** El bloqueo global evita reutilizar un identificador entre instituciones. */
 	public int resolverRolAdministrador() {
-		consultas.execute("LOCK TABLE role IN SHARE ROW EXCLUSIVE MODE");
+		bloquearCatalogoRoles(consultas);
 		Integer existente = consultas.query("SELECT id_role FROM role WHERE code_role = 'administrador'",
 				(fila, numero) -> fila.getInt("id_role")).stream().findFirst().orElse(null);
 		if (existente != null) {
@@ -87,6 +87,10 @@ public class RepositorioAccesoMensual {
 				VALUES (?, 'administrador', 'Administración institucional')
 				""", identificador);
 		return identificador;
+	}
+
+	static void bloquearCatalogoRoles(JdbcTemplate consultas) {
+		consultas.query("SELECT pg_advisory_xact_lock(hashtextextended('medishift:roles', 0))", fila -> { });
 	}
 
 	public void asignarAdministrador(UUID cuenta, int rol) {

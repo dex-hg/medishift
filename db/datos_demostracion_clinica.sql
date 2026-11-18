@@ -78,8 +78,8 @@ BEGIN
     PERFORM pg_advisory_xact_lock(hashtextextended('catalogos:' ||
         pg_temp.id_demo_clinica(d.pais,'institucion')::text, 0))
     FROM demo_clinica_sedes d ORDER BY d.pais;
+    PERFORM pg_advisory_xact_lock(hashtextextended('medishift:roles', 0));
     IF (SELECT count(*) FROM role WHERE code_role IN ('administrador','doctor')) < 2 THEN
-        LOCK TABLE role IN SHARE ROW EXCLUSIVE MODE;
         INSERT INTO role(id_role,code_role,description_role)
         SELECT (SELECT coalesce(max(id_role),0) FROM role) + row_number() OVER (ORDER BY r.codigo),
                r.codigo, r.descripcion

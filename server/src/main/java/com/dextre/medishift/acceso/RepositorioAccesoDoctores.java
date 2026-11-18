@@ -51,7 +51,7 @@ public class RepositorioAccesoDoctores {
 					""", cuenta);
 			return;
 		}
-		consultas.execute("LOCK TABLE role IN SHARE ROW EXCLUSIVE MODE");
+		RepositorioAccesoMensual.bloquearCatalogoRoles(consultas);
 		Integer rol = consultas.query("SELECT id_role FROM role WHERE code_role='doctor'", (fila, numero) -> fila.getInt(1))
 				.stream().findFirst().orElse(null);
 		if (rol == null) {
