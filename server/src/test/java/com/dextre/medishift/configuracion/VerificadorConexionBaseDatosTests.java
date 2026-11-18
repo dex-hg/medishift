@@ -14,10 +14,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.DefaultApplicationArguments;
+import org.springframework.mock.env.MockEnvironment;
+
+import com.zaxxer.hikari.HikariDataSource;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -31,11 +35,16 @@ class VerificadorConexionBaseDatosTests {
 	@Mock
 	private Connection conexion;
 
+	@Mock
+	private HikariDataSource pool;
+
+	private final MockEnvironment entorno = new MockEnvironment();
+
 	private VerificadorConexionBaseDatos verificador;
 
 	@BeforeEach
 	void prepararVerificador() {
-		verificador = new VerificadorConexionBaseDatos(origenDatos, "clave_de_prueba_no_real");
+		verificador = new VerificadorConexionBaseDatos(origenDatos, "clave_de_prueba_no_real", entorno);
 	}
 
 	@ParameterizedTest
@@ -43,9 +52,20 @@ class VerificadorConexionBaseDatosTests {
 	@ValueSource(strings = { " ", "\t" })
 	void rechazaClaveAusenteOVacia(String claveBaseDatos) {
 		assertThrows(IllegalArgumentException.class,
-				() -> new VerificadorConexionBaseDatos(origenDatos, claveBaseDatos));
+				() -> new VerificadorConexionBaseDatos(origenDatos, claveBaseDatos, entorno));
 
 		verifyNoInteractions(origenDatos);
+	}
+
+	@Test
+	void supabaseRechazaTlsSinValidarElServidorAntesDeConectar() throws SQLException {
+		entorno.setActiveProfiles("supabase");
+		var verificadorSupabase = new VerificadorConexionBaseDatos(pool, "clave_de_prueba_no_real", entorno);
+		when(pool.getJdbcUrl()).thenReturn("jdbc:postgresql://localhost:5432/postgres?sslmode=require");
+
+		assertThrows(IllegalStateException.class, () -> verificadorSupabase.run(new DefaultApplicationArguments()));
+
+		verify(pool, never()).getConnection();
 	}
 
 	@Test
