@@ -110,12 +110,11 @@ test('acepta un correo de 254 caracteres y rechaza 255', () => {
   assert.ok(validarCuenta({ ...datosValidos, correo: `${correo}e` }).correo);
 });
 
-test('no introduce una longitud mínima de contraseña ausente del esquema', () => {
-  assert.deepEqual(validarCuenta({
-    ...datosValidos,
-    contrasena: 'a',
-    confirmacionContrasena: 'a',
-  }), {});
+test('el alta exige doce puntos de código Unicode en la contraseña', () => {
+  const corta = '🩺'.repeat(11);
+  const valida = corta + 'a';
+  assert.ok(validarCuenta({ ...datosValidos, contrasena: corta, confirmacionContrasena: corta }).contrasena);
+  assert.deepEqual(validarCuenta({ ...datosValidos, contrasena: valida, confirmacionContrasena: valida }), {});
 });
 
 test('exige confirmación exacta sin recortar ni convertir las contraseñas', () => {

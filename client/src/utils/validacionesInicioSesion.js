@@ -1,7 +1,7 @@
 import {
   LIMITES_REGISTRO,
   normalizarDatosRegistro,
-  validarCuenta,
+  validarCredencialesCuenta,
   validarInstitucion,
 } from './validacionesRegistro.js';
 
@@ -19,7 +19,7 @@ export function normalizarDatosInicioSesion(datos) {
 export function validarInicioSesion(datos) {
   const datosNormalizados = normalizarDatosInicioSesion(datos);
   const erroresInstitucion = validarInstitucion(datosNormalizados);
-  const erroresCuenta = validarCuenta(datosNormalizados);
+  const erroresCuenta = validarCredencialesCuenta(datosNormalizados);
   const errores = {};
 
   // Comparte las reglas del registro sin exigir sus demás campos.

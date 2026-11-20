@@ -3,6 +3,7 @@ export const LIMITES_REGISTRO = Object.freeze({
   nombreInstitucion: 140,
   zonaHoraria: 64,
   correo: 254,
+  contrasenaMinima: 12,
   contrasena: 1024,
 });
 
@@ -77,8 +78,7 @@ export function validarInstitucion(datos) {
   return errores;
 }
 
-export function validarCuenta(datos) {
-  const { correo, contrasena, confirmacionContrasena } = normalizarDatosRegistro(datos);
+export function validarCredencialesCuenta({ correo, contrasena }) {
   const errores = {};
 
   if (!correo) {
@@ -95,6 +95,17 @@ export function validarCuenta(datos) {
     errores.contrasena = 'La contraseña admite hasta 1024 caracteres.';
   } else if (contieneCaracteresInvalidos(contrasena)) {
     errores.contrasena = 'La contraseña contiene caracteres no válidos.';
+  }
+
+  return errores;
+}
+
+export function validarCuenta(datos) {
+  const { correo, contrasena, confirmacionContrasena } = normalizarDatosRegistro(datos);
+  const errores = validarCredencialesCuenta({ correo, contrasena });
+
+  if (!errores.contrasena && Array.from(contrasena).length < LIMITES_REGISTRO.contrasenaMinima) {
+    errores.contrasena = 'Usa una contraseña de al menos 12 caracteres.';
   }
 
   if (!confirmacionContrasena.trim()) {

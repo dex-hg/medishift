@@ -136,7 +136,7 @@ function Registro() {
       ayuda: 'Se usará como identificador para acceder.', autoComplete: 'email',
       placeholder: 'nombre@institucion.pe', maxLength: LIMITES_REGISTRO.correo },
     { nombre: 'contrasena', etiqueta: 'Contraseña', tipo: 'password',
-      ayuda: 'Elige una contraseña personal. Hasta 1024 caracteres.', autoComplete: 'new-password' },
+      ayuda: 'Usa entre 12 y 1024 caracteres.', autoComplete: 'new-password' },
     { nombre: 'confirmacionContrasena', etiqueta: 'Confirmar contraseña', tipo: 'password',
       autoComplete: 'new-password' },
   ];
