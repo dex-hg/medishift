@@ -83,6 +83,23 @@
   grid-column: span 2;
 }
 
+.opcion-acceso-profesional {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  width: fit-content;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.opcion-acceso-profesional input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--turquesa);
+}
+
 .campo label {
   display: flex;
   flex-direction: column;

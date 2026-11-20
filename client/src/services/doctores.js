@@ -26,10 +26,13 @@ export async function gestionarAccesoDoctor(idProfesional, { datos, revision, se
       throw fallo;
     }
     if (!contenido || (contenido.idCuenta !== null && !UUID.test(contenido.idCuenta))
-      || typeof contenido.correo !== 'string' || typeof contenido.habilitado !== 'boolean' || !REVISION.test(contenido.revision)) {
+      || typeof contenido.correo !== 'string' || typeof contenido.habilitado !== 'boolean'
+      || (contenido.credencialesEditables !== undefined && typeof contenido.credencialesEditables !== 'boolean')
+      || !REVISION.test(contenido.revision)) {
       throw new Error('El servidor devolvió un acceso inválido.');
     }
-    return { idCuenta: contenido.idCuenta, correo: contenido.correo, habilitado: contenido.habilitado, revision: contenido.revision };
+    return { idCuenta: contenido.idCuenta, correo: contenido.correo, habilitado: contenido.habilitado,
+      credencialesEditables: contenido.credencialesEditables ?? !contenido.idCuenta, revision: contenido.revision };
   } catch (fallo) {
     if (controlador.signal.aborted) throw new Error('La solicitud se canceló o tardó demasiado. Actualiza para comprobar si se guardó.');
     if (fallo instanceof TypeError) throw new Error('No se pudo contactar al servidor. Comprueba la conexión.');

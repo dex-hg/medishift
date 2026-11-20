@@ -4,7 +4,7 @@ import { gestionarAccesoDoctor } from './doctores.js';
 
 const identificador = '1b6dcff8-9084-438c-a33c-72b95d48777b';
 const revision = 'a'.repeat(64);
-const acceso = { idCuenta: null, correo: 'doctor@institucion.test', habilitado: false, revision };
+const acceso = { idCuenta: null, correo: 'doctor@institucion.test', habilitado: false, credencialesEditables: true, revision };
 const responder = (estado, contenido) => new Response(JSON.stringify(contenido), { status: estado });
 
 test('consulta acceso con cookie y extrae únicamente datos públicos', async () => {

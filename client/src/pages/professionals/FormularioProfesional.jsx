@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { ArrowLeft, BriefcaseMedical, ContactRound } from 'lucide-react';
+import { ArrowLeft, BriefcaseMedical, ContactRound, KeyRound } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import CampoFormulario from '../../components/CampoFormulario';
 import SelectorEtiquetas from '../../components/SelectorEtiquetas';
@@ -8,7 +8,7 @@ import FormularioBase from '../../components/FormularioBase';
 import { AvisoCatalogo } from '../../components/AvisoCatalogo';
 import { useFormularioCatalogo } from '../../hooks/useCatalogos';
 import { actualizarProfesional, crearProfesional, obtenerProfesional } from '../../services/catalogos';
-import { LIMITES_PROFESIONAL } from '../../utils/validacionesCatalogos';
+import { LIMITES_ACCESO, LIMITES_PROFESIONAL } from '../../utils/validacionesCatalogos';
 
 const DATOS_INICIALES = Object.freeze({
   nombres: '', apellidos: '', colegiatura: '', correo: '', telefono: '',
@@ -29,6 +29,12 @@ function FormularioProfesional({ modo }) {
     onChange: formulario.actualizarCampo, maxLength: LIMITES_PROFESIONAL[nombre],
     'aria-invalid': Boolean(formulario.errores[nombre]),
   });
+  const conAcceso = formulario.datos.correoAcceso !== undefined;
+  const cambiarAcceso = (evento) => {
+    const habilitar = evento.target.checked;
+    formulario.actualizarCampo({ target: { name: 'correoAcceso', value: habilitar ? formulario.datos.correo : undefined } });
+    formulario.actualizarCampo({ target: { name: 'contrasenaAcceso', value: habilitar ? '' : undefined } });
+  };
 
   return (
     <>
@@ -93,6 +99,27 @@ function FormularioProfesional({ modo }) {
                 alOcupar={cambiarCreandoEtiqueta} ayuda="Elige todas las competencias del profesional. Puedes completarlas después." />
             </div>
           </section>
+          {modo === 'crear' && <section className="seccion-formulario">
+            <div className="seccion-formulario__titulo"><KeyRound size={19} aria-hidden="true" /><div>
+              <h2>Acceso a MediShift</h2>
+              <p>Desde Profesionales → Acceso del doctor, puedes crear la cuenta más adelante o cambiar sus credenciales.</p>
+            </div></div>
+            <div className="rejilla-formulario">
+              <label className="opcion-acceso-profesional">
+                <input type="checkbox" checked={conAcceso} onChange={cambiarAcceso} /> Crear cuenta de acceso ahora
+              </label>
+              {conAcceso && <>
+                <CampoFormulario etiqueta="Correo de acceso" requerido error={formulario.errores.correoAcceso}>
+                  <input {...campo('correoAcceso')} type="email" maxLength={LIMITES_ACCESO.correo} autoComplete="off" required />
+                </CampoFormulario>
+                <CampoFormulario etiqueta="Contraseña inicial" requerido error={formulario.errores.contrasenaAcceso}
+                  ayuda="Entre 12 y 128 caracteres. El doctor puede cambiarla en Mi perfil.">
+                  <input {...campo('contrasenaAcceso')} type="password" minLength={LIMITES_ACCESO.contrasenaMinima}
+                    maxLength={LIMITES_ACCESO.contrasenaMaxima} autoComplete="new-password" required />
+                </CampoFormulario>
+              </>}
+            </div>
+          </section>}
           <AvisoCatalogo error={formulario.errorEtiquetas} reintentar={formulario.reintentarEtiquetas} />
         </FormularioBase>
       )}

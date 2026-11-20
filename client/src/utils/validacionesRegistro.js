@@ -17,6 +17,7 @@ export const ZONAS_HORARIAS = [
 
 // Admite el formato de los campos HTML de correo, incluidos dominios locales.
 const FORMATO_CORREO = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+export const tieneFormatoCorreo = (correo) => FORMATO_CORREO.test(correo);
 
 function obtenerTexto(datos, campo) {
   return typeof datos?.[campo] === 'string' ? datos[campo] : '';
@@ -84,7 +85,7 @@ export function validarCuenta(datos) {
     errores.correo = 'Ingresa el correo de tu cuenta.';
   } else if (superaLimite(correo, LIMITES_REGISTRO.correo)) {
     errores.correo = 'El correo admite hasta 254 caracteres.';
-  } else if (!FORMATO_CORREO.test(correo)) {
+  } else if (!tieneFormatoCorreo(correo)) {
     errores.correo = 'Ingresa un correo válido, por ejemplo nombre@institucion.pe.';
   }
 

@@ -1,9 +1,11 @@
 import { UUID } from './validacionesProgramacion.js';
+import { tieneFormatoCorreo } from './validacionesRegistro.js';
 
 export const LIMITES_PROFESIONAL = Object.freeze({
   nombres: 80, apellidos: 100, colegiatura: 32, correo: 254,
   telefono: 20, categoria: 40, especialidad: 100,
 });
+export const LIMITES_ACCESO = Object.freeze({ correo: 254, contrasenaMinima: 12, contrasenaMaxima: 128 });
 
 export const LIMITES_CONSULTORIO = Object.freeze({
   codigo: 20, nombre: 100, ubicacion: 100, especialidad: 100,
@@ -28,6 +30,10 @@ export function normalizarProfesional(datos) {
   const normalizados = normalizarDatos(datos, CAMPOS_PROFESIONAL);
   normalizados.correo = normalizados.correo.toLowerCase();
   normalizados.colegiatura = normalizados.colegiatura.toUpperCase();
+  if (datos?.correoAcceso !== undefined || datos?.contrasenaAcceso !== undefined) {
+    normalizados.correoAcceso = typeof datos.correoAcceso === 'string' ? datos.correoAcceso.trim().toLowerCase() : '';
+    normalizados.contrasenaAcceso = datos.contrasenaAcceso;
+  }
   return incluirEtiquetas(normalizados, datos);
 }
 
@@ -79,6 +85,17 @@ export function validarProfesional(datos) {
   const usaEtiquetas = datos?.idsEtiquetas !== undefined;
   const errores = validarDatos(normalizados, LIMITES_PROFESIONAL, usaEtiquetas ? ['telefono', 'especialidad'] : ['telefono'], datos);
   if (usaEtiquetas && !idsEtiquetasValidos(normalizados.idsEtiquetas)) errores.idsEtiquetas = 'Selecciona etiquetas válidas.';
+  if (Object.hasOwn(normalizados, 'correoAcceso')) {
+    const { correoAcceso, contrasenaAcceso } = normalizados;
+    if (correoAcceso.length > LIMITES_ACCESO.correo || !tieneFormatoCorreo(correoAcceso)) {
+      errores.correoAcceso = 'Ingresa un correo de acceso válido.';
+    }
+    if (typeof contrasenaAcceso !== 'string' || !contrasenaAcceso.trim() || /[\p{Cc}\p{Cs}]/u.test(contrasenaAcceso)
+      || contrasenaAcceso.length < LIMITES_ACCESO.contrasenaMinima || contrasenaAcceso.length > LIMITES_ACCESO.contrasenaMaxima) {
+      errores.contrasenaAcceso = 'Usa entre 12 y 128 caracteres sin caracteres de control.';
+    }
+    if (normalizados.estado === 'Inactivo') errores.estado = 'Selecciona Activo para habilitar el acceso ahora.';
+  }
   const formatoCorreo = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
   if (normalizados.correo && !errores.correo && !formatoCorreo.test(normalizados.correo)) {
     errores.correo = 'Ingresa un correo válido.';
