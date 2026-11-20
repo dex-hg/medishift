@@ -1,6 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
+import re
 from tempfile import TemporaryDirectory
 import unittest
 
@@ -45,6 +46,19 @@ class PrepararSqlEditorSupabaseTests(unittest.TestCase):
             self.assertTrue("SCRAM-SHA-256$4096:" in activacion)
             self.assertEqual(demostracion.count("{pbkdf2@medishift-v1}"), 4)
             self.assertFalse(any(clave in activacion or clave in demostracion for clave in claves))
+
+    def test_activa_rls_en_las_tablas_temporales_antes_del_commit(self):
+        with TemporaryDirectory() as carpeta:
+            salida = Path(carpeta)
+            preparar_archivos(salida)
+            sql = (salida / "privado.local/cargar-demostracion.sql.local").read_text(encoding="utf-8")
+            tablas = re.findall(r"(?m)^CREATE TEMP TABLE (\w+) \(", sql)
+            self.assertEqual(tablas, ["demo_clinica_areas", "demo_clinica_medicos", "demo_clinica_sedes"])
+            confirmacion = sql.index("\nCOMMIT;")
+            for tabla in tablas:
+                posicion = sql.index(f"ALTER TABLE {tabla} ENABLE ROW LEVEL SECURITY;")
+                self.assertLess(posicion, sql.index(f"INSERT INTO {tabla} VALUES"))
+                self.assertLess(posicion, confirmacion)
 
 
 if __name__ == "__main__":

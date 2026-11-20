@@ -4,10 +4,12 @@ SET LOCAL search_path = public, pg_catalog;
 SET LOCAL lock_timeout = '10s';
 SET LOCAL statement_timeout = '90s';
 
+-- El editor de Supabase reconoce el RLS de las temporales dentro de la transacción.
 CREATE TEMP TABLE demo_clinica_areas (
     numero integer PRIMARY KEY, codigo text NOT NULL, especialidad text NOT NULL,
     nombre text NOT NULL, salas integer NOT NULL
 ) ON COMMIT DROP;
+ALTER TABLE demo_clinica_areas ENABLE ROW LEVEL SECURITY;
 INSERT INTO demo_clinica_areas VALUES
     (0,'DER','Dermatología','Dermatología',2),
     (1,'CIR','Cirugía plástica','Cirugía plástica ambulatoria',2),
@@ -21,6 +23,7 @@ INSERT INTO demo_clinica_areas VALUES
 CREATE TEMP TABLE demo_clinica_medicos (
     numero integer PRIMARY KEY, nombres text NOT NULL, apellidos_pe text NOT NULL, apellidos_co text NOT NULL
 ) ON COMMIT DROP;
+ALTER TABLE demo_clinica_medicos ENABLE ROW LEVEL SECURITY;
 INSERT INTO demo_clinica_medicos VALUES
     (1,'Lucía','Vega Salazar','Mejía Ocampo'), (2,'Alonso','Paredes Li','Restrepo Gil'),
     (3,'Rocío','Núñez Arias','Valencia Ríos'), (4,'Iván','Soto Ponce','Quintero Ruiz'),
@@ -42,6 +45,7 @@ INSERT INTO demo_clinica_medicos VALUES
 CREATE TEMP TABLE demo_clinica_sedes (
     pais text PRIMARY KEY, codigo text NOT NULL, nombre text NOT NULL, zona text NOT NULL, base_dni integer NOT NULL
 ) ON COMMIT DROP;
+ALTER TABLE demo_clinica_sedes ENABLE ROW LEVEL SECURITY;
 INSERT INTO demo_clinica_sedes VALUES
     ('pe','DEMO-MEDISHIFT-PE','Clínica Los Sauces · Demo Perú','America/Lima',90100),
     ('co','DEMO-MEDISHIFT-CO','Centro Médico La Alameda · Demo Colombia','America/Bogota',91100);
