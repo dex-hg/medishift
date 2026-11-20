@@ -20,13 +20,13 @@ class ValidadorRegistroTests {
 	@Test
 	void normalizaComoJavascriptSinCambiarCodigoNiContrasena() {
 		SolicitudRegistro solicitud = new SolicitudRegistro("\u00a0\ufeffClinica-Lima\u3000",
-				"\u2002Clínica Lima\u202f", "America/Lima", "\ufeff CUENTA@Institucion.PE \u00a0", " clave ");
+				"\u2002Clínica Lima\u202f", "America/Lima", "\ufeff CUENTA@Institucion.PE \u00a0", " clave de prueba ");
 		DatosRegistro datos = ValidadorRegistro.validar(solicitud);
 
 		assertEquals("Clinica-Lima", datos.codigoInstitucion());
 		assertEquals("Clínica Lima", datos.nombreInstitucion());
 		assertEquals("cuenta@institucion.pe", datos.correo());
-		assertEquals(" clave ", datos.contrasena());
+		assertEquals(" clave de prueba ", datos.contrasena());
 		assertFalse(solicitud.toString().contains("clave"));
 		assertFalse(datos.toString().contains("clave"));
 	}

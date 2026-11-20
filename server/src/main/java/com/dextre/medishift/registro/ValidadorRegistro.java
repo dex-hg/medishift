@@ -39,6 +39,9 @@ public final class ValidadorRegistro {
 		validarTexto(zona, "zonaHoraria", 64, errores);
 		validarTexto(correo, "correo", 254, errores);
 		validarTexto(contrasena, "contrasena", 1024, errores);
+		if (!errores.containsKey("contrasena") && contrasena.codePointCount(0, contrasena.length()) < 12) {
+			errores.put("contrasena", "Usa una contraseña de al menos 12 caracteres.");
+		}
 
 		if (!errores.containsKey("zonaHoraria") && !ZONAS_HORARIAS.contains(zona)) {
 			errores.put("zonaHoraria", "Selecciona una zona horaria de la lista.");
