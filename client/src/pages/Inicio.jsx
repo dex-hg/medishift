@@ -3,7 +3,6 @@ import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { ArrowRight, Building2, CalendarClock, Plus, Search, UserRoundX, UsersRound } from 'lucide-react';
 import EncabezadoPagina from '../components/EncabezadoPagina';
 import { useResumenInicio } from '../hooks/useResumenInicio';
-import { mostrarFecha } from '../utils/validacionesProgramacion';
 
 function Inicio() {
   const { resumen, reintentar } = useResumenInicio();
@@ -11,14 +10,12 @@ function Inicio() {
   const navegar = useNavigate();
   const [busquedaFaltas, cambiarBusquedaFaltas] = useState('');
 
-  const { profesionales, consultorios, semana } = resumen;
+  const { profesionales, consultorios } = resumen;
   const accesos = [
     { titulo: 'Profesionales', descripcion: 'Datos laborales, etiquetas y estado del personal.',
       cantidad: profesionales.length, destino: '/profesionales', icono: UsersRound, color: 'turquesa' },
     { titulo: 'Consultorios', descripcion: 'Ambientes registrados para la atención.',
       cantidad: consultorios.length, destino: '/consultorios', icono: Building2, color: 'azul' },
-    { titulo: 'Historial semanal', descripcion: `Programación anterior por semanas: ${semana?.estado || 'cargando'}.`,
-      cantidad: semana?.turnos.length || 0, destino: '/horarios/semanales', icono: CalendarClock, color: 'azul' },
   ];
 
   return (
@@ -49,40 +46,21 @@ function Inicio() {
                 <strong>{consultorios.filter((item) => item.estado === 'Activo').length}</strong>
                 <small>de {consultorios.length} registrados</small></div>
             </article>
-            <article className="tarjeta-metrica">
-              <span className="tarjeta-metrica__icono tarjeta-metrica__icono--azul"><CalendarClock size={21} /></span>
-              <div><span>Turnos semanales anteriores</span><strong>{semana.turnos.length}</strong>
-                <small>{semana.estado}{semana.version ? ` · Versión ${semana.version}` : ''}</small></div>
-            </article>
           </section>
 
-          <div className="rejilla-inicio">
-            <section className="panel panel--principal">
-              <div className="panel__encabezado"><div><p className="sobrelinea">Gestión de atención</p><h2>Registros y programación</h2></div></div>
-              <div className="accesos-crud">
-                {accesos.map(({ titulo, descripcion, cantidad, destino, icono: Icono, color }) => (
-                  <Link className="acceso-crud" to={destino} key={titulo}>
-                    <span className={`acceso-crud__icono acceso-crud__icono--${color}`}><Icono size={20} /></span>
-                    <span className="acceso-crud__contenido"><strong>{titulo}</strong><small>{descripcion}</small></span>
-                    <span className="acceso-crud__cantidad"><strong>{cantidad}</strong><small>registros</small></span>
-                    <ArrowRight className="acceso-crud__flecha" size={18} />
-                  </Link>
-                ))}
-              </div>
-            </section>
-            <aside className="panel panel--agenda">
-              <p className="sobrelinea">Historial semanal independiente</p><h2>{semana.estado}</h2>
-              <p className="nota-programacion nota-programacion--compacta">{mostrarFecha(semana.fechaInicio)} al {mostrarFecha(semana.fechaFin)}. Zona: {semana.zonaHoraria}.</p>
-              {semana.estado === 'Borrador' && semana.versionAprobada && <p className="nota-programacion nota-programacion--compacta">
-                La versión aprobada {semana.versionAprobada} sigue vigente; los turnos mostrados pertenecen al borrador.</p>}
-              <div className="lista-turnos">{semana.turnos.slice(0, 4).map((turno) => <div className="turno-resumen" key={turno.id}>
-                <span><CalendarClock size={17} /></span><div><strong>{turno.profesional}</strong>
-                  <small>{mostrarFecha(turno.fecha)} · {turno.horaInicio} a {turno.horaFin}</small><small>{turno.consultorio} · {turno.estado}</small></div>
-              </div>)}{!semana.turnos.length && <div className="turno-resumen"><span><CalendarClock size={17} /></span>
-                <div><strong>No hay turnos registrados</strong><small>Selecciona un médico y un consultorio para crear el primer turno.</small></div></div>}</div>
-              <Link className="boton boton--secundario" to={`/horarios/semanales?fechaInicio=${semana.fechaInicio}`}>Consultar semana anterior</Link>
-            </aside>
-          </div>
+          <section className="panel panel--principal">
+            <div className="panel__encabezado"><h2>Catálogos de atención</h2></div>
+            <div className="accesos-crud">
+              {accesos.map(({ titulo, descripcion, cantidad, destino, icono: Icono, color }) => (
+                <Link className="acceso-crud" to={destino} key={titulo}>
+                  <span className={`acceso-crud__icono acceso-crud__icono--${color}`}><Icono size={20} /></span>
+                  <span className="acceso-crud__contenido"><strong>{titulo}</strong><small>{descripcion}</small></span>
+                  <span className="acceso-crud__cantidad"><strong>{cantidad}</strong><small>registros</small></span>
+                  <ArrowRight className="acceso-crud__flecha" size={18} />
+                </Link>
+              ))}
+            </div>
+          </section>
         </>
       )}
 

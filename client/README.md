@@ -25,9 +25,7 @@ Las pruebas actuales verifican servicios y validaciones con transporte inyectado
 
 ## Una sección para los horarios
 
-El menú contiene una sola entrada Horarios. `/horarios` abre Meses y áreas para Administrador; `?vista=semanal` o los enlaces existentes con `fechaInicio` abren los turnos semanales. `/planes-mensuales` redirige a la sección unificada. La sesión aporta `esAdministrador` como booleano desde el servidor; no se infieren roles a partir del correo o del nombre. Las cuentas sin ese permiso conservan la vista semanal y la API mensual sigue denegando su acceso.
-
-La vista mensual organiza consultorios por área y permite crear, editar, mover y eliminar sus turnos en borrador. Las asignaciones mensuales están persistidas; su aprobación sigue pendiente. El historial semanal conserva su flujo independiente.
+`/horarios` abre el calendario mensual por área, subárea y consultorio. El administrador puede crear, editar y eliminar turnos en borrador y aprobar los planes. El doctor consulta sus propios turnos. Puede programarlos si la clínica habilita la autoprogramación médica. `/planes-mensuales` redirige al calendario.
 
 ## Reportes del calendario mensual
 

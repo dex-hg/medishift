@@ -1,6 +1,6 @@
 .resumen {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 18px;
   gap: 14px;
 }
@@ -65,14 +65,7 @@
   font-size: 0.7rem;
 }
 
-.rejilla-inicio {
-  display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.8fr);
-  gap: 18px;
-}
-
 .panel--principal,
-.panel--agenda,
 .panel--acciones {
   padding: 24px;
 }
@@ -175,53 +168,6 @@
 
 .acceso-crud__flecha {
   color: #577082;
-}
-
-.panel--agenda > h2 {
-  margin-bottom: 20px;
-}
-
-.lista-turnos {
-  display: grid;
-  margin-bottom: 20px;
-  gap: 10px;
-}
-
-.turno-resumen {
-  display: flex;
-  align-items: center;
-  padding: 11px;
-  gap: 11px;
-  background: rgb(7 17 28 / 40%);
-  border: 1px solid var(--borde-suave);
-  border-radius: 10px;
-}
-
-.turno-resumen > span {
-  display: grid;
-  flex: 0 0 30px;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  color: var(--turquesa);
-  background: rgb(45 212 191 / 8%);
-  border-radius: 8px;
-}
-
-.turno-resumen div {
-  display: grid;
-  gap: 4px;
-}
-
-.turno-resumen strong {
-  font-size: 0.78rem;
-}
-
-.turno-resumen small {
-  color: var(--texto-tenue);
-  font-size: 0.7rem;
-  line-height: 1.45;
-  text-transform: capitalize;
 }
 
 .panel--acciones {

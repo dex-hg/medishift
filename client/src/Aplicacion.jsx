@@ -8,8 +8,6 @@ import MisCitas from './pages/patients/MisCitas';
 import Inicio from './pages/Inicio';
 import Faltas from './pages/attendance/Faltas';
 import Horarios from './pages/schedules/Horarios';
-import HorariosSemanales from './pages/schedules/HorariosSemanales';
-import FormularioTurno from './pages/schedules/FormularioTurno';
 import Profesionales from './pages/professionals/Profesionales';
 import FormularioProfesional from './pages/professionals/FormularioProfesional';
 import Consultorios from './pages/consulting-rooms/Consultorios';
@@ -40,10 +38,7 @@ function Aplicacion() {
         <Route path="citas" element={<AgendaCitas />} />
         <Route path="faltas" element={<Faltas />} />
         <Route path="horarios" element={<Horarios />} />
-        <Route path="horarios/semanales" element={<HorariosSemanales />} />
         <Route path="planes-mensuales" element={<Navigate to="/horarios" replace />} />
-        <Route path="horarios/nuevo" element={<FormularioTurno modo="crear" />} />
-        <Route path="horarios/:id/editar" element={<FormularioTurno modo="editar" />} />
         <Route path="profesionales" element={<Profesionales />} />
         <Route path="etiquetas" element={<Etiquetas />} />
         <Route path="especialidades" element={<Navigate to="/etiquetas" replace />} />

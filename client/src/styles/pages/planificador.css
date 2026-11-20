@@ -111,9 +111,6 @@
 .planificador-exito { color: #a6edcf; border-color: rgb(74 222 128 / 22%); background: rgb(74 222 128 / 5%); }
 .planificador-error { color: #ffc4cc; border-color: rgb(251 113 133 / 25%); background: rgb(251 113 133 / 5%); }
 .planificador-error p { margin-bottom: 8px; }
-.planificador-legado { margin-top: 25px; padding-top: 16px; border-top: 1px solid var(--borde); color: var(--texto-tenue); font-size: .7rem; }
-.planificador-legado summary { cursor: pointer; width: fit-content; }
-.planificador-legado p { margin: 12px 0 0; }
 .ventana-planificador { width: min(610px, calc(100vw - 28px)); max-height: calc(100dvh - 40px); overflow-y: auto; border: 1px solid var(--borde); border-radius: 16px; background: var(--panel); color: var(--texto); padding: 0; box-shadow: var(--sombra); }
 .ventana-planificador::backdrop { background: rgb(0 6 13 / 78%); backdrop-filter: blur(4px); }
 .ventana-planificador__cabecera { display: flex; align-items: start; justify-content: space-between; gap: 20px; padding: 23px 23px 18px; border-bottom: 1px solid var(--borde); }

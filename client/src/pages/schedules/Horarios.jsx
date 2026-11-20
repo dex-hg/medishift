@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, FileDown, FolderPlus, RefreshCw } from 'lucide-react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
 import ResumenFeriados from '../../components/ResumenFeriados';
 import usePlanificadorMensual from '../../hooks/usePlanificadorMensual';
@@ -150,8 +150,6 @@ export default function Horarios() {
         <p className="planificador-ayuda">Cada turno se guarda al confirmar. El consultorio queda reservado durante las horas del turno. Zona horaria: {datos.zonaHoraria}.</p>
       </div>
     </div>}
-    {esAdministrador && <details className="planificador-legado"><summary>Consultar programación semanal anterior</summary><p>Los horarios semanales anteriores son independientes del calendario mensual.</p>
-      <Link className="planificador-enlace" to="/horarios/semanales">Abrir historial semanal</Link></details>}
     {editor && datos && <DialogoTurnoMensual editor={editor} datos={datos} periodo={periodo} hoy={hoy} ocupado={guardando || cargando}
       error={consulta.error || consulta.errorCarga} errores={consulta.errores} guardar={guardarTurno} eliminar={borrarTurno} cerrar={() => setEditor(null)} recargar={consulta.recargar}
       actualizarRevision={(turno) => { setEditor((anterior) => ({ ...anterior, turno })); consulta.limpiarError(); }} />}
