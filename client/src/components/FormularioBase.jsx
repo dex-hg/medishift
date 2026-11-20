@@ -42,7 +42,7 @@ function FormularioBase({ children, accionesSecundarias, onGuardar, guardando = 
 
   return (
     <form ref={formulario} className="formulario" onSubmit={guardarFormulario} noValidate aria-busy={ocupado}>
-      <fieldset disabled={ocupado} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+      <fieldset disabled={ocupado} className="formulario__campos">
         {children}
       </fieldset>
       {mensaje && (

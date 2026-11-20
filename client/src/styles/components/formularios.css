@@ -2,6 +2,13 @@
   overflow: hidden;
 }
 
+.formulario__campos {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
 .aviso {
   display: flex;
   align-items: flex-start;

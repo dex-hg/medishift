@@ -1,0 +1,41 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npx --yes pnpm@12.4.2 install --frozen-lockfile",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "no-referrer",
+        "Strict-Transport-Security": "max-age=31536000"
+      },
+      "continue": true
+    },
+    {
+      "src": "/api(?:/.*)?",
+      "headers": {
+        "Cache-Control": "no-store",
+        "CDN-Cache-Control": "no-store",
+        "x-vercel-enable-rewrite-caching": "0"
+      },
+      "continue": true
+    },
+    {
+      "src": "/api",
+      "dest": "${MEDISHIFT_RENDER_URL}/api",
+      "env": ["MEDISHIFT_RENDER_URL"]
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "${MEDISHIFT_RENDER_URL}/api/$1",
+      "env": ["MEDISHIFT_RENDER_URL"]
+    },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
