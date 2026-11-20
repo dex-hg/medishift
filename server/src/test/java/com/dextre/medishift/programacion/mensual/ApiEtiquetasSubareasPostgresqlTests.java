@@ -65,6 +65,11 @@ class ApiEtiquetasSubareasPostgresqlTests extends SoporteAtencionPostgresql {
     void bastaUnaEtiquetaYLaSubareaConservaSusEtiquetasCuandoCambiaElPadre() throws Exception {
         UUID subarea = crearSubarea("PRE", especialidad, cirugia);
         UUID sala = crearSala("PRE-01", subarea);
+        solicitar(get("/api/consultorios/" + sala).session(sesion)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.area.id").value(subarea.toString()))
+                .andExpect(jsonPath("$.area.idPadre").value(area.toString()))
+                .andExpect(jsonPath("$.area.etiquetas.length()").value(2))
+                .andExpect(jsonPath("$.etiquetas.length()").value(0));
         json(post("/api/planificador/turnos"), asignacion(subarea, profesional, sala, especialidad, "10:00"))
                 .andExpect(status().isCreated());
         UUID otraEtiqueta = identificador(json(post("/api/etiquetas"), "{\"nombre\":\"Medicina interna\"}")

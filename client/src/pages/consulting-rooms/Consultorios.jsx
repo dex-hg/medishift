@@ -1,25 +1,30 @@
 import { useMemo, useState } from 'react';
-import { Building2, MapPin, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Building2, FolderTree, List, Plus, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EncabezadoPagina from '../../components/EncabezadoPagina';
-import Estado from '../../components/Estado';
 import { AvisoCatalogo, ConfirmacionEliminar } from '../../components/AvisoCatalogo';
 import { useListadoCatalogo } from '../../hooks/useCatalogos';
 import { eliminarConsultorio, obtenerConsultorios } from '../../services/catalogos';
+import { ArbolConsultorios, ListaConsultorios, etiquetasDeConsultorio } from './VistasConsultorios';
+
+const normalizarBusqueda = (texto) => texto.normalize('NFD').replace(/\p{M}/gu, '').trim().toLocaleLowerCase('es');
 
 function Consultorios() {
   const listado = useListadoCatalogo(obtenerConsultorios, eliminarConsultorio);
-  const [busqueda, setBusqueda] = useState('');
-  const [estado, setEstado] = useState('Todos');
+  const [busqueda, cambiarBusqueda] = useState('');
+  const [estado, cambiarEstado] = useState('Todos');
+  const [vista, cambiarVista] = useState('lista');
   const consultoriosFiltrados = useMemo(() => {
-    const termino = busqueda.trim().toLocaleLowerCase('es');
+    const termino = normalizarBusqueda(busqueda);
     return listado.registros.filter((consultorio) => {
       const coincideTexto = [consultorio.codigo, consultorio.nombre, consultorio.ubicacion,
-        ...(consultorio.usoGeneral ? ['Uso general'] : consultorio.etiquetas.map((etiqueta) => etiqueta.nombre))]
-        .some((valor) => valor.toLocaleLowerCase('es').includes(termino));
+        consultorio.area?.nombre || 'Sin área asignada', consultorio.area?.nombrePadre || '',
+        consultorio.usoGeneral ? 'Uso general' : '', ...etiquetasDeConsultorio(consultorio).map((etiqueta) => etiqueta.nombre)]
+        .some((valor) => normalizarBusqueda(valor).includes(termino));
       return coincideTexto && (estado === 'Todos' || consultorio.estado === estado);
     });
   }, [listado.registros, busqueda, estado]);
+  const VistaConsultorios = vista === 'arbol' ? ArbolConsultorios : ListaConsultorios;
 
   return (
     <>
@@ -32,14 +37,22 @@ function Consultorios() {
         <div className="barra-tabla">
           <label className="buscador"><Search size={17} aria-hidden="true" />
             <span className="solo-lectores">Buscar consultorios</span>
-            <input type="search" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)}
-              placeholder="Código, nombre, ubicación o etiqueta" />
+            <input type="search" value={busqueda} onChange={(evento) => cambiarBusqueda(evento.target.value)}
+              placeholder="Código, nombre, ubicación, área o etiqueta" />
           </label>
           <label className="selector-filtro"><span>Estado</span>
-            <select value={estado} onChange={(evento) => setEstado(evento.target.value)}>
+            <select value={estado} onChange={(evento) => cambiarEstado(evento.target.value)}>
               <option>Todos</option><option>Activo</option><option>Inactivo</option>
             </select>
           </label>
+          <div className="consultorios-vista" role="group" aria-label="Vista de consultorios">
+            <button type="button" aria-pressed={vista === 'lista'} onClick={() => cambiarVista('lista')}>
+              <List size={16} aria-hidden="true" /> Lista
+            </button>
+            <button type="button" aria-pressed={vista === 'arbol'} onClick={() => cambiarVista('arbol')}>
+              <FolderTree size={16} aria-hidden="true" /> Árbol
+            </button>
+          </div>
           {!listado.cargando && <span className="contador-resultados">{consultoriosFiltrados.length} resultados</span>}
         </div>
         <AvisoCatalogo cargando={listado.cargando} error={listado.error} mensaje={listado.mensaje}
@@ -48,29 +61,7 @@ function Consultorios() {
           descripcion={`el consultorio ${listado.seleccionado.codigo}: ${listado.seleccionado.nombre}`}
           eliminando={listado.eliminando} confirmar={listado.confirmarEliminacion} cancelar={listado.cancelarEliminacion} />}
         {!listado.cargando && !listado.error && (consultoriosFiltrados.length ? (
-          <div className="tabla-responsive"><table>
-            <thead><tr><th>Consultorio</th><th>Ubicación</th><th>Etiquetas admitidas</th><th>Estado</th>
-              <th><span className="solo-lectores">Acciones</span></th></tr></thead>
-            <tbody>{consultoriosFiltrados.map((consultorio) => <tr key={consultorio.id}>
-              <td><div className="identidad"><span className="avatar avatar--edificio" aria-hidden="true"><Building2 size={18} /></span>
-                <span><strong>{consultorio.codigo}</strong><small>{consultorio.nombre}</small></span></div></td>
-              <td><span className="dato-con-icono"><MapPin size={15} aria-hidden="true" /> {consultorio.ubicacion}</span></td>
-              <td>{consultorio.usoGeneral ? 'Uso general' : consultorio.etiquetas.length
-                ? <ul className="etiquetas-elegidas">{consultorio.etiquetas.map((etiqueta) => <li key={etiqueta.id}>{etiqueta.nombre}</li>)}</ul>
-                : 'Sin etiquetas activas'}</td><td><Estado valor={consultorio.estado} /></td>
-              <td><div className="acciones-tabla">
-                <Link className="boton-icono" to={`/consultorios/${consultorio.id}/editar`}
-                  aria-label={`Editar consultorio ${consultorio.codigo}`} aria-disabled={listado.eliminando || undefined}
-                  onClick={(evento) => { if (listado.eliminando) evento.preventDefault(); }}>
-                  <Pencil size={16} aria-hidden="true" />
-                </Link>
-                <button className="boton-icono boton-icono--peligro" type="button" disabled={listado.eliminando}
-                  onClick={() => listado.seleccionar(consultorio)} aria-label={`Eliminar consultorio ${consultorio.codigo}`}>
-                  <Trash2 size={16} aria-hidden="true" />
-                </button>
-              </div></td>
-            </tr>)}</tbody>
-          </table></div>
+          <VistaConsultorios consultorios={consultoriosFiltrados} seleccionar={listado.seleccionar} eliminando={listado.eliminando} />
         ) : (
           <div className="sin-resultados"><Building2 size={32} aria-hidden="true" />
             <strong>{listado.registros.length ? 'No encontramos coincidencias' : 'Aún no hay consultorios registrados'}</strong>
