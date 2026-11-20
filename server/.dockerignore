@@ -1,0 +1,14 @@
+# Maven solo necesita el POM y los archivos de la aplicación.
+*
+!pom.xml
+!src/
+!src/main/
+!src/main/**
+**/.env
+**/.env.*
+**/*.local
+**/*.log
+**/*.cer
+**/*.crt
+**/*.key
+**/*.pem
