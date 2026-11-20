@@ -18,6 +18,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import com.dextre.medishift.acceso.RepositorioAccesoMensual;
+import com.dextre.medishift.seguridad.LimitadorSolicitudes;
 
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
@@ -52,7 +53,7 @@ class ControladorRegistroTests {
 		when(gestor.getTransaction(any(TransactionDefinition.class))).thenReturn(new SimpleTransactionStatus());
 		when(codificador.encode(any())).thenReturn("hash-de-prueba");
 		ServicioRegistro servicio = new ServicioRegistro(repositorio, mock(RepositorioAccesoMensual.class), codificador, gestor);
-		cliente = MockMvcBuilders.standaloneSetup(new ControladorRegistro(servicio))
+		cliente = MockMvcBuilders.standaloneSetup(new ControladorRegistro(servicio, new LimitadorSolicitudes()))
 				.setControllerAdvice(new ManejadorErroresRegistro()).build();
 	}
 

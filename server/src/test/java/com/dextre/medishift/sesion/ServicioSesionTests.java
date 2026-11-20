@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.dextre.medishift.registro.ValidacionRegistroException;
+import com.dextre.medishift.seguridad.LimitadorSolicitudes;
 import com.dextre.medishift.sesion.RepositorioSesion.CuentaAutenticable;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class ServicioSesionTests {
+	private static final String DIRECCION_DE_PRUEBA = "192.0.2.1";
 
 	private RepositorioSesion repositorio;
 	private PasswordEncoder codificador;
@@ -32,7 +34,7 @@ class ServicioSesionTests {
 		repositorio = mock(RepositorioSesion.class);
 		codificador = mock(PasswordEncoder.class);
 		when(codificador.encode("verificacion-interna-medishift")).thenReturn("hash-ficticio");
-		servicio = new ServicioSesion(repositorio, codificador);
+		servicio = new ServicioSesion(repositorio, codificador, new LimitadorSolicitudes());
 		perfil = new RespuestaSesion(UUID.randomUUID(), UUID.randomUUID(),
 				"Clinica-Lima", "Clínica Lima", "cuenta@institucion.pe", false);
 		solicitud = new SolicitudSesion(" Clinica-Lima ", " CUENTA@Institucion.PE ", " Clave exacta ");
@@ -43,7 +45,7 @@ class ServicioSesionTests {
 		when(repositorio.buscarCredenciales("Clinica-Lima", "cuenta@institucion.pe"))
 				.thenReturn(Optional.of(new CuentaAutenticable(perfil, "hash-guardado")));
 		when(codificador.matches(" Clave exacta ", "hash-guardado")).thenReturn(true);
-		assertEquals(perfil, servicio.autenticar(solicitud));
+		assertEquals(perfil, servicio.autenticar(solicitud, DIRECCION_DE_PRUEBA));
 		verify(codificador).matches(" Clave exacta ", "hash-guardado");
 	}
 
@@ -51,7 +53,7 @@ class ServicioSesionTests {
 	void usuarioInexistenteHaceComprobacionFicticiaYDevuelve401Generico() {
 		when(repositorio.buscarCredenciales("Clinica-Lima", "cuenta@institucion.pe"))
 				.thenReturn(Optional.empty());
-		assertThrows(AccesoNoAutorizadoException.class, () -> servicio.autenticar(solicitud));
+		assertThrows(AccesoNoAutorizadoException.class, () -> servicio.autenticar(solicitud, DIRECCION_DE_PRUEBA));
 		verify(codificador).matches(" Clave exacta ", "hash-ficticio");
 	}
 
@@ -59,17 +61,17 @@ class ServicioSesionTests {
 	void contrasenaErroneaYHashDesconocidoDanMismoError() {
 		when(repositorio.buscarCredenciales("Clinica-Lima", "cuenta@institucion.pe"))
 				.thenReturn(Optional.of(new CuentaAutenticable(perfil, "hash-guardado")));
-		assertThrows(AccesoNoAutorizadoException.class, () -> servicio.autenticar(solicitud));
+		assertThrows(AccesoNoAutorizadoException.class, () -> servicio.autenticar(solicitud, DIRECCION_DE_PRUEBA));
 		when(codificador.matches(" Clave exacta ", "hash-guardado"))
 				.thenThrow(new IllegalArgumentException("Identificador desconocido"));
-		assertThrows(AccesoNoAutorizadoException.class, () -> servicio.autenticar(solicitud));
+		assertThrows(AccesoNoAutorizadoException.class, () -> servicio.autenticar(solicitud, DIRECCION_DE_PRUEBA));
 		verify(codificador).matches(" Clave exacta ", "hash-ficticio");
 	}
 
 	@Test
 	void entradaInvalidaNoConsultaBaseNiVerificaHash() {
 		assertThrows(ValidacionRegistroException.class,
-				() -> servicio.autenticar(new SolicitudSesion(null, null, null)));
+				() -> servicio.autenticar(new SolicitudSesion(null, null, null), DIRECCION_DE_PRUEBA));
 		verifyNoInteractions(repositorio);
 		verify(codificador, never()).matches(any(), any());
 	}

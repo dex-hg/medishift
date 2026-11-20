@@ -134,6 +134,7 @@ class ApiPortalPacientePostgresqlTests extends SoporteAtencionPostgresql {
             solicitar(ingreso(documento, "2000-02-28")).andExpect(status().isUnauthorized());
         }
         solicitar(ingreso(documento, NACIMIENTO)).andExpect(status().isTooManyRequests())
+				.andExpect(header().exists("Retry-After"))
                 .andExpect(header().string("Cache-Control", "no-store"));
     }
 

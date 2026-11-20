@@ -13,7 +13,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import tools.jackson.databind.json.JsonMapper;
 
+import com.dextre.medishift.seguridad.FiltroSeguridadApi;
+import com.dextre.medishift.seguridad.LimitadorSolicitudes;
+import com.dextre.medishift.seguridad.ManejadorLimitesApi;
 import com.dextre.medishift.sesion.RepositorioSesion.CuentaAutenticable;
 
 import static org.hamcrest.Matchers.containsString;
@@ -24,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -50,12 +56,12 @@ class ControladorSesionTests {
 		repositorio = mock(RepositorioSesion.class);
 		codificador = mock(PasswordEncoder.class);
 		when(codificador.encode("verificacion-interna-medishift")).thenReturn("hash-ficticio");
-		ServicioSesion servicio = new ServicioSesion(repositorio, codificador);
+		ServicioSesion servicio = new ServicioSesion(repositorio, codificador, new LimitadorSolicitudes());
 		perfil = new RespuestaSesion(UUID.randomUUID(), UUID.randomUUID(),
 				"Clinica-Lima", "Clínica Lima", "cuenta@institucion.pe", false);
 		cliente = MockMvcBuilders.standaloneSetup(new ControladorSesion(servicio))
-				.setControllerAdvice(new ManejadorErroresSesion())
-				.addFilters(new FiltroNoCacheSesion()).build();
+				.setControllerAdvice(new ManejadorLimitesApi(), new ManejadorErroresSesion())
+				.addFilters(new FiltroSeguridadApi("http://localhost:5173", false, JsonMapper.shared())).build();
 	}
 
 	@Test
@@ -141,6 +147,42 @@ class ControladorSesionTests {
 				.andExpect(header().string("Cache-Control", "no-store"))
 				.andExpect(content().string(not(containsString("Clave exacta")))).andReturn();
 		assertEquals(null, resultado.getRequest().getSession(false));
+	}
+
+	@Test
+	void limitaLaMismaCuentaAunqueCambienMayusculasEspaciosYDirecciones() throws Exception {
+		when(repositorio.buscarCredenciales("Clinica-Lima", "cuenta@institucion.pe")).thenReturn(Optional.empty());
+		for (int intento = 1; intento <= 8; intento++) {
+			String direccion = "192.0.2." + intento;
+			cliente.perform(post("/api/sesion").with(solicitud -> {
+				solicitud.setRemoteAddr(direccion);
+				return solicitud;
+			}).contentType(MediaType.APPLICATION_JSON).content(JSON_VALIDO))
+					.andExpect(status().isUnauthorized());
+		}
+		cliente.perform(post("/api/sesion").contentType(MediaType.APPLICATION_JSON)
+				.content(JSON_VALIDO.replace(" CUENTA@Institucion.PE ", "cuenta@institucion.pe")
+						.replace(" Clinica-Lima ", "Clinica-Lima")))
+				.andExpect(status().isTooManyRequests())
+				.andExpect(header().exists("Retry-After"))
+				.andExpect(header().string("Cache-Control", "no-store"));
+		verify(repositorio, times(8)).buscarCredenciales("Clinica-Lima", "cuenta@institucion.pe");
+		verify(codificador, times(8)).matches(" Clave exacta ", "hash-ficticio");
+		cliente.perform(post("/api/sesion").contentType(MediaType.APPLICATION_JSON)
+				.content(JSON_VALIDO.replace("Clinica-Lima", "Otra-clinica")))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void protegeElInicioYCierreFrenteAOrigenesAjenosAntesDeCambiarLaSesion() throws Exception {
+		MockHttpSession sesion = sesionValida();
+		cliente.perform(delete("/api/sesion").session(sesion).header("Origin", "https://ajeno.test"))
+				.andExpect(status().isForbidden());
+		cliente.perform(post("/api/sesion").contentType(MediaType.APPLICATION_JSON).content(JSON_VALIDO)
+				.header("Origin", "https://ajeno.test"))
+				.andExpect(status().isForbidden());
+		assertFalse(sesion.isInvalid());
+		verifyNoInteractions(repositorio);
 	}
 
 	@Test

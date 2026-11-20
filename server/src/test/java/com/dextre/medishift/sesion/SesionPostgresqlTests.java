@@ -27,7 +27,7 @@ class SesionPostgresqlTests extends SoporteCuentasPostgresql {
 		RespuestaRegistro fixture = crearFixture(contrasena);
 		SolicitudSesion correcta = new SolicitudSesion(" " + fixture.codigoInstitucion() + " ",
 				" CUENTA@MediShift.TEST ", contrasena);
-		RespuestaSesion autenticada = sesiones.autenticar(correcta);
+		RespuestaSesion autenticada = autenticar(correcta);
 		assertEquals(fixture.idCuenta(), autenticada.idCuenta());
 		assertEquals(fixture.idInstitucion(), autenticada.idInstitucion());
 		assertEquals("cuenta@medishift.test", autenticada.correo());
@@ -35,10 +35,10 @@ class SesionPostgresqlTests extends SoporteCuentasPostgresql {
 		assertEquals(Optional.of(autenticada),
 				sesiones.consultar(fixture.idInstitucion(), fixture.idCuenta()));
 		assertThrows(AccesoNoAutorizadoException.class,
-				() -> sesiones.autenticar(new SolicitudSesion(
+				() -> autenticar(new SolicitudSesion(
 						fixture.codigoInstitucion().toUpperCase(Locale.ROOT), fixture.correo(), contrasena)));
 		assertThrows(AccesoNoAutorizadoException.class,
-				() -> sesiones.autenticar(new SolicitudSesion(
+				() -> autenticar(new SolicitudSesion(
 						fixture.codigoInstitucion(), fixture.correo(), contrasena.trim())));
 	}
 
@@ -50,7 +50,7 @@ class SesionPostgresqlTests extends SoporteCuentasPostgresql {
 				fixture.idCuenta());
 		assertFalse(sesiones.consultar(fixture.idInstitucion(), fixture.idCuenta()).isPresent());
 		assertThrows(AccesoNoAutorizadoException.class,
-				() -> sesiones.autenticar(new SolicitudSesion(
+				() -> autenticar(new SolicitudSesion(
 						fixture.codigoInstitucion(), fixture.correo(), "clave-de-prueba")));
 		consultas.update("UPDATE user_account SET status_user_account = 'active' WHERE id_user_account = ?",
 				fixture.idCuenta());
@@ -58,7 +58,7 @@ class SesionPostgresqlTests extends SoporteCuentasPostgresql {
 				fixture.idInstitucion());
 		assertFalse(sesiones.consultar(fixture.idInstitucion(), fixture.idCuenta()).isPresent());
 		assertThrows(AccesoNoAutorizadoException.class,
-				() -> sesiones.autenticar(new SolicitudSesion(
+				() -> autenticar(new SolicitudSesion(
 						fixture.codigoInstitucion(), fixture.correo(), "clave-de-prueba")));
 	}
 
@@ -66,14 +66,14 @@ class SesionPostgresqlTests extends SoporteCuentasPostgresql {
 	void mismoCorreoSeAutenticaEnSuInstitucionSinCruzarCuentas() {
 		RespuestaRegistro primera = crearFixture("clave-primera");
 		RespuestaRegistro segunda = crearFixture("clave-segunda");
-		RespuestaSesion sesionPrimera = sesiones.autenticar(new SolicitudSesion(
+		RespuestaSesion sesionPrimera = autenticar(new SolicitudSesion(
 				primera.codigoInstitucion(), primera.correo(), "clave-primera"));
-		RespuestaSesion sesionSegunda = sesiones.autenticar(new SolicitudSesion(
+		RespuestaSesion sesionSegunda = autenticar(new SolicitudSesion(
 				segunda.codigoInstitucion(), segunda.correo(), "clave-segunda"));
 		assertEquals(primera.idCuenta(), sesionPrimera.idCuenta());
 		assertEquals(segunda.idCuenta(), sesionSegunda.idCuenta());
 		assertThrows(AccesoNoAutorizadoException.class,
-				() -> sesiones.autenticar(new SolicitudSesion(
+				() -> autenticar(new SolicitudSesion(
 						segunda.codigoInstitucion(), segunda.correo(), "clave-primera")));
 	}
 
@@ -83,9 +83,13 @@ class SesionPostgresqlTests extends SoporteCuentasPostgresql {
 		assertTrue(sesiones.consultar(fixture.idInstitucion(), fixture.idCuenta()).orElseThrow().esAdministrador());
 		consultas.update("DELETE FROM user_role WHERE id_user_account = ?", fixture.idCuenta());
 		assertFalse(sesiones.consultar(fixture.idInstitucion(), fixture.idCuenta()).orElseThrow().esAdministrador());
-		assertFalse(sesiones.autenticar(new SolicitudSesion(fixture.codigoInstitucion(), fixture.correo(),
+		assertFalse(autenticar(new SolicitudSesion(fixture.codigoInstitucion(), fixture.correo(),
 				"clave-de-prueba")).esAdministrador());
 		assertEquals(0, consultas.queryForObject("SELECT count(*) FROM user_role", Integer.class));
+	}
+
+	private RespuestaSesion autenticar(SolicitudSesion solicitud) {
+		return sesiones.autenticar(solicitud, "192.0.2.1");
 	}
 
 	private RespuestaRegistro crearFixture(String contrasena) {

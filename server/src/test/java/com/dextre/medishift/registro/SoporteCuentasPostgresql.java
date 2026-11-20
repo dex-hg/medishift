@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.dextre.medishift.acceso.RepositorioAccesoMensual;
+import com.dextre.medishift.seguridad.LimitadorSolicitudes;
 import com.dextre.medishift.sesion.RepositorioSesion;
 import com.dextre.medishift.sesion.ServicioSesion;
 
@@ -51,7 +52,7 @@ public abstract class SoporteCuentasPostgresql {
 			gestor = new DataSourceTransactionManager(fuentePrivada);
 			accesos = new RepositorioAccesoMensual(consultas);
 			registro = new ServicioRegistro(new RepositorioRegistro(consultas), accesos, codificador, gestor);
-			sesiones = new ServicioSesion(new RepositorioSesion(consultas), codificador);
+			sesiones = new ServicioSesion(new RepositorioSesion(consultas), codificador, new LimitadorSolicitudes());
 		} catch (Exception | AssertionError fallo) {
 			cerrarCuentasAisladas();
 			throw fallo;

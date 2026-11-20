@@ -50,10 +50,6 @@ public class CatalogoException extends RuntimeException {
 		return new CatalogoException(HttpStatus.UNAUTHORIZED, mensaje, Map.of());
 	}
 
-	public static CatalogoException limiteIntentos(String mensaje) {
-		return new CatalogoException(HttpStatus.TOO_MANY_REQUESTS, mensaje, Map.of());
-	}
-
 	public static CatalogoException noDisponible(String mensaje) {
 		return new CatalogoException(HttpStatus.SERVICE_UNAVAILABLE, mensaje, Map.of());
 	}

@@ -30,7 +30,7 @@ public class ControladorSesion {
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RespuestaSesion> iniciar(@RequestBody SolicitudSesion datos,
 			HttpServletRequest solicitudHttp) {
-		RespuestaSesion perfil = servicio.autenticar(datos);
+		RespuestaSesion perfil = servicio.autenticar(datos, solicitudHttp.getRemoteAddr());
 		HttpSession sesion = SesionesHttp.renovar(solicitudHttp);
 		sesion.setAttribute(ATRIBUTO_ID_CUENTA, perfil.idCuenta());
 		sesion.setAttribute(ATRIBUTO_ID_INSTITUCION, perfil.idInstitucion());
