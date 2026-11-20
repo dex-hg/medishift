@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import EstructuraAplicacion from './EstructuraAplicacion';
+import useRestaurarPaginaPrivada from '../hooks/useRestaurarPaginaPrivada';
 import { obtenerSesion } from '../services/sesion';
 import { rutaPermitida } from '../utils/autoprogramacion';
 
 function RutaProtegida() {
+  useRestaurarPaginaPrivada();
   const ubicacion = useLocation();
   const ruta = ubicacion.pathname;
   const [intento, setIntento] = useState(0);

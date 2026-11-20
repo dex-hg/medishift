@@ -5,6 +5,7 @@ import EncabezadoPagina from '../../components/EncabezadoPagina';
 import Estado from '../../components/Estado';
 import { CalendarioMensualCitas } from '../appointments/CalendarioCitas';
 import { useConsultaAtencion, useOperacionAtencion } from '../../hooks/useAtencion';
+import useRestaurarPaginaPrivada from '../../hooks/useRestaurarPaginaPrivada';
 import { guardarArchivoReporte } from '../../services/archivoReporte';
 import { cerrarSesionPaciente, obtenerCalendarioPaciente } from '../../services/portalPaciente';
 import { etiquetasEstadoCita, partesLocales } from '../../utils/validacionesAtencion';
@@ -42,6 +43,7 @@ function DetalleCita({ cita }) {
 }
 
 export default function MisCitas() {
+  useRestaurarPaginaPrivada();
   const navegar = useNavigate();
   const hoy = fechaActual(ZONA_LOCAL);
   const [periodo, cambiarPeriodo] = useState(() => hoy.slice(0, 7));
