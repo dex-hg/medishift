@@ -46,9 +46,9 @@ def leer_migraciones():
     return cambios
 
 
-def generar_sql(solo_verificar=False):
+def generar_sql(solo_verificar=False, para_editor=False):
     base = leer_sql(BASE)
-    # psql administra la transacción y ubica btree_gist en el esquema de extensiones.
+    # Ambos instaladores comparten la transacción y el esquema de extensiones.
     cuerpo_base, retiradas = re.subn(r"(?m)^(BEGIN;|COMMIT;|CREATE EXTENSION IF NOT EXISTS btree_gist;)$", "", base)
     exigir(retiradas == 3, "Cambió la estructura de la línea base. Revisa el instalador antes de continuar.")
     cambios = leer_migraciones()
@@ -59,8 +59,17 @@ def generar_sql(solo_verificar=False):
         huella = hashlib.sha256(sql.encode("utf-8")).hexdigest()
         firmas.append(f"({literal(version)}, {literal(nombre)}, {literal(huella)})")
     filas = ",\n".join(firmas)
-    es_verificacion = "on" if solo_verificar else "off"
     sentencia_verificacion = f"""
+DO $instalacion$
+BEGIN
+    IF to_regnamespace('medishift') IS NULL THEN
+        RAISE EXCEPTION 'MediShift todavía no está instalado en este proyecto';
+    END IF;
+END;
+$instalacion$;
+
+SET LOCAL ROLE medishift_propietario;
+
 DO $registro$
 BEGIN
     IF EXISTS (
@@ -74,20 +83,32 @@ BEGIN
 END;
 $registro$;
 """
-    return "\n".join((
-        f"\\set solo_verificar {es_verificacion}",
-        "SET TRANSACTION READ ONLY;" if solo_verificar else "",
-        leer_sql(SUPABASE / "preparar.sql"),
-        r"\if :instalacion_nueva",
-        cuerpo_base,
-        *(sql for _, _, sql in cambios),
-        REGISTRO,
-        f"INSERT INTO medishift.schema_migration (version, name, checksum_sha256) VALUES\n{filas};",
-        permisos,
-        r"\endif",
-        sentencia_verificacion,
-        leer_sql(SUPABASE / "verificar.sql"),
-    ))
+    entrada = [leer_sql(SUPABASE / "preparar.sql")]
+    if solo_verificar:
+        entrada.insert(0, "SET TRANSACTION READ ONLY;")
+    else:
+        instalacion = [
+            leer_sql(SUPABASE / "crear_esquema.sql"),
+            cuerpo_base,
+            *(sql for _, _, sql in cambios),
+            REGISTRO,
+            f"INSERT INTO medishift.schema_migration (version, name, checksum_sha256) VALUES\n{filas};",
+            permisos,
+        ]
+        if not para_editor:
+            # Permite repetir la comprobación mediante psql sin volver a crear tablas.
+            instalacion = [
+                r"SELECT to_regnamespace('medishift') IS NULL AS instalacion_nueva \gset",
+                r"\if :instalacion_nueva",
+                *instalacion,
+                r"\endif",
+            ]
+        entrada.extend(instalacion)
+    entrada.extend((sentencia_verificacion, leer_sql(SUPABASE / "verificar.sql")))
+    if para_editor:
+        entrada.insert(0, "-- SQL generado por scripts/preparar_sql_editor_supabase.py.\nBEGIN;")
+        entrada.append("COMMIT;\nSELECT 'Esquema y permisos de MediShift verificados' AS resultado;")
+    return "\n".join(entrada) + "\n"
 
 
 def localizar_psql():

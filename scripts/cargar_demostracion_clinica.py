@@ -16,13 +16,33 @@ SQL_DEMOSTRACION = RAIZ / "db/datos_demostracion_clinica.sql"
 PAISES = ("pe", "co")
 ROLES = ("admin", "doctor")
 
+COMPROBAR_DEMOSTRACION_SUPABASE = """
+DO $accesos$
+DECLARE
+    claves jsonb := current_setting('medishift.accesos_demostracion')::jsonb;
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM schema_migration WHERE version = '009') THEN
+        RAISE EXCEPTION 'Instala y verifica el esquema de MediShift antes de cargar la demostración.';
+    END IF;
+    IF EXISTS (
+        SELECT 1
+        FROM jsonb_each(claves) AS sede(pais, cuentas)
+        CROSS JOIN LATERAL jsonb_each_text(sede.cuentas) AS cuenta(tipo, huella)
+        JOIN institution i ON i.code_institution = 'DEMO-MEDISHIFT-' || upper(sede.pais)
+        LEFT JOIN user_account u ON u.id_institution = i.id_institution
+            AND u.email_user_account = cuenta.tipo || '.' || sede.pais || '@medishift.example.test'
+        WHERE u.password_hash_user_account IS DISTINCT FROM cuenta.huella
+    ) THEN
+        RAISE EXCEPTION 'La demostración ya tiene otros accesos o falta alguna cuenta. Conserva los accesos vigentes.';
+    END IF;
+END;
+$accesos$;
+"""
+
 
 class CargadorDemostracion(AdministradorMigracion):
     def ejecutar_demostracion(self, claves):
-        hashes = {pais: {rol: proteger_clave(claves[pais][rol]) for rol in ROLES}
-                  for pais in PAISES}
-        configuracion = "SET medishift.accesos_demostracion = " + literal(json.dumps(hashes)) + ";\n"
-        entrada = configuracion + SQL_DEMOSTRACION.read_text(encoding="utf-8")
+        entrada = generar_sql_demostracion(claves)
         salida = self.ejecutar("psql", ["--dbname", self.base, "-X", "-qAt",
                                         "-v", "ON_ERROR_STOP=1", "--file", "-"], entrada)
         return json.loads(salida)
@@ -40,6 +60,19 @@ def proteger_clave(clave):
     sal = secrets.token_bytes(16)
     hash_clave = hashlib.pbkdf2_hmac("sha256", clave.encode("utf-8"), sal, 600_000)
     return "{pbkdf2@medishift-v1}" + (sal + hash_clave).hex()
+
+
+def generar_sql_demostracion(claves, para_supabase=False):
+    huellas = {pais: {rol: proteger_clave(claves[pais][rol]) for rol in ROLES} for pais in PAISES}
+    configuracion = "SET LOCAL medishift.accesos_demostracion = " + literal(json.dumps(huellas)) + ";"
+    ruta_publica = "SET LOCAL search_path = public, pg_catalog;"
+    sql = SQL_DEMOSTRACION.read_text(encoding="utf-8")
+    exigir(sql.count(ruta_publica) == 1, "Cambió la entrada de la carga de demostración.")
+    inicio = [ruta_publica, configuracion]
+    if para_supabase:
+        inicio = ["SET LOCAL ROLE medishift_propietario;", "SET LOCAL search_path TO medishift, pg_temp;",
+                  configuracion, COMPROBAR_DEMOSTRACION_SUPABASE]
+    return sql.replace(ruta_publica, "\n".join(inicio), 1)
 
 
 def archivo_accesos(cargador):
