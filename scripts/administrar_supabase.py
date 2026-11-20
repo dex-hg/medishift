@@ -42,7 +42,7 @@ def leer_migraciones():
         version = nombre.group(1)
         exigir(int(version) == len(cambios) + 1, f"Secuencia de migraciones inválida en {ruta.name}.")
         cambios.append((version, ruta.name, leer_sql(ruta)))
-    exigir(len(cambios) >= 8, "La instalación requiere las migraciones desde V001 hasta V008.")
+    exigir(len(cambios) >= 9, "La instalación requiere las migraciones desde V001 hasta V009.")
     return cambios
 
 

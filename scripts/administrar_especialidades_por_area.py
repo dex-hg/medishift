@@ -31,7 +31,8 @@ class AdministradorEspecialidades(AdministradorMigracion):
         objetos = json.loads(self.consultar(base, """
             SELECT json_build_array(
                 EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.specialty'::regclass
-                    AND attname='id_institution' AND NOT attisdropped AND NOT attnotnull
+                    AND attname='id_institution' AND NOT attisdropped
+                    AND attnotnull = (EXISTS (SELECT 1 FROM public.schema_migration WHERE version='009'))
                     AND atttypid='uuid'::regtype),
                 EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.planning_unit'::regclass
                     AND attname='id_specialty' AND NOT attisdropped AND NOT attnotnull
