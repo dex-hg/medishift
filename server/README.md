@@ -53,6 +53,8 @@ pnpm dev
 
 Si ya estás dentro de `client`, ejecuta solo `pnpm dev`. Abre `http://127.0.0.1:5173/registro` o `/iniciar-sesion`. Vite redirige `/api/registro` y `/api/sesion` al backend en `localhost:8080`. Mantén ambas terminales abiertas mientras utilizas la aplicación.
 
+`GET /api` y `GET /api/` devuelven HTTP 200 y un mensaje JSON que identifica la API de MediShift.
+
 La conexión correcta muestra `Conexión con PostgreSQL verificada correctamente.`. La falta de contraseña, una clave vacía o una conexión inválida impiden arrancar. La comprobación inicial es de solo lectura. `spring.sql.init.mode=never` mantiene desactivada la ejecución automática de scripts y no se incluyen cambios de esquema.
 
 Si Vite muestra `ECONNREFUSED` al solicitar `/api/registro` o `/api/sesion`, comprueba la terminal del backend: ese mensaje indica que no pudo conectarse al servicio de `localhost:8080`. Inicia el backend o resuelve el error que impidió su arranque, y vuelve a intentar la solicitud. Si falla la conexión con PostgreSQL, revisa el servicio y la configuración local antes de reiniciar. No basta con tener Vite activo en el puerto 5173.
@@ -146,7 +148,7 @@ Las pruebas de programación crean recursos temporales identificados por UUID. C
 
 ## Transición al núcleo mensual
 
-La sección `/horarios` reúne las vistas Meses y áreas y Turnos semanales. El Administrador puede crear unidades y borradores mensuales y consultar versiones con auditoría. `/planes-mensuales` redirige a `/horarios`; las API conservan sus rutas. El rol se comprueba contra PostgreSQL en cada operación. El registro de una institución nueva crea su administrador inicial. Para recuperar instituciones anteriores sin administrador se mantiene la herramienta local explícita, sin servidor web. Iniciar sesión nunca concede ni repone roles.
+La sección `/horarios` abre el calendario mensual. El Administrador puede crear unidades y borradores mensuales y consultar versiones con auditoría. `/planes-mensuales` redirige al calendario. El rol se comprueba contra PostgreSQL en cada operación. El registro de una institución nueva crea su administrador inicial. Para recuperar instituciones anteriores sin administrador está disponible la herramienta local de inicialización.
 
 Para incluir las pruebas mensuales, añadir `-Dmedishift.prueba-migracion-mensual=true` y `-Dmedishift.prueba-planes-mensuales=true` a la verificación completa. La cuenta de prueba debe poder crear esquemas y `btree_gist` debe existir. Las pruebas de API confirman y revierten transacciones reales dentro de esquemas privados que se eliminan al terminar.
 
@@ -154,15 +156,17 @@ V001 se administra mediante `scripts/administrar_migracion_mensual.py`; Spring n
 
 ## Etiquetas institucionales y subáreas
 
-`GET /api/etiquetas` lista las etiquetas propias y las compartidas, con su estado y revisión. `POST /api/etiquetas` recibe `nombre`. `PUT /api/etiquetas/{id}` recibe `nombre` y `activa` con `If-Match`. El administrador puede renombrar, archivar y reactivar etiquetas propias. El catálogo compartido se consulta y se puede usar al programar.
+`GET /api/etiquetas` lista las etiquetas de la clínica de la sesión, con su estado y revisión. `POST /api/etiquetas` recibe `nombre`. `PUT /api/etiquetas/{id}` recibe `nombre` y `activa` con `If-Match`. El administrador puede renombrar, archivar y reactivar las etiquetas de su clínica.
 
 Los formularios de Profesionales y Consultorios aceptan `idsEtiquetas`, un arreglo de UUID sin duplicados. Las ediciones con este campo requieren `If-Match`. En un profesional el arreglo vacío permite completar sus competencias más adelante. En un consultorio significa uso general. Las solicitudes anteriores con el campo `especialidad` siguen disponibles.
+
+`GET /api/consultorios` incluye el área de cada consultorio, su área principal si está en una subárea y las etiquetas del área asignada. El cliente usa estos datos en las vistas de lista y árbol.
 
 `POST /api/planificador/areas` recibe `codigo`, `nombre`, `idsEtiquetas` e `idAreaPadre` opcional. `PUT /api/planificador/areas/{id}` recibe `nombre`, `idsEtiquetas`, `idAreaPadre` y `estado` con `If-Match`. Cada subárea tiene consultorios y plan propios. El servidor valida que el padre sea un área raíz de la institución. `POST /api/planificador/consultorios` acepta `idsEtiquetas` para restringir las opciones de su unidad.
 
 La programación mensual y semanal comprueba que la etiqueta del turno sea válida para el profesional, el área vinculada y el consultorio. `idEtiqueta` es un alias de `idEspecialidad` para las solicitudes de turnos. Las ediciones que dejarían incompatibles turnos vigentes se revierten con 409. Los cambios y movimientos se serializan por institución y conservan la protección de citas. Las versiones archivadas y los reportes usan la etiqueta guardada en el turno.
 
-Aplica la [migración V008](../db/migraciones/README.md) antes de iniciar el backend actualizado. `ApiEtiquetasSubareasPostgresqlTests` cubre la jerarquía, las restricciones, el movimiento, las citas y la concurrencia. Se ejecuta con `-Dmedishift.prueba-atencion=true` en esquemas privados.
+Aplica V009 antes de iniciar el backend actualizado. `ApiEtiquetasSubareasPostgresqlTests` cubre la jerarquía, las restricciones, el movimiento, las citas y la concurrencia. Se ejecuta con `-Dmedishift.prueba-atencion=true` en esquemas privados. [Migraciones de MediShift](../db/migraciones/README.md)
 
 ## Datos para reportes mensuales
 
@@ -212,7 +216,7 @@ Referencias oficiales: [configuración externa de Spring Boot](https://docs.spri
 
 La programación administrativa se conserva. Desde Configuraciones, Reglas de la institución, el administrador puede activar «Habilitar autoprogramación médica». La opción está desactivada inicialmente. Al activarla, los doctores crean, modifican y eliminan sus propios turnos futuros editables en el calendario mensual. El administrador consulta y modifica toda la programación, incluso con la opción desactivada. Desactivarla conserva los turnos y deja a los doctores en modo de consulta.
 
-En Profesionales, el botón «Acceso del doctor» permite crear una cuenta vinculada al profesional o habilitar/revocar el rol de una cuenta ya vinculada. La cuenta debe estar activa y el profesional también. La contraseña inicial admite de 12 a 128 caracteres y se guarda mediante el codificador PBKDF2 existente. No se vinculan cuentas automáticamente por coincidencia de correo. Revocar el rol no elimina los turnos ni otros roles de la cuenta.
+Al registrar a un profesional activo, `POST /api/profesionales` admite `correoAcceso` y `contrasenaAcceso` como par opcional. Si se envían, el profesional y su cuenta de doctor se crean en la misma transacción. En Profesionales → Acceso del doctor, el administrador también puede crear la cuenta más adelante, cambiar su correo o contraseña y habilitar o revocar el rol. La contraseña admite de 12 a 128 caracteres y se guarda como hash PBKDF2. Las cuentas con otros roles institucionales gestionan su contraseña desde Mi perfil.
 
 `GET /api/planificador` devuelve permisos vigentes, solo los turnos y el registro profesional del doctor y una lista de ocupaciones compartidas sin nombres ni notas ajenas. El administrador conserva la consulta completa. Los consultorios ocupados se marcan al elegir fecha y horas; las ocupaciones incluyen programación semanal y mensual. La validación del servidor se ejecuta después del bloqueo transaccional institucional y conserva especialidades, cruces de profesional/consultorio, ausencias aprobadas, bloqueos y límites diarios/semanales. El inicio de un turno puede coincidir con el final del anterior. La edición usa `If-Match` y audita al actor autenticado.
 
