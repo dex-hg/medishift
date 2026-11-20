@@ -25,7 +25,8 @@ Conserva los valores de un `.env` existente. El archivo está excluido de Git y 
 | `MEDISHIFT_BD_URL`        | `jdbc:postgresql://localhost:5432/MediShift`                 |
 | `MEDISHIFT_BD_USUARIO`    | `postgres`                                                   |
 | `MEDISHIFT_BD_CLAVE`      | Contraseña de PostgreSQL, obligatoria                         |
-| `MEDISHIFT_COOKIE_SEGURA` | `false` en localhost HTTP; `true` al servir mediante HTTPS |
+| `MEDISHIFT_COOKIE_SEGURA` | `false` en localhost HTTP y `true` al servir mediante HTTPS |
+| `MEDISHIFT_ORIGENES_PERMITIDOS` | Orígenes del navegador separados por comas. Por defecto admite el Vite local en `localhost:5173` y `127.0.0.1:5173` |
 
 La URL debe coincidir con el nombre exacto de la base, incluidas las mayúsculas. El esquema se toma de la configuración del usuario de PostgreSQL; si necesitas especificarlo, añade `?currentSchema=NOMBRE_ESQUEMA` a la URL.
 
@@ -59,6 +60,23 @@ La conexión correcta muestra `Conexión con PostgreSQL verificada correctamente
 
 Si Vite muestra `ECONNREFUSED` al solicitar `/api/registro` o `/api/sesion`, comprueba la terminal del backend: ese mensaje indica que no pudo conectarse al servicio de `localhost:8080`. Inicia el backend o resuelve el error que impidió su arranque, y vuelve a intentar la solicitud. Si falla la conexión con PostgreSQL, revisa el servicio y la configuración local antes de reiniciar. No basta con tener Vite activo en el puerto 5173.
 
+## Seguridad de la API
+
+Las escrituras con cuerpo aceptan JSON de hasta 32 KiB sin compresión. La API rechaza JSON con claves duplicadas, contenido adicional o anidación excesiva. En registro e inicio de sesión también rechaza campos desconocidos. Los parámetros de consulta son escalares y la cadena de consulta admite hasta 2048 caracteres. Las solicitudes rechazadas por tamaño o tipo devuelven 413 o 415. [OWASP REST Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html).
+
+En operaciones de escritura, Spring comprueba `Origin` o `Referer` antes de procesar el cuerpo. Una solicitud con cookie sin esos encabezados requiere la indicación del navegador `Sec-Fetch-Site: same-origin`. Las respuestas incluyen `Cache-Control: no-store` y cabeceras de protección del contenido. El perfil `supabase` habilita la cookie `Secure` y HSTS. En Render, configura `MEDISHIFT_ORIGENES_PERMITIDOS` con el origen HTTPS de Vercel, sin ruta. El frontend usa `/api` a través de un proxy bajo su propio origen para que el navegador envíe la cookie. [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
+
+| Operación | Límite por identidad | Límite por dirección | Límite de la instancia | Ventana |
+| --- | --- | --- | --- | --- |
+| Inicio de sesión del personal | 8 fallos por institución y correo | 60 solicitudes | 400 solicitudes | 10 minutos |
+| Inicio de sesión del paciente | 8 fallos por DNI | 60 solicitudes | 400 solicitudes | 10 minutos |
+| Registro de institución | | 20 solicitudes | 80 solicitudes | 10 minutos |
+| Consulta de DNI al proveedor | 15 solicitudes por cuenta | | 120 solicitudes | 1 minuto |
+
+La API responde 429 con `Retry-After` en segundos cuando se agota un cupo. Cada autenticación reserva sus cupos antes de consultar PostgreSQL. Una verificación exitosa o un fallo de base devuelve el cupo de identidad reservado. Los contadores son temporales, se guardan en memoria de cada instancia y se reinician con el proceso. Las identidades y las direcciones se guardan como huellas con sal. [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html).
+
+Por defecto, el cupo de dirección usa el interlocutor TCP que ve Tomcat. Si todas las solicitudes llegan desde el mismo proxy, comparten ese cupo. Para usar la dirección del visitante durante el despliegue, verifica primero la cadena de proxies y configura la confianza en el intermediario que controla los encabezados reenviados. [Configuración de RemoteIpValve](https://tomcat.apache.org/tomcat-11.0-doc/config/valve.html#Remote_IP_Valve).
+
 ## Registro
 
 `POST /api/registro` acepta `Content-Type: application/json` con los datos siguientes. La confirmación de contraseña se comprueba en el cliente y no se envía.
@@ -77,7 +95,7 @@ Los cinco campos deben ser texto. El código y el nombre se recortan con las mis
 
 Los límites son 32 caracteres para el código, 140 para el nombre, 64 para la zona horaria y 254 para el correo. Se cuentan puntos de código Unicode, como PostgreSQL, y se rechazan NUL y secuencias UTF-16 mal formadas. La zona debe coincidir exactamente con una de las seis opciones del cliente: `America/Lima`, `America/Bogota`, `America/Santiago`, `America/La_Paz`, `America/Mexico_City` y `America/Argentina/Buenos_Aires`.
 
-La contraseña no puede ser vacía ni estar compuesta solo por espacios. No se recorta ni se modifica. Tiene un límite operativo de 1024 puntos de código para acotar el procesamiento de cada solicitud. Se guarda un hash PBKDF2 con HMAC SHA-256, salt aleatorio de 16 bytes y 600 000 iteraciones. El prefijo `{pbkdf2@medishift-v1}` identifica esos parámetros para su futura verificación. El cálculo se realiza antes de abrir la transacción.
+Las contraseñas de registro requieren entre 12 y 1024 puntos de código Unicode y al menos un carácter distinto de un espacio. Se conservan los caracteres tal como se escriben. Se guarda un hash PBKDF2 con HMAC SHA-256, salt aleatorio de 16 bytes y 600 000 iteraciones. El prefijo `{pbkdf2@medishift-v1}` identifica esos parámetros para su futura verificación. El cálculo se realiza antes de abrir la transacción.
 
 La operación inserta una institución y una cuenta activas, con UUID generados en la aplicación. PostgreSQL asigna `created_at_user_account` mediante su valor predeterminado. El registro asigna el rol `administrador` a la cuenta que acaba de crear esa nueva institución, reutilizando el rol global si existe, y registra el evento `register_admin`. Institución, cuenta, vínculo y auditoría se guardan en una sola transacción; cualquier fallo revierte el conjunto. El cliente no elige el rol ni una institución existente. Un código duplicado sigue devolviendo 409 y no concede privilegios.
 
@@ -99,6 +117,7 @@ Los errores tienen la forma `{"mensaje":"Descripción","errores":{"campo":"Descr
 | ------ | ------------------------------------- |
 | 400    | Campos inválidos o JSON incorrecto   |
 | 409    | Código de institución ya existente  |
+| 429    | Cupo de solicitudes agotado         |
 | 503    | No se puede acceder a PostgreSQL      |
 | 500    | Fallo interno con respuesta genérica |
 
@@ -106,7 +125,7 @@ Las respuestas no incluyen contraseñas, hashes, SQL ni mensajes internos. Solo 
 
 ## Inicio y cierre de sesión
 
-`POST /api/sesion` recibe tres campos de texto: `codigoInstitucion`, `correo` y `contrasena`. El código conserva sus mayúsculas y minúsculas, el correo se compara sin distinguirlas dentro de la institución y la contraseña se verifica exactamente, sin recortarla. Usa los mismos límites y reglas del registro para esos campos. Un ejemplo:
+`POST /api/sesion` recibe los campos de texto `codigoInstitucion`, `correo` y `contrasena`. El código conserva sus mayúsculas y minúsculas y el correo se compara sin distinguirlas dentro de la institución. La contraseña se verifica exactamente y conserva el límite de 1024 puntos de código para cuentas existentes.
 
 ```json
 {"codigoInstitucion":"Clinica-Lima","correo":"cuenta@institucion.pe","contrasena":"una-contraseña-de-ejemplo"}
@@ -116,9 +135,9 @@ Si la cuenta y la institución están activas y el hash PBKDF2 coincide, respond
 
 El inicio reemplaza cualquier sesión anterior y rota su identificador. La sesión HTTP contiene únicamente los UUID de cuenta e institución. `POST /api/sesion` y `GET /api/sesion` incluyen `esAdministrador`, `esDoctor` e `idProfesional`, obtenidos de PostgreSQL sin guardar los roles en la sesión HTTP. `GET /api/sesion` devuelve los datos de la cuenta y ese indicador con HTTP 200 si la sesión aún existe y ambos estados siguen activos; ante una cuenta o institución revocada, invalida la sesión y devuelve 401. `DELETE /api/sesion` cierra la sesión y devuelve 204, incluso si ya estaba cerrada. Los tres métodos incluyen `Cache-Control: no-store` en sus respuestas.
 
-La sesión caduca tras 30 minutos de inactividad. Viaja solo por cookie `HttpOnly` y `SameSite=Strict`; no se admite el identificador en la URL. `MEDISHIFT_COOKIE_SEGURA=false` permite probar en `localhost` por HTTP. Configura `MEDISHIFT_COOKIE_SEGURA=true` al servir mediante HTTPS para marcar la cookie como `Secure`. El cliente debe enviar la cookie en las solicitudes a `/api`; no debe guardar el identificador ni la contraseña en almacenamiento del navegador. Los endpoints de profesionales, consultorios y especialidades comprueban la sesión y el estado activo de la cuenta e institución. La institución se toma de la sesión y limita cada operación de gestión.
+La sesión del personal caduca tras 30 minutos de inactividad o 8 horas desde el inicio. El identificador viaja solo por cookie `HttpOnly` y `SameSite=Strict`. `MEDISHIFT_COOKIE_SEGURA=false` permite probar por HTTP en `localhost`. Los endpoints de profesionales, consultorios y especialidades comprueban la sesión y el estado activo de la cuenta e institución. La institución se toma de la sesión y limita cada operación de gestión.
 
-Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Las cuentas institucionales requieren una política de limitación de intentos de autenticación antes de publicar el servicio. Profesionales, consultorios y horarios usan PostgreSQL. El encargado asigna los turnos directamente, sin registrar disponibilidades previamente. Los horarios semanales se crean como borrador y se aprueban por semana, con validación completa y reemplazo transaccional de versiones. Los límites iniciales por profesional son 6 horas diarias y 36 semanales; un administrador puede modificarlos en el menú de usuario, Configuraciones. Se aplican al calendario mensual y semanal.
+Las sesiones se conservan en la memoria del servidor y se pierden al reiniciarlo. Profesionales, consultorios y horarios usan PostgreSQL. El encargado asigna los turnos directamente, sin registrar disponibilidades previamente. Los horarios semanales se crean como borrador y se aprueban por semana, con validación completa y reemplazo transaccional de versiones. Los límites iniciales por profesional son 6 horas diarias y 36 semanales. Un administrador puede modificarlos en el menú de usuario, Configuraciones. Se aplican al calendario mensual y semanal.
 
 ### Perfil y configuraciones
 
@@ -237,4 +256,4 @@ En «Acceso para pacientes», ingresa el DNI y la fecha de nacimiento registrado
 - `POST /api/portal-paciente/sesion` recibe `dni` y `fechaNacimiento` como texto. La fecha utiliza el formato `AAAA-MM-DD`. Una coincidencia válida abre una sesión de consulta y devuelve 204. Una coincidencia fallida devuelve 401 con el mismo mensaje para ambos campos. `DELETE` en la misma ruta cierra la sesión.
 - `GET /api/portal-paciente/calendario?periodo=AAAA-MM` vuelve a verificar las fichas con los datos de la sesión. Devuelve únicamente los hospitales y las citas autorizadas del mes.
 
-La consulta limita los intentos fallidos por DNI y dirección de conexión en cada instancia del servidor. Cualquier persona que conozca ambos datos puede acceder a las citas asociadas. Las pruebas de coincidencia de fichas, aislamiento de sesiones y límite de intentos se ejecutan con `-Dmedishift.prueba-atencion=true`.
+La sesión del portal caduca tras 15 minutos de inactividad o una hora desde el inicio. El DNI y la fecha de nacimiento válidos dan acceso de lectura a las citas asociadas. Las pruebas de coincidencia de fichas, aislamiento de sesiones y límite de intentos se ejecutan con `-Dmedishift.prueba-atencion=true`.
