@@ -1,9 +1,18 @@
-import { ErrorProgramacion } from './programacion.js';
 import { periodoValido } from './planesMensuales.js';
 import { fechaValida, horaValida, normalizarTurno, REVISION, UUID, validarTurno } from '../utils/validacionesProgramacion.js';
 import { validarFeriados } from '../utils/feriados.js';
 import { esPolitica } from './configuracion.js';
 import { idsEtiquetasValidos } from '../utils/validacionesCatalogos.js';
+
+class ErrorProgramacion extends Error {
+  constructor(mensaje, { estado = 0, errores = {}, tipo = 'servicio' } = {}) {
+    super(mensaje);
+    this.name = 'ErrorProgramacion';
+    this.estado = estado;
+    this.errores = errores;
+    this.tipo = tipo;
+  }
+}
 
 const esObjeto = (valor) => valor !== null && typeof valor === 'object' && !Array.isArray(valor);
 const esId = (valor) => typeof valor === 'string' && UUID.test(valor);
@@ -25,8 +34,7 @@ function lista(valor, convertir) {
 
 function especialidad(valor) {
   if (!esObjeto(valor) || !esId(valor.id) || !esTexto(valor.nombre)) respuestaInvalida();
-  if (valor.compartida !== undefined && typeof valor.compartida !== 'boolean') respuestaInvalida();
-  return { id: valor.id, nombre: valor.nombre, ...(valor.compartida !== undefined ? { compartida: valor.compartida } : {}) };
+  return { id: valor.id, nombre: valor.nombre };
 }
 
 function recurso(valor, consultorio = false) {
