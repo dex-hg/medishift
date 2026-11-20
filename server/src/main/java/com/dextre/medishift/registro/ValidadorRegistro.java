@@ -43,7 +43,7 @@ public final class ValidadorRegistro {
 		if (!errores.containsKey("zonaHoraria") && !ZONAS_HORARIAS.contains(zona)) {
 			errores.put("zonaHoraria", "Selecciona una zona horaria de la lista.");
 		}
-		if (!errores.containsKey("correo") && !FORMATO_CORREO.matcher(correo).matches()) {
+		if (!errores.containsKey("correo") && !tieneFormatoCorreo(correo)) {
 			errores.put("correo", "Ingresa un correo válido, por ejemplo nombre@institucion.pe.");
 		}
 		if (!errores.isEmpty()) {
@@ -63,13 +63,17 @@ public final class ValidadorRegistro {
 		validarTexto(codigo, "codigoInstitucion", 32, errores);
 		validarTexto(correo, "correo", 254, errores);
 		validarTexto(contrasena, "contrasena", 1024, errores);
-		if (!errores.containsKey("correo") && !FORMATO_CORREO.matcher(correo).matches()) {
+		if (!errores.containsKey("correo") && !tieneFormatoCorreo(correo)) {
 			errores.put("correo", "Ingresa un correo válido, por ejemplo nombre@institucion.pe.");
 		}
 		if (!errores.isEmpty()) {
 			throw new ValidacionRegistroException(errores);
 		}
 		return new DatosCredenciales(codigo, correo, contrasena);
+	}
+
+	public static boolean tieneFormatoCorreo(String correo) {
+		return FORMATO_CORREO.matcher(correo).matches();
 	}
 
 	private static String leerTexto(Object valor, String campo, Map<String, String> errores) {

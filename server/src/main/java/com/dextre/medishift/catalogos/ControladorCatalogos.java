@@ -1,5 +1,6 @@
 package com.dextre.medishift.catalogos;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.dextre.medishift.acceso.ValidadorAccesoDoctores;
 import com.dextre.medishift.catalogos.DatosCatalogos.Consultorio;
 import com.dextre.medishift.catalogos.DatosCatalogos.Especialidad;
 import com.dextre.medishift.catalogos.DatosCatalogos.Etiqueta;
@@ -51,10 +53,15 @@ public class ControladorCatalogos {
 	public ResponseEntity<Profesional> crearProfesional(@RequestBody Map<String, Object> datos,
 			HttpServletRequest solicitud) {
 		UUID institucion = acceso.obtenerInstitucion(solicitud);
-		Profesional formulario = ValidadorCatalogos.validarProfesional(datos);
-		Profesional creado = datos.containsKey("idsEtiquetas")
+		Map<String, Object> datosProfesionales = new LinkedHashMap<>(datos);
+		Object correo = datosProfesionales.remove("correoAcceso");
+		Object contrasena = datosProfesionales.remove("contrasenaAcceso");
+		Profesional formulario = ValidadorCatalogos.validarProfesional(datosProfesionales);
+		var credenciales = datosProfesionales.size() == datos.size() ? null : ValidadorAccesoDoctores.validarInicial(correo, contrasena);
+		List<UUID> etiquetas = datos.containsKey("idsEtiquetas") ? ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")) : null;
+		Profesional creado = etiquetas != null || credenciales != null
 				? servicio.guardarProfesional(institucion, acceso.obtenerCuenta(solicitud), null, formulario,
-						ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")), null)
+						etiquetas, null, credenciales)
 				: servicio.crearProfesional(institucion, formulario);
 		return ResponseEntity.status(HttpStatus.CREATED).body(creado);
 	}
@@ -68,7 +75,7 @@ public class ControladorCatalogos {
 		Profesional formulario = ValidadorCatalogos.validarProfesional(datos);
 		if (datos.containsKey("idsEtiquetas")) {
 			return servicio.guardarProfesional(institucion, acceso.obtenerCuenta(solicitud), profesional, formulario,
-					ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")), RevisionesProgramacion.leerCondicion(revision));
+					ValidadorCatalogos.idsEtiquetas(datos.get("idsEtiquetas")), RevisionesProgramacion.leerCondicion(revision), null);
 		}
 		return servicio.actualizarProfesional(institucion, profesional, formulario);
 	}
