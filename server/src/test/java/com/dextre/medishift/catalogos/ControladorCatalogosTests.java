@@ -17,7 +17,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.dextre.medishift.catalogos.DatosCatalogos.Consultorio;
-import com.dextre.medishift.sesion.FiltroNoCacheSesion;
+import com.dextre.medishift.seguridad.FiltroSeguridadApi;
+import tools.jackson.databind.json.JsonMapper;
 import com.dextre.medishift.sesion.RespuestaSesion;
 import com.dextre.medishift.sesion.ServicioSesion;
 
@@ -63,8 +64,9 @@ class ControladorCatalogosTests {
 		when(sesiones.consultar(institucion, cuenta)).thenReturn(Optional.of(
 				new RespuestaSesion(cuenta, institucion, "Clinica", "Clínica", "cuenta@institucion.pe", false)));
 		cliente = MockMvcBuilders.standaloneSetup(new ControladorCatalogos(
-				new AccesoCatalogos(sesiones, "http://localhost:5173"), catalogos))
-				.setControllerAdvice(new ManejadorErroresCatalogos()).addFilters(new FiltroNoCacheSesion()).build();
+				new AccesoCatalogos(sesiones), catalogos))
+				.setControllerAdvice(new ManejadorErroresCatalogos())
+				.addFilters(new FiltroSeguridadApi("http://localhost:5173", false, JsonMapper.shared())).build();
 	}
 
 	@ParameterizedTest

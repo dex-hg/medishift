@@ -5,10 +5,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 
@@ -22,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -37,7 +33,7 @@ class AccesoCatalogosTests {
 	@BeforeEach
 	void preparar() {
 		sesiones = mock(ServicioSesion.class);
-		acceso = new AccesoCatalogos(sesiones, "http://localhost:5173,http://127.0.0.1:5173");
+		acceso = new AccesoCatalogos(sesiones);
 		institucion = UUID.randomUUID();
 		cuenta = UUID.randomUUID();
 		perfil = new RespuestaSesion(cuenta, institucion, "Clinica", "Clínica", "cuenta@institucion.pe", false);
@@ -71,37 +67,6 @@ class AccesoCatalogosTests {
 		assertEquals(institucion, acceso.obtenerInstitucion(solicitud));
 		assertThrows(AccesoNoAutorizadoException.class, () -> acceso.obtenerInstitucion(solicitud));
 		assertTrue(sesion.isInvalid());
-	}
-
-	@ParameterizedTest
-	@ValueSource(strings = { "http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:5173" })
-	void permiteOrigenDelServidorYFrontendConfigurado(String origen) {
-		MockHttpServletRequest solicitud = solicitudActiva("POST");
-		solicitud.addHeader("Origin", origen);
-		assertEquals(institucion, acceso.obtenerInstitucion(solicitud));
-		verify(sesiones).consultar(institucion, cuenta);
-	}
-
-	@ParameterizedTest
-	@ValueSource(strings = { "https://ajeno.test", "http://localhost:9000", "null", "http://",
-			"http://usuario@localhost:8080", "http://localhost:8080/ruta", "http://localhost:8080?consulta=1",
-			"http://localhost:8080#fragmento", "javascript:alert(1)", "https://localhost:8080" })
-	void rechazaOrigenMaliciosoOpacoMalformadoYNoConfigurado(String origen) {
-		MockHttpServletRequest solicitud = solicitudActiva("PUT");
-		solicitud.addHeader("Origin", origen);
-		CatalogoException error = assertThrows(CatalogoException.class, () -> acceso.obtenerInstitucion(solicitud));
-		assertEquals(HttpStatus.FORBIDDEN, error.obtenerEstado());
-		assertFalse(((MockHttpSession) solicitud.getSession(false)).isInvalid());
-	}
-
-	@Test
-	void fetchCrossSiteSinOriginTambienSeRechazaPeroGetNoModifica() {
-		MockHttpServletRequest solicitud = solicitudActiva("DELETE");
-		solicitud.addHeader("Sec-Fetch-Site", "cross-site");
-		assertEquals(HttpStatus.FORBIDDEN,
-				assertThrows(CatalogoException.class, () -> acceso.obtenerInstitucion(solicitud)).obtenerEstado());
-		solicitud.setMethod("GET");
-		assertEquals(institucion, acceso.obtenerInstitucion(solicitud));
 	}
 
 	@Test

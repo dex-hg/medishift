@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dextre.medishift.atencion.ValidadorAtencion;
-import com.dextre.medishift.catalogos.AccesoCatalogos;
 import com.dextre.medishift.programacion.mensual.ValidadorPlanesMensuales;
 import com.dextre.medishift.sesion.AccesoNoAutorizadoException;
 import com.dextre.medishift.sesion.SesionesHttp;
@@ -23,16 +22,12 @@ import com.dextre.medishift.sesion.SesionesHttp;
 @RequestMapping("/api/portal-paciente")
 public class ControladorPortalPaciente {
     private final ServicioPortalPaciente servicio;
-    private final AccesoCatalogos acceso;
-
-    public ControladorPortalPaciente(ServicioPortalPaciente servicio, AccesoCatalogos acceso) {
+    public ControladorPortalPaciente(ServicioPortalPaciente servicio) {
         this.servicio = servicio;
-        this.acceso = acceso;
     }
 
     @PostMapping(value = "/sesion", consumes = "application/json")
     public ResponseEntity<Void> iniciar(@RequestBody Map<String, Object> datos, HttpServletRequest solicitud) {
-        acceso.validarOrigen(solicitud);
         var identidad = ValidadorAtencion.ingresoPaciente(datos);
         servicio.autenticar(identidad, solicitud.getRemoteAddr());
         SesionesHttp.abrirPortal(solicitud, identidad);
@@ -41,7 +36,6 @@ public class ControladorPortalPaciente {
 
     @DeleteMapping("/sesion")
     public ResponseEntity<Void> cerrar(HttpServletRequest solicitud) {
-        acceso.validarOrigen(solicitud);
         HttpSession sesion = solicitud.getSession(false);
         if (SesionesHttp.identificarPortal(sesion) != null) SesionesHttp.invalidar(sesion);
         return ResponseEntity.noContent().build();
