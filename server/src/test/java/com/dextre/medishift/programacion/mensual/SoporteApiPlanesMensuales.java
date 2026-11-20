@@ -42,6 +42,7 @@ abstract class SoporteApiPlanesMensuales extends SoporteMigracionMensual {
 		ejecutarArchivo("V002__consultorios_por_area.sql");
 		ejecutarArchivo("V003__especialidades_por_area.sql");
 		ejecutarArchivo("V008__etiquetas_y_subareas.sql");
+		ejecutarArchivo("V009__etiquetas_institucionales.sql");
 		conexion.commit();
 		conexion.setAutoCommit(true);
 		consultas.queryForObject("SELECT set_config('search_path', ?, false)", String.class, esquema + ", public");

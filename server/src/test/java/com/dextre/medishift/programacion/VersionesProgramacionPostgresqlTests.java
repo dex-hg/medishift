@@ -117,7 +117,7 @@ class VersionesProgramacionPostgresqlTests extends SoporteProgramacionPostgresql
 				.andExpect(status().isNotFound());
 		cliente.perform(json(post("/api/horarios"), turno(lunes.plusDays(1), "08:00", "10:00"))
 				.header("Origin", "https://ajeno.invalid")).andExpect(status().isForbidden());
-		UUID ajeno = nuevoProfesional(ajena, especialidad);
+		UUID ajeno = nuevoProfesional(ajena, nuevaEspecialidad(ajena));
 		cliente.perform(json(post("/api/horarios"), turno(ajeno, consultorio, especialidad, lunes, "10:00", "12:00")))
 				.andExpect(status().isNotFound());
 	}

@@ -93,8 +93,13 @@ class ApiPortalPacientePostgresqlTests extends SoporteAtencionPostgresql {
                 "Segundo hospital", "America/Mexico_City", hospital);
         var segundaFicha = paciente(sesionDe(hospital, cuenta), DNI);
         UUID idSegundaFicha = UUID.fromString(texto(segundaFicha, "id"));
-        UUID citaSegundoHospital = citaEnHospital(hospital, cuenta, idSegundaFicha, LocalDate.of(2032, 11, 3), "10:00:00");
-        UUID citaFinDeOctubre = citaEnHospital(hospital, cuenta, idSegundaFicha, LocalDate.of(2032, 10, 31), "23:15:00");
+        UUID etiquetaHospital = UUID.randomUUID();
+        consultas.update("""
+                INSERT INTO specialty(id_specialty,code_specialty,name_specialty,id_institution)
+                VALUES (?,'HOSP-02','Especialidad de ensayo',?)
+                """, etiquetaHospital, hospital);
+        UUID citaSegundoHospital = citaEnHospital(hospital, cuenta, idSegundaFicha, etiquetaHospital, LocalDate.of(2032, 11, 3), "10:00:00");
+        UUID citaFinDeOctubre = citaEnHospital(hospital, cuenta, idSegundaFicha, etiquetaHospital, LocalDate.of(2032, 10, 31), "23:15:00");
 
         var acceso = sesionPaciente(solicitar(ingreso(DNI, NACIMIENTO)).andExpect(status().isNoContent()).andReturn());
         calendario(acceso, "2032-11").andExpect(status().isOk())
@@ -132,7 +137,7 @@ class ApiPortalPacientePostgresqlTests extends SoporteAtencionPostgresql {
                 .andExpect(header().string("Cache-Control", "no-store"));
     }
 
-    private UUID citaEnHospital(UUID hospital, UUID cuenta, UUID ficha, LocalDate dia, String hora) {
+    private UUID citaEnHospital(UUID hospital, UUID cuenta, UUID ficha, UUID etiqueta, LocalDate dia, String hora) {
         UUID sala = UUID.randomUUID(), medico = UUID.randomUUID(), plan = UUID.randomUUID(), turno = UUID.randomUUID();
         UUID id = UUID.randomUUID();
         String codigo = id.toString().substring(0, 8);
@@ -143,7 +148,7 @@ class ApiPortalPacientePostgresqlTests extends SoporteAtencionPostgresql {
                     license_number_professional,category_professional,email_professional,status_professional)
                 VALUES (?,?,'Doctora','Segunda',?,'Medico',?,'active')
                 """, medico, hospital, codigo, codigo + "@medishift.test");
-        consultas.update("INSERT INTO professional_specialty VALUES (?,?,true)", medico, especialidad);
+        consultas.update("INSERT INTO professional_specialty VALUES (?,?,true)", medico, etiqueta);
         consultas.update("""
                 INSERT INTO schedule(id_schedule,id_institution,period_start_schedule,period_end_schedule,version_schedule,
                     status_schedule,id_creator_user_account,id_approver_user_account,approved_at_schedule)
@@ -155,7 +160,7 @@ class ApiPortalPacientePostgresqlTests extends SoporteAtencionPostgresql {
                     start_at_shift,end_at_shift,status_shift)
                 VALUES (?,?,?,?,?,?,?::timestamp AT TIME ZONE 'America/Mexico_City',
                     (?::timestamp + interval '40 minutes') AT TIME ZONE 'America/Mexico_City','approved')
-                """, turno, hospital, plan, medico, sala, especialidad, local, local);
+                """, turno, hospital, plan, medico, sala, etiqueta, local, local);
         consultas.update("""
                 INSERT INTO cita(id,id_institucion,id_paciente,id_turno,id_profesional,id_consultorio,inicio,fin,id_creador)
                 VALUES (?,?,?,?,?,?,?::timestamp AT TIME ZONE 'America/Mexico_City',

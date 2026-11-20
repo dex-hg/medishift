@@ -131,7 +131,8 @@ class ApiAutoprogramacionPostgresqlTests extends SoporteApiPlanesMensuales {
 	void respetaEspecialidadDelAreaYEstadoDelConsultorio() throws Exception {
 		activar(true);
 		UUID especialidadAjena = UUID.randomUUID();
-		consultas.update("INSERT INTO specialty(id_specialty,code_specialty,name_specialty) VALUES (?,'OTRA','Otra')", especialidadAjena);
+		consultas.update("INSERT INTO specialty(id_specialty,code_specialty,name_specialty,id_institution) VALUES (?,'OTRA','Otra',?)",
+				especialidadAjena, institucion);
 		consultas.update("UPDATE planning_unit SET id_specialty=? WHERE id_planning_unit=?", especialidadAjena, area);
 		crear(doctor, profesional, "08:00", "10:00").andExpect(status().isConflict());
 		consultas.update("UPDATE planning_unit SET id_specialty=? WHERE id_planning_unit=?", especialidad, area);

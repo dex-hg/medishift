@@ -118,10 +118,14 @@ abstract class SoporteProgramacionPostgresql {
 	}
 
 	protected UUID nuevaEspecialidad() {
+		return nuevaEspecialidad(cuenta);
+	}
+
+	protected UUID nuevaEspecialidad(CuentaTemporal titular) {
 		UUID id = UUID.randomUUID();
 		especialidades.add(id);
-		consultas.update("INSERT INTO specialty VALUES (?, ?, ?)", id,
-				"T-hor-" + id.toString().substring(0, 24), "Especialidad temporal " + id);
+		consultas.update("INSERT INTO specialty(id_specialty,code_specialty,name_specialty,id_institution) VALUES (?,?,?,?)", id,
+				"T-hor-" + id.toString().substring(0, 24), "Especialidad temporal " + id, titular.institucion());
 		return id;
 	}
 

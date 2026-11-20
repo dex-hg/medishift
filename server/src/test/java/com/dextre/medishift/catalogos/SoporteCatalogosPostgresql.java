@@ -118,8 +118,8 @@ abstract class SoporteCatalogosPostgresql {
 		UUID id = UUID.randomUUID();
 		especialidades.add(id);
 		String nombre = "Especialidad prueba " + id;
-		consultas.update("INSERT INTO specialty VALUES (?, ?, ?)",
-				id, "T-cat-" + id.toString().substring(0, 24), nombre);
+		consultas.update("INSERT INTO specialty(id_specialty,code_specialty,name_specialty,id_institution) VALUES (?,?,?,?)",
+				id, "T-cat-" + id.toString().substring(0, 24), nombre, cuenta.institucion());
 		return nombre;
 	}
 
