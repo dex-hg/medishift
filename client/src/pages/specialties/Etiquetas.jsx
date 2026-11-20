@@ -57,7 +57,7 @@ export default function Etiquetas() {
     .includes(busqueda.trim().toLocaleLowerCase('es')));
   return <>
     <EncabezadoPagina ruta={[{ etiqueta: 'Etiquetas' }]} titulo="Etiquetas"
-      descripcion="Administra las competencias que se pueden asignar a profesionales, áreas y consultorios." />
+      descripcion="Administra las etiquetas de tu clínica y asígnalas a profesionales, áreas y consultorios." />
     <section className="panel especialidades-alta" aria-label={edicion ? 'Editar etiqueta' : 'Nueva etiqueta'}>
       <h2><Tags size={19} aria-hidden="true" /> {edicion ? 'Editar etiqueta' : 'Nueva etiqueta'}</h2>
       <form onSubmit={guardar}>
@@ -89,9 +89,9 @@ export default function Etiquetas() {
         <thead><tr><th>Etiqueta</th><th>Estado</th><th><span className="solo-lectores">Acciones</span></th></tr></thead>
         <tbody>{registros.map((registro) => <tr key={registro.id}>
           <td>{registro.nombre}</td><td>{registro.activa ? 'Activa' : 'Archivada'}</td>
-          <td>{registro.compartida ? <small>Compartida</small> : <button type="button" className="boton-icono"
+          <td><button type="button" className="boton-icono"
             aria-label={`Editar etiqueta ${registro.nombre}`} disabled={guardando} onClick={() => preparar(registro)}>
-            <Pencil size={16} aria-hidden="true" /></button>}</td>
+            <Pencil size={16} aria-hidden="true" /></button></td>
         </tr>)}</tbody>
       </table></div> : <p className="sin-resultados">{busqueda ? 'No hay coincidencias.' : 'Crea la primera etiqueta de tu institución.'}</p>)}
     </section>

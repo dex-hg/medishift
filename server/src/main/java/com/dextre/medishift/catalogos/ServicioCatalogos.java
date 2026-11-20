@@ -7,7 +7,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dextre.medishift.acceso.ServicioAccesoDoctores;
 import com.dextre.medishift.acceso.ServicioAccesoMensual;
+import com.dextre.medishift.acceso.ValidadorAccesoDoctores.Solicitud;
 import com.dextre.medishift.catalogos.DatosCatalogos.CambioEtiqueta;
 import com.dextre.medishift.catalogos.DatosCatalogos.Consultorio;
 import com.dextre.medishift.catalogos.DatosCatalogos.Especialidad;
@@ -27,16 +29,18 @@ public class ServicioCatalogos {
 	private final RepositorioEspecialidades especialidades;
 	private final RepositorioRecursosProgramacion programacion;
 	private final ServicioAccesoMensual permisos;
+	private final ServicioAccesoDoctores accesoDoctores;
 	private final JsonMapper json;
 
 	public ServicioCatalogos(RepositorioProfesionales profesionales, RepositorioConsultorios consultorios,
 			RepositorioEspecialidades especialidades, RepositorioRecursosProgramacion programacion,
-			ServicioAccesoMensual permisos, JsonMapper json) {
+			ServicioAccesoMensual permisos, ServicioAccesoDoctores accesoDoctores, JsonMapper json) {
 		this.profesionales = profesionales;
 		this.consultorios = consultorios;
 		this.especialidades = especialidades;
 		this.programacion = programacion;
 		this.permisos = permisos;
+		this.accesoDoctores = accesoDoctores;
 		this.json = json;
 	}
 
@@ -75,18 +79,22 @@ public class ServicioCatalogos {
 
 	@Transactional
 	public Profesional guardarProfesional(UUID institucion, UUID actor, UUID identificador, Profesional datos,
-			List<UUID> etiquetas, String revision) {
+			List<UUID> etiquetas, String revision, Solicitud credenciales) {
 		prepararEdicion(institucion, actor);
 		Profesional anterior = identificador == null ? null : buscarProfesional(institucion, identificador);
 		if (anterior != null) RevisionesProgramacion.comprobar(revision, anterior.revision());
-		especialidades.exigirActivas(institucion, etiquetas);
+		List<UUID> etiquetasSeleccionadas = etiquetas == null
+				? List.of(especialidades.resolver(institucion, datos.especialidad())) : etiquetas;
+		especialidades.exigirActivas(institucion, etiquetasSeleccionadas);
 		UUID profesional = identificador == null ? UUID.randomUUID() : identificador;
 		profesionales.verificarDuplicados(institucion, profesional, datos);
 		if (anterior == null) profesionales.insertar(institucion, profesional, datos);
 		else profesionales.actualizar(institucion, profesional, datos);
-		profesionales.guardarEtiquetas(institucion, profesional, etiquetas);
+		profesionales.guardarEtiquetas(institucion, profesional, etiquetasSeleccionadas);
 		if (anterior != null) {
 			programacion.exigirTurnosCompatibles(institucion, Alcance.PROFESIONAL, profesional, "idsEtiquetas");
+		} else if (credenciales != null) {
+			accesoDoctores.crearAccesoInicial(institucion, actor, profesional, credenciales);
 		}
 		Profesional resultado = buscarProfesional(institucion, profesional);
 		auditar(institucion, actor, "professional", profesional, captura(anterior), captura(resultado));
@@ -191,9 +199,6 @@ public class ServicioCatalogos {
 	public Etiqueta actualizarEtiqueta(UUID institucion, UUID actor, UUID identificador, String revision, CambioEtiqueta cambio) {
 		prepararEdicion(institucion, actor);
 		Etiqueta anterior = especialidades.buscarEtiqueta(institucion, identificador);
-		if (anterior.compartida()) {
-			throw CatalogoException.conflicto("etiqueta", "Las etiquetas compartidas se consultan desde el catálogo.");
-		}
 		RevisionesProgramacion.comprobar(revision, anterior.revision());
 		Etiqueta etiqueta = especialidades.cambiar(institucion, identificador, cambio);
 		if (anterior.activa() && !etiqueta.activa()) {

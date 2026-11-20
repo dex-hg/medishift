@@ -9,20 +9,31 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.dextre.medishift.catalogos.DatosCatalogos.AreaConsultorio;
 import com.dextre.medishift.catalogos.DatosCatalogos.Consultorio;
 
 @Repository
 public class RepositorioConsultorios {
 
 	private static final String CONSULTA = """
-			SELECT r.*, etiquetas.* FROM room r
+			SELECT r.*, area.name_planning_unit AS nombre_area, padre.id_planning_unit AS id_padre,
+			       padre.name_planning_unit AS nombre_padre, etiquetas.*, etiquetas_area.*
+			FROM room r
+			LEFT JOIN planning_unit area ON (area.id_institution,area.id_planning_unit)=(r.id_institution,r.id_planning_unit)
+			LEFT JOIN planning_unit padre ON (padre.id_institution,padre.id_planning_unit)=(area.id_institution,area.id_area_padre)
 			LEFT JOIN LATERAL (
 			    SELECT array_agg(s.id_specialty ORDER BY lower(s.name_specialty),s.id_specialty) AS ids_etiquetas,
 			           array_agg(s.name_specialty ORDER BY lower(s.name_specialty),s.id_specialty) AS nombres_etiquetas
 			    FROM room_specialty v JOIN specialty s USING (id_specialty)
 			    WHERE v.id_room=r.id_room AND s.activa AND NOT r.is_general_room
-			        AND (s.id_institution IS NULL OR s.id_institution=r.id_institution)
-			) etiquetas ON true WHERE r.id_institution=?
+			        AND s.id_institution=r.id_institution
+			) etiquetas ON true
+			LEFT JOIN LATERAL (
+			    SELECT array_agg(s.id_specialty ORDER BY lower(s.name_specialty),s.id_specialty) AS ids_area,
+			           array_agg(s.name_specialty ORDER BY lower(s.name_specialty),s.id_specialty) AS etiquetas_del_area
+			    FROM area_etiqueta v JOIN specialty s ON s.id_specialty=v.id_etiqueta AND s.id_institution=v.id_institucion
+			    WHERE (v.id_institucion,v.id_area)=(area.id_institution,area.id_planning_unit) AND s.activa
+			) etiquetas_area ON true WHERE r.id_institution=?
 			""";
 	private final JdbcTemplate consultas;
 
@@ -132,11 +143,15 @@ public class RepositorioConsultorios {
 
 	private Consultorio leer(ResultSet fila) throws SQLException {
 		var etiquetas = RepositorioEspecialidades.leerReferencias(fila);
+		UUID idArea = fila.getObject("id_planning_unit", UUID.class);
+		AreaConsultorio area = idArea == null ? null : new AreaConsultorio(idArea, fila.getString("nombre_area"),
+				fila.getObject("id_padre", UUID.class), fila.getString("nombre_padre"),
+				RepositorioEspecialidades.leerReferencias(fila, "ids_area", "etiquetas_del_area"));
 		return new Consultorio(fila.getObject("id_room", UUID.class), fila.getString("code_room"),
 				fila.getString("name_room"), fila.getString("location_room"),
 				etiquetas.isEmpty() ? "" : etiquetas.getFirst().nombre(),
 				"active".equals(fila.getString("status_room")) ? "Activo" : "Inactivo",
-				fila.getBoolean("is_general_room"), etiquetas);
+				fila.getBoolean("is_general_room"), etiquetas, area);
 	}
 
 	private String traducirEstado(String estado) {

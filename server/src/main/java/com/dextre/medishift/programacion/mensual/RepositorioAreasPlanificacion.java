@@ -21,7 +21,7 @@ public class RepositorioAreasPlanificacion {
 			LEFT JOIN LATERAL (
 			    SELECT array_agg(e.id_specialty ORDER BY lower(e.name_specialty),e.id_specialty) AS ids_etiquetas,
 			           array_agg(e.name_specialty ORDER BY lower(e.name_specialty),e.id_specialty) AS nombres_etiquetas
-			    FROM area_etiqueta a JOIN specialty e ON e.id_specialty=a.id_etiqueta AND e.activa
+			    FROM area_etiqueta a JOIN specialty e ON e.id_specialty=a.id_etiqueta AND e.id_institution=a.id_institucion AND e.activa
 			    WHERE (a.id_institucion,a.id_area)=(u.id_institution,u.id_planning_unit)
 			) etiquetas ON true WHERE u.id_institution=?
 			""";

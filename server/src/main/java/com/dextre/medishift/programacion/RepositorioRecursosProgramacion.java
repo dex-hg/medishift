@@ -24,7 +24,7 @@ public class RepositorioRecursosProgramacion {
 			))
 			""";
 	private static final String COMPETENCIA_ACTIVA = """
-			(e.activa AND (e.id_institution IS NULL OR e.id_institution=p.id_institution) AND EXISTS (
+			(e.activa AND e.id_institution=p.id_institution AND EXISTS (
 			    SELECT 1 FROM professional_specialty v
 			    WHERE (v.id_professional,v.id_specialty)=(p.id_professional,e.id_specialty) AND v.activo
 			))

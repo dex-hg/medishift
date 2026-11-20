@@ -41,6 +41,17 @@ function validarIdentificador(id) {
   }
 }
 
+function extraerAreaConsultorio(area) {
+  if (area === null) return null;
+  if (!esObjeto(area) || !UUID.test(area.id) || typeof area.nombre !== 'string' || !area.nombre.trim()
+    || (area.idPadre === null ? area.nombrePadre !== null : !UUID.test(area.idPadre)
+      || typeof area.nombrePadre !== 'string' || !area.nombrePadre.trim())) {
+    throw new ErrorCatalogo('El servicio devolvió un área inválida.', { tipo: 'respuesta' });
+  }
+  return { id: area.id, nombre: area.nombre, idPadre: area.idPadre, nombrePadre: area.nombrePadre,
+    etiquetas: extraerContenido(area.etiquetas, 'especialidades', true) };
+}
+
 function extraerRegistro(contenido, recurso) {
   const campos = CAMPOS[recurso];
   const opcionales = recurso === 'profesionales' ? ['telefono', ...(Array.isArray(contenido?.etiquetas) ? ['especialidad'] : [])]
@@ -52,17 +63,18 @@ function extraerRegistro(contenido, recurso) {
   }
   const registro = Object.fromEntries(campos.map((campo) => [campo, contenido[campo]]));
   if (recurso === 'etiquetas') {
-    if (typeof contenido.activa !== 'boolean' || typeof contenido.compartida !== 'boolean' || !REVISION.test(contenido.revision)) {
+    if (typeof contenido.activa !== 'boolean' || !REVISION.test(contenido.revision)) {
       throw new ErrorCatalogo('El servicio devolvió una etiqueta inválida.', { tipo: 'respuesta' });
     }
-    return { ...registro, activa: contenido.activa, compartida: contenido.compartida, revision: contenido.revision };
+    return { ...registro, activa: contenido.activa, revision: contenido.revision };
   }
   if (contenido.etiquetas !== undefined && ['profesionales', 'consultorios'].includes(recurso)) {
     if (!REVISION.test(contenido.revision) || (recurso === 'consultorios' && typeof contenido.usoGeneral !== 'boolean')) {
       throw new ErrorCatalogo('El servicio devolvió un catálogo inválido.', { tipo: 'respuesta' });
     }
     return { ...registro, etiquetas: extraerContenido(contenido.etiquetas, 'especialidades', true), revision: contenido.revision,
-      ...(recurso === 'consultorios' ? { usoGeneral: contenido.usoGeneral } : {}) };
+      ...(recurso === 'consultorios' ? { usoGeneral: contenido.usoGeneral,
+        ...(contenido.area === undefined ? {} : { area: extraerAreaConsultorio(contenido.area) }) } : {}) };
   }
   return registro;
 }
@@ -123,7 +135,8 @@ async function solicitarCatalogo(recurso, metodo, {
       }
       const estadoEsperado = metodo === 'POST' ? 201 : metodo === 'DELETE' ? 204 : 200;
       if (respuesta.status !== estadoEsperado) {
-        const errores = esObjeto(contenido?.errores) ? Object.fromEntries([...CAMPOS[recurso], 'idsEtiquetas', 'activa', 'revision']
+        const camposAcceso = recurso === 'profesionales' ? ['correoAcceso', 'contrasenaAcceso'] : [];
+        const errores = esObjeto(contenido?.errores) ? Object.fromEntries([...CAMPOS[recurso], ...camposAcceso, 'idsEtiquetas', 'activa', 'revision']
           .filter((campo) => campo !== 'id' && typeof contenido.errores[campo] === 'string')
           .map((campo) => [campo, contenido.errores[campo]])) : {};
         const mensaje = respuesta.status === 401 ? MENSAJES[401]

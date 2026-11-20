@@ -38,7 +38,7 @@ public class RepositorioAprobacionMensual {
                     SELECT jsonb_agg(CASE WHEN jsonb_exists(turno,'nombre_etiqueta') THEN turno ELSE
                         turno || jsonb_build_object('nombre_etiqueta',e.name_specialty) END ORDER BY orden)
                     FROM jsonb_array_elements(contenido->'turnos') WITH ORDINALITY AS archivo(turno,orden)
-                    LEFT JOIN specialty e ON e.id_specialty=(turno->>'id_specialty')::uuid
+                    LEFT JOIN specialty e ON e.id_specialty=(turno->>'id_specialty')::uuid AND e.id_institution=historial_plan_mensual.id_institucion
                 ),'[]'::jsonb))::text AS contenido
                 FROM historial_plan_mensual WHERE id_institucion=? AND id_plan=? ORDER BY version DESC
                 """,

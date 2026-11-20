@@ -16,11 +16,6 @@ export default function SelectorEtiquetas({ etiqueta = 'Etiquetas', opciones, va
   const bloqueo = useRef(false);
   const disponibles = [...opciones, ...nuevas.filter((nueva) => !opciones.some((opcion) => opcion.id === nueva.id))];
   const elegidas = disponibles.filter((opcion) => valor.includes(opcion.id));
-  const frecuencia = new Map();
-  const claveNombre = (opcion) => opcion.nombre.normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('es');
-  for (const opcion of disponibles) frecuencia.set(claveNombre(opcion), (frecuencia.get(claveNombre(opcion)) ?? 0) + 1);
-  const nombreVisible = (opcion) => frecuencia.get(claveNombre(opcion)) > 1
-    ? `${opcion.nombre} · ${opcion.compartida ? 'Compartida' : 'Institucional'}` : opcion.nombre;
   const termino = buscar.trim().toLocaleLowerCase('es');
   const visibles = disponibles.filter((opcion) => opcion.nombre.toLocaleLowerCase('es').includes(termino));
 
@@ -52,7 +47,7 @@ export default function SelectorEtiquetas({ etiqueta = 'Etiquetas', opciones, va
     <legend>{etiqueta}</legend>
     {ayuda && <small id={`${id}-ayuda`}>{ayuda}</small>}
     {elegidas.length > 0 && <ul className="etiquetas-elegidas" aria-label="Etiquetas seleccionadas">
-      {elegidas.map((opcion) => <li key={opcion.id}>{nombreVisible(opcion)}</li>)}
+      {elegidas.map((opcion) => <li key={opcion.id}>{opcion.nombre}</li>)}
     </ul>}
     {disponibles.length > 6 && <label className="planificador-busqueda">
       <Search size={16} aria-hidden="true" /><span className="solo-lectores">Buscar etiquetas</span>
@@ -62,7 +57,7 @@ export default function SelectorEtiquetas({ etiqueta = 'Etiquetas', opciones, va
       {visibles.map((opcion) => <label key={opcion.id}>
         <input type="checkbox" name="idsEtiquetas" value={opcion.id} checked={valor.includes(opcion.id)}
           onChange={(evento) => cambiar(evento.target.checked ? [...valor, opcion.id] : valor.filter((idEtiqueta) => idEtiqueta !== opcion.id))} />
-        <span>{nombreVisible(opcion)}</span>
+        <span>{opcion.nombre}</span>
       </label>)}
       {!visibles.length && <small role="status">{termino ? 'Sin coincidencias.' : 'Todavía no hay etiquetas disponibles.'}</small>}
     </div>

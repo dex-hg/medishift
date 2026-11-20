@@ -18,8 +18,7 @@ import com.dextre.medishift.catalogos.DatosCatalogos.Etiqueta;
 public class RepositorioEspecialidades {
 
 	private static final String CONSULTA = """
-			SELECT id_specialty,name_specialty,activa,id_institution IS NULL AS compartida
-			FROM specialty WHERE (id_institution IS NULL OR id_institution=?)
+			SELECT id_specialty,name_specialty,activa FROM specialty WHERE id_institution=?
 			""";
 	private final JdbcTemplate consultas;
 
@@ -28,7 +27,7 @@ public class RepositorioEspecialidades {
 	}
 
 	public List<Etiqueta> listarEtiquetas(UUID institucion) {
-		return consultas.query(CONSULTA + "ORDER BY activa DESC, lower(name_specialty), compartida, id_specialty",
+		return consultas.query(CONSULTA + "ORDER BY activa DESC, lower(name_specialty), id_specialty",
 				(fila, numero) -> leer(fila), institucion);
 	}
 
@@ -99,10 +98,14 @@ public class RepositorioEspecialidades {
 
 	/** Los arreglos salen del mismo orden en la consulta de catálogo y recursos. */
 	public static List<Especialidad> leerReferencias(ResultSet fila) throws SQLException {
-		var ids = fila.getArray("ids_etiquetas");
+		return leerReferencias(fila, "ids_etiquetas", "nombres_etiquetas");
+	}
+
+	public static List<Especialidad> leerReferencias(ResultSet fila, String idsEtiqueta, String nombresEtiqueta) throws SQLException {
+		var ids = fila.getArray(idsEtiqueta);
 		if (ids == null) return List.of();
 		Object[] identificadores = (Object[]) ids.getArray();
-		String[] nombres = (String[]) fila.getArray("nombres_etiquetas").getArray();
+		String[] nombres = (String[]) fila.getArray(nombresEtiqueta).getArray();
 		List<Especialidad> etiquetas = new ArrayList<>(identificadores.length);
 		for (int indice = 0; indice < identificadores.length; indice++) {
 			etiquetas.add(new Especialidad(UUID.fromString(identificadores[indice].toString()), nombres[indice]));
@@ -116,7 +119,7 @@ public class RepositorioEspecialidades {
 		consultas.update("""
 				INSERT INTO specialty(id_specialty,code_specialty,name_specialty,id_institution) VALUES (?,?,?,?)
 				""", identificador, codigo, nombre, institucion);
-		return new Etiqueta(identificador, nombre, true, false);
+		return new Etiqueta(identificador, nombre, true);
 	}
 
 	private void exigirNombreDisponible(UUID institucion, UUID excluir, String nombre) {
@@ -128,8 +131,7 @@ public class RepositorioEspecialidades {
 	}
 
 	private static Etiqueta leer(ResultSet fila) throws SQLException {
-		return new Etiqueta(fila.getObject("id_specialty", UUID.class), fila.getString("name_specialty"),
-				fila.getBoolean("activa"), fila.getBoolean("compartida"));
+		return new Etiqueta(fila.getObject("id_specialty", UUID.class), fila.getString("name_specialty"), fila.getBoolean("activa"));
 	}
 
 	private static String normalizado(String nombre) {

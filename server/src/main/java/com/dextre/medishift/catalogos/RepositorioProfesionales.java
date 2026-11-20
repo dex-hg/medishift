@@ -21,7 +21,7 @@ public class RepositorioProfesionales {
 			           array_agg(s.name_specialty ORDER BY ps.is_primary_professional_specialty DESC,lower(s.name_specialty),s.id_specialty) AS nombres_etiquetas
 			    FROM professional_specialty ps JOIN specialty s USING (id_specialty)
 			    WHERE ps.id_professional=p.id_professional AND ps.activo AND s.activa
-				    AND (s.id_institution IS NULL OR s.id_institution=p.id_institution)
+				    AND s.id_institution=p.id_institution
 			) etiquetas ON true WHERE p.id_institution=?
 			""";
 	private final JdbcTemplate consultas;
