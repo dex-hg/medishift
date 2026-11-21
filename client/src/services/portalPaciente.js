@@ -10,7 +10,8 @@ const invalida = () => { throw new ErrorAtencion('La respuesta del servidor no e
 
 export function iniciarSesionPaciente({ dni, fechaNacimiento }, opciones) {
   return solicitarAtencion(PORTAL + '/sesion', 'POST', () => true,
-    { ...opciones, datos: { dni, fechaNacimiento }, estadoEsperado: 204 });
+    { ...opciones, datos: { dni, fechaNacimiento }, estadoEsperado: 204,
+      avisoEspera: 'El acceso al portal tardó demasiado. Espera un momento y vuelve a intentarlo.' });
 }
 
 export function cerrarSesionPaciente(opciones) {

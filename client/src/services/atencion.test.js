@@ -36,6 +36,29 @@ test('consulta DNI por backend sin enviar token y omite campos adicionales de la
   assert.deepEqual(resultado, { dni: '00123456', nombres: 'Ana', apellidos: 'Pérez' });
   assert.throws(() => consultarIdentidadDni('123'), /8 dígitos/);
 });
+
+test('al vencer una consulta de DNI ofrece completar los nombres manualmente y no reintenta', async () => {
+  let intentos = 0;
+  let senal;
+  await assert.rejects(consultarIdentidadDni('00123456', {
+    tiempoEspera: 5,
+    ejecutarSolicitud: async (ruta, opciones) => {
+      intentos++;
+      senal = opciones.signal;
+      return new Promise(() => {});
+    },
+  }), /La consulta de DNI tardó demasiado. Puedes completar los nombres manualmente./);
+  assert.equal(intentos, 1);
+  assert.equal(senal.aborted, true);
+});
+
+test('la consulta de DNI propaga los segundos del límite de solicitudes', async () => {
+  await assert.rejects(consultarIdentidadDni('00123456', {
+    ejecutarSolicitud: async () => new Response(JSON.stringify({ mensaje: 'Demasiados intentos.' }), {
+      status: 429, headers: { 'Retry-After': '43' },
+    }),
+  }), (fallo) => fallo.estado === 429 && fallo.reintentarEn === 43);
+});
 test('consulta el mes completo con sesión y rechaza calendarios de otro mes', async () => {
   const calendario = { periodo: '2032-11', zonaHoraria: 'America/Lima', turnos: [], citas: [cita] };
   assert.equal((await obtenerCalendarioCitas('2032-11', { ejecutarSolicitud: responder(calendario) })).citas.length, 1);

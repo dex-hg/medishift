@@ -3,14 +3,19 @@ import { normalizarPaciente, validarPaciente, normalizarCita, validarCita, etiqu
 import { periodoValido } from './planesMensuales.js';
 
 export class ErrorAtencion extends Error {
-  constructor(mensaje, { estado = 0, errores = {} } = {}) {
-    super(mensaje); this.name = 'ErrorAtencion'; this.estado = estado; this.errores = errores;
+  constructor(mensaje, { estado = 0, errores = {}, reintentarEn = 0 } = {}) {
+    super(mensaje);
+    this.name = 'ErrorAtencion';
+    this.estado = estado;
+    this.errores = errores;
+    this.reintentarEn = reintentarEn;
   }
 }
 
 const objeto = (valor) => valor !== null && typeof valor === 'object' && !Array.isArray(valor);
 const texto = (valor) => typeof valor === 'string' && valor.trim().length > 0;
 const instante = (valor) => typeof valor === 'string' && Number.isFinite(Date.parse(valor));
+const AVISO_ESPERA_GUARDADO = 'La solicitud tardó demasiado. Recarga para comprobar si se guardó antes de repetirla.';
 const invalida = () => { throw new ErrorAtencion('La respuesta del servidor no es válida. Recarga los datos.'); };
 const idValido = (id) => { if (!UUID.test(id)) throw new ErrorAtencion('El identificador no es válido.'); return id; };
 
@@ -45,7 +50,10 @@ const extraerListado = (valor) => {
   return valor;
 };
 
-export async function solicitarAtencion(ruta, metodo, convertir, { datos, revision, senal, estadoEsperado, ejecutarSolicitud = globalThis.fetch, tiempoEspera = 15000 } = {}) {
+export async function solicitarAtencion(ruta, metodo, convertir, {
+  datos, revision, senal, estadoEsperado, ejecutarSolicitud = globalThis.fetch,
+  tiempoEspera = 15000, avisoEspera = AVISO_ESPERA_GUARDADO,
+} = {}) {
   if (!/^\/api\/(?:pacientes|citas|planes-mensuales|portal-paciente)(?:\/|\?|$)/.test(ruta) || typeof ejecutarSolicitud !== 'function'
     || !Number.isFinite(tiempoEspera) || tiempoEspera <= 0 || (senal !== undefined && !(senal instanceof AbortSignal))) throw new ErrorAtencion('No se pudo iniciar la solicitud.');
   if (revision !== undefined && !REVISION.test(revision)) throw new ErrorAtencion('Recarga el registro antes de guardar.', { estado: 428 });
@@ -55,7 +63,7 @@ export async function solicitarAtencion(ruta, metodo, convertir, { datos, revisi
   if (senal?.aborted) controlador.abort();
   let temporizador;
   const vencimiento = new Promise((resolver, rechazar) => { temporizador = setTimeout(() => {
-    rechazar(new ErrorAtencion('La solicitud tardó demasiado. Recarga para comprobar si se guardó antes de repetirla.'));
+    rechazar(new ErrorAtencion(avisoEspera));
     controlador.abort();
   }, tiempoEspera); });
   try {
@@ -68,8 +76,14 @@ export async function solicitarAtencion(ruta, metodo, convertir, { datos, revisi
         try { contenido = await respuesta.json(); } catch { /* La respuesta de error puede llegar sin JSON. */ }
       }
       const esperado = estadoEsperado ?? (metodo === 'POST' && ['/api/pacientes', '/api/citas'].includes(ruta) ? 201 : 200);
-      if (respuesta.status !== esperado) throw new ErrorAtencion(texto(contenido?.mensaje) ? contenido.mensaje : 'No se pudo completar la solicitud.',
-        { estado: respuesta.status, errores: objeto(contenido?.errores) ? Object.fromEntries(Object.entries(contenido.errores).filter(([, mensaje]) => typeof mensaje === 'string')) : {} });
+      if (respuesta.status !== esperado) {
+        const espera = respuesta.status === 429 ? respuesta.headers?.get('Retry-After') : null;
+        throw new ErrorAtencion(texto(contenido?.mensaje) ? contenido.mensaje : 'No se pudo completar la solicitud.', {
+          estado: respuesta.status,
+          errores: objeto(contenido?.errores) ? Object.fromEntries(Object.entries(contenido.errores).filter(([, mensaje]) => typeof mensaje === 'string')) : {},
+          reintentarEn: /^[1-9][0-9]{0,2}$/.test(espera) ? Number(espera) : 0,
+        });
+      }
       return convertir(contenido);
     };
     return await Promise.race([operacion(), vencimiento]);
@@ -111,7 +125,11 @@ export const consultarIdentidadDni = (dni, opciones) => {
     if (!objeto(valor) || valor.dni !== dni || !texto(valor.nombres) || !texto(valor.apellidos)
       || [...valor.nombres].length > 80 || [...valor.apellidos].length > 100) invalida();
     return { dni: valor.dni, nombres: valor.nombres, apellidos: valor.apellidos };
-  }, { ...opciones, datos: { dni } });
+  }, {
+    ...opciones,
+    datos: { dni },
+    avisoEspera: 'La consulta de DNI tardó demasiado. Puedes completar los nombres manualmente.',
+  });
 };
 export const guardarCita = (datos, { id, ...opciones } = {}) => {
   const normalizados = normalizarCita(datos);

@@ -68,7 +68,7 @@ export default function FormularioPaciente({ paciente, dni = '', zonaHoraria, gu
           <div className="consulta-dni-fila campo--doble">
             <CampoFormulario etiqueta="DNI" requerido error={errores.dni}><input name="dni" inputMode="numeric" pattern="[0-9]{8}" maxLength={8} required
               value={datos.dni} readOnly={integrado} onChange={(evento) => cambiar('dni', evento.target.value)} /></CampoFormulario>
-            {!paciente && <button className="boton boton--secundario" type="button" disabled={ocupado || !/^[0-9]{8}$/.test(datos.dni)}
+            {!paciente && <button className="boton boton--secundario" type="button" disabled={ocupado || identidad.enPausa || !/^[0-9]{8}$/.test(datos.dni)}
               onClick={() => consultar(datos.dni)}>{identidad.consultando ? 'Consultando…' : 'Consultar DNI'}</button>}
           </div>
           {identidad.aviso && <p className="consulta-dni-aviso campo--doble" role="status">{identidad.aviso}</p>}
