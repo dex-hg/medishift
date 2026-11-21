@@ -50,6 +50,21 @@ class ApiAgendaVisualPostgresqlTests extends SoporteAtencionPostgresql {
     }
 
     @Test
+    void limitaLasConsultasPorCuentaAntesDeContactarAlProveedor() throws Exception {
+        when(proveedor.consultar("12345678")).thenReturn(new IdentidadDni("12345678", "Ana", "Paciente de prueba"));
+        for (int intento = 0; intento < 15; intento++) {
+            solicitar(post("/api/pacientes/consultar-dni").session(doctor)
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"dni\":\"12345678\"}"))
+                    .andExpect(status().isOk());
+        }
+        solicitar(post("/api/pacientes/consultar-dni").session(doctor)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"dni\":\"12345678\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"));
+        verify(proveedor, times(15)).consultar("12345678");
+    }
+
+    @Test
     void calendarioMensualSoloIncluyeTurnosAprobadosYCitasAutorizadas() throws Exception {
         var paciente = paciente(sesion, "12345678");
         var propio = turno(profesional, "08:00", "12:00");
