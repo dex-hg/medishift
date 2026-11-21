@@ -1,13 +1,17 @@
 package com.dextre.medishift.atencion;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +43,7 @@ class ClienteIdentidadDniTests {
         var identidad = cliente.consultar(DNI);
         assertEquals("Ana María", identidad.nombres()); assertEquals("Pérez Soto", identidad.apellidos());
         var captura = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(conexion).send(captura.capture(), any(HttpResponse.BodyHandler.class));
+        verify(conexion).sendAsync(captura.capture(), any(HttpResponse.BodyHandler.class));
         assertEquals("dniruc.apisperu.com", captura.getValue().uri().getHost());
         assertEquals("/api/v1/dni/00123456", captura.getValue().uri().getPath());
         assertEquals("token=secreto%26solo%3Dservidor", captura.getValue().uri().getRawQuery());
@@ -77,7 +81,7 @@ class ClienteIdentidadDniTests {
     }
 
     @Test
-    void erroresHttpNoPublicanCuerpoDelProveedorNiSiguenRedirecciones() throws Exception {
+    void erroresHttpNoPublicanCuerpoDelProveedorNiSiguenRedirecciones() {
         for (int estado : new int[]{302,401,403,429,500}) {
             responder(estado, "No publicar token secreto ni respuesta interna");
             var fallo = assertThrows(CatalogoException.class, () -> cliente.consultar(DNI));
@@ -88,9 +92,43 @@ class ClienteIdentidadDniTests {
     }
 
     @Test
-    void manejaTimeoutSinPublicarLaUrlConToken() throws Exception {
-        when(conexion.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(new IOException("https://proveedor?token=secreto"));
-        assertFalse(assertThrows(CatalogoException.class, () -> cliente.consultar(DNI)).getMessage().contains("secreto"));
+    void manejaUnFalloDeRedSinPublicarLaUrlConToken() {
+        when(conexion.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(CompletableFuture.failedFuture(new IOException("https://proveedor?token=secreto")));
+        var fallo = assertThrows(CatalogoException.class, () -> cliente.consultar(DNI));
+        assertEquals(503, fallo.obtenerEstado().value());
+        assertFalse(fallo.getMessage().contains("secreto"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void cancelaLaDescargaCuandoSeAgotaElPlazoTotal() throws Exception {
+        CompletableFuture<HttpResponse<byte[]>> pendiente = mock(CompletableFuture.class);
+        when(pendiente.get(8000, TimeUnit.MILLISECONDS)).thenThrow(new TimeoutException());
+        when(conexion.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(pendiente);
+
+        var fallo = assertThrows(CatalogoException.class, () -> cliente.consultar(DNI));
+        assertEquals(504, fallo.obtenerEstado().value());
+        assertTrue(fallo.getMessage().contains("completar los nombres manualmente"));
+        verify(pendiente).cancel(true);
+    }
+
+    @Test
+    void cancelaUnaRespuestaQueSuperaElTamanoPermitidoEnVariosFragmentos() {
+        var info = mock(HttpResponse.ResponseInfo.class);
+        var suscripcion = mock(Flow.Subscription.class);
+        when(info.statusCode()).thenReturn(200);
+        when(conexion.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenAnswer(invocacion -> {
+            HttpResponse.BodyHandler<byte[]> manejador = invocacion.getArgument(1);
+            var receptor = manejador.apply(info);
+            receptor.onSubscribe(suscripcion);
+            receptor.onNext(List.of(ByteBuffer.allocate(8_192)));
+            receptor.onNext(List.of(ByteBuffer.allocate(8_193)));
+            return receptor.getBody().toCompletableFuture().thenApply(cuerpo -> null);
+        });
+
+        assertEquals(503, assertThrows(CatalogoException.class, () -> cliente.consultar(DNI)).obtenerEstado().value());
+        verify(suscripcion).cancel();
     }
 
     @Test
@@ -100,10 +138,11 @@ class ClienteIdentidadDniTests {
     }
 
     @SuppressWarnings("unchecked")
-    private void responder(int estado, String contenido) throws Exception {
-        HttpResponse<InputStream> respuesta = mock(HttpResponse.class);
+    private void responder(int estado, String contenido) {
+        HttpResponse<byte[]> respuesta = mock(HttpResponse.class);
         when(respuesta.statusCode()).thenReturn(estado);
-        when(respuesta.body()).thenAnswer(invocacion -> new ByteArrayInputStream(contenido.getBytes(StandardCharsets.UTF_8)));
-        when(conexion.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(respuesta);
+        when(respuesta.body()).thenReturn(contenido.getBytes(StandardCharsets.UTF_8));
+        when(conexion.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(CompletableFuture.completedFuture(respuesta));
     }
 }

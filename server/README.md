@@ -219,6 +219,8 @@ La agenda presenta un calendario mensual, los turnos aprobados del día y sus in
 
 La consulta de identidad se realiza en el backend mediante el [contrato oficial de ApisPerú](https://dniruc.apisperu.com/doc/swagger). Configura `MEDISHIFT_APISPERU_TOKEN` en `server/.env` y reinicia el backend. El token no se envía al navegador. El proveedor completa nombres y apellidos; la fecha de nacimiento se registra manualmente y es obligatoria. Correo y teléfono son opcionales. Si el proveedor no responde, no encuentra el DNI o rechaza la consulta, se permite completar los nombres manualmente.
 
+El backend espera hasta ocho segundos por la respuesta completa del proveedor. Si se agota el plazo, cancela la descarga y devuelve HTTP 504 con la opción de completar los nombres en el formulario. Cuando el backend devuelve HTTP 429, el formulario pausa el botón de consulta durante el tiempo de espera indicado.
+
 `POST /api/pacientes/consultar-dni` recibe únicamente `{"dni":"12345678"}` y devuelve `dni`, `nombres` y `apellidos`. Requiere sesión y rol vigentes de administrador o doctor. No registra una ficha por consultar el documento. Los errores del proveedor se convierten en mensajes públicos sin copiar su respuesta, la URL autenticada ni el token.
 
 `GET /api/citas/calendario?periodo=AAAA-MM` devuelve `periodo`, `zonaHoraria`, `turnos` y `citas`. El administrador consulta la institución y el doctor solo su agenda. La vista visual conserva los controles de turno aprobado, paciente activo, cruces, estados y revisión mediante `If-Match`. Las reservas concurrentes se comprueban otra vez al guardar, y el formulario conserva los datos cuando se produce un conflicto.
